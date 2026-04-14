@@ -1,10 +1,12 @@
 package org.edu.mapper;
 
+import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
 import org.edu.entity.Student;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class StudentMapper {
 
     public Student toEntity(StudentDTO dto) {
@@ -13,14 +15,11 @@ public class StudentMapper {
         }
 
         Student student = new Student();
-        student.setId(dto.getId());
+
         student.setName(dto.getName());
         student.setDateOfBirth(dto.getDateOfBirth());
         student.setActive(dto.isActive());
-        student.setEmail(dto.getEmail());
         student.setPhoneNumber(dto.getPhoneNumber());
-        student.setCreatedAt(dto.getCreatedAt());
-        student.setUpdatedAt(dto.getUpdatedAt());
         return student;
     }
 
@@ -30,14 +29,20 @@ public class StudentMapper {
         }
 
         StudentDTO dto = new StudentDTO();
+
         dto.setId(student.getId());
         dto.setName(student.getName());
         dto.setDateOfBirth(student.getDateOfBirth());
         dto.setActive(student.isActive());
-        dto.setEmail(student.getEmail());
         dto.setPhoneNumber(student.getPhoneNumber());
         dto.setCreatedAt(student.getCreatedAt());
         dto.setUpdatedAt(student.getUpdatedAt());
+
+        // 🔗 Map userId
+        if (student.getUser() != null) {
+            dto.setUserId(student.getUser().getId());
+        }
+
         return dto;
     }
 
@@ -46,13 +51,16 @@ public class StudentMapper {
             return;
         }
 
-        student.setId(dto.getId());
-        student.setName(dto.getName());
-        student.setDateOfBirth(dto.getDateOfBirth());
-        student.setActive(dto.isActive());
-        student.setEmail(dto.getEmail());
-        student.setPhoneNumber(dto.getPhoneNumber());
-        student.setCreatedAt(dto.getCreatedAt());
-        student.setUpdatedAt(dto.getUpdatedAt());
+        if (dto.getName() != null) {
+            student.setName(dto.getName());
+        }
+
+        if (dto.getDateOfBirth() != null) {
+            student.setDateOfBirth(dto.getDateOfBirth());
+        }
+
+        if (dto.getPhoneNumber() != null) {
+            student.setPhoneNumber(dto.getPhoneNumber());
+        }
     }
 }
