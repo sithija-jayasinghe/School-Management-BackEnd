@@ -15,9 +15,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Student {
+
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
+
+        @OneToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "user_id", nullable = false, unique = true)
+        private User user;
 
         @Column(nullable = false, length = 150)
         private String name;
@@ -25,13 +30,10 @@ public class Student {
         @Column(nullable = false)
         private LocalDate dateOfBirth;
 
-        @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+        @Column(nullable = false)
         private boolean active = true;
 
-        @Column(nullable = false, length = 150, unique = true)
-        private String email;
-
-        @Column(nullable = false, length = 10)
+        @Column(nullable = false, length = 15)
         private String phoneNumber;
 
         @CreatedDate
