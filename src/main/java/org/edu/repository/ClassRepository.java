@@ -1,0 +1,17 @@
+package org.edu.repository;
+
+import org.edu.entity.Class;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface ClassRepository extends JpaRepository<Class, Long> {
+
+    List<Class> findByActiveTrue();
+
+    Page<Class> findByActiveTrue(Pageable pageable);
+
+    Page<Class> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
+}
