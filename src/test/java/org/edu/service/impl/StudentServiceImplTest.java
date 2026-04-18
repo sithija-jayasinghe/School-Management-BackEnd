@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.util.Optional;
 import org.edu.dto.StudentDTO;
 import org.edu.entity.User;
+import org.edu.exception.InvalidStudentDataException;
+import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.StudentMapper;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.UserRepository;
@@ -38,6 +40,7 @@ class StudentServiceImplTest {
 
     @Test
     void shouldRejectStudentCreationWhenUserRoleIsNotStudent() {
+        // Arrange
         StudentDTO dto = new StudentDTO();
         dto.setUserId(4L);
         dto.setName("Kamal Perera");
@@ -51,36 +54,32 @@ class StudentServiceImplTest {
         when(userRepository.findById(4L)).thenReturn(Optional.of(user));
         when(studentRepository.existsByUser(user)).thenReturn(false);
 
-        IllegalArgumentException ex = assertThrows(
-            IllegalArgumentException.class,
-            () -> studentService.createStudent(dto)
+        // Act & Assert
+        assertThrows(InvalidStudentDataException.class,
+                () -> studentService.createStudent(dto)
         );
 
-        assertEquals("User must have STUDENT role", ex.getMessage());
         verify(studentRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void shouldRejectStudentCreationWhenUserAlreadyAssigned() {
-        StudentDTO dto = new StudentDTO();
-        dto.setUserId(7L);
-        dto.setName("Kamal Perera");
-        dto.setDateOfBirth(LocalDate.of(2010, 5, 10));
-        dto.setPhoneNumber("0771234567");
-
+        // Arrange
         User user = new User();
-        user.setId(7L);
+        user.setId(1L);
         user.setRole(Role.STUDENT);
 
-        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        StudentDTO studentDTO = new StudentDTO();
+        studentDTO.setUserId(1L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(studentRepository.existsByUser(user)).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(
-            IllegalArgumentException.class,
-            () -> studentService.createStudent(dto)
+        // Act & Assert
+        assertThrows(InvalidStudentDataException.class,
+                () -> studentService.createStudent(studentDTO)
         );
 
-        assertEquals("User already assigned to a student", ex.getMessage());
         verify(studentRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }
 }

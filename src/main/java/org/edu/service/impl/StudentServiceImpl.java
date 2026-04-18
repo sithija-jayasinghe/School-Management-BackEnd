@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
 import org.edu.entity.Student;
 import org.edu.entity.User;
+import org.edu.exception.InvalidAgeException;
+import org.edu.exception.InvalidStudentDataException;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.StudentMapper;
 import org.edu.repository.StudentRepository;
@@ -33,15 +35,15 @@ public class StudentServiceImpl implements StudentService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (studentRepository.existsByUser(user)) {
-            throw new IllegalArgumentException("User already assigned to a student");
+            throw new InvalidStudentDataException("User already assigned to a student");
         }
 
         if (!user.getRole().name().equals("STUDENT")) {
-            throw new IllegalArgumentException("User must have STUDENT role");
+            throw new InvalidStudentDataException("User must have STUDENT role");
         }
 
         if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
-            throw new IllegalArgumentException("Invalid student age");
+            throw new InvalidAgeException("Invalid student age: Must be at least 3 years old");
         }
 
         Student student = studentMapper.toEntity(studentDTO);
@@ -63,7 +65,7 @@ public class StudentServiceImpl implements StudentService {
 
         if (studentDTO.getDateOfBirth() != null) {
             if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
-                throw new IllegalArgumentException("Invalid student age");
+                throw new InvalidAgeException("Invalid student age: Must be at least 3 years old");
             }
             student.setDateOfBirth(studentDTO.getDateOfBirth());
         }
@@ -77,21 +79,16 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public void deleteStudent(Long id) {
-
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
-
-        if (!student.isActive()) {
-            throw new IllegalStateException("Student already inactive");
+        if (!studentRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Student not found with id: " + id);
         }
-
-        student.setActive(false);
+        studentRepository.deleteById(id);
     }
 
     @Override
     public Page<StudentDTO> getAllStudents(Pageable pageable) {
 
-        return studentRepository.findByActiveTrue(pageable)
+        return studentRepository.findAll(pageable)
                 .map(studentMapper::toDTO);
     }
 
@@ -108,14 +105,14 @@ public class StudentServiceImpl implements StudentService {
     public Page<StudentDTO> searchStudents(String name, Pageable pageable) {
 
         return studentRepository
-                .findByNameContainingIgnoreCaseAndActiveTrue(name, pageable)
+                .findByNameContainingIgnoreCase(name, pageable)
                 .map(studentMapper::toDTO);
     }
 
     @Override
     public List<StudentDTO> getAllActiveStudents() {
 
-        return studentRepository.findByActiveTrue()
+        return studentRepository.findAll()
                 .stream()
                 .map(studentMapper::toDTO)
                 .toList();
