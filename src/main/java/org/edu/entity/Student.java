@@ -8,9 +8,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Entity
 @Table(name = "students")
 @EntityListeners(AuditingEntityListener.class)
+@SQLDelete(sql = "UPDATE students SET active = false WHERE id = ?")
+@SQLRestriction("active = true")
 @NoArgsConstructor
 @Getter
 @Setter
