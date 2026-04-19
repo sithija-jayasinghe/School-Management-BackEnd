@@ -1,6 +1,5 @@
 package org.edu.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -9,26 +8,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Setter
 @Getter
-@NoArgsConstructor
+@Setter
 @AllArgsConstructor
-public class StudentDTO {
+@NoArgsConstructor
+public class StaffDTO {
 
     private Long id;
 
     @NotNull(message = "User ID is required")
     private Long userId;
 
+    @NotNull(message = "Staff ID is required")
+    private String staffId;
+
     @NotBlank(message = "Name is required")
     private String name;
-
-    @NotNull(message = "Date of birth is required")
-    @JsonFormat(pattern = "yyyy-mm-dd")
-    private LocalDate dateOfBirth;
 
     private boolean active;
 
@@ -38,6 +35,9 @@ public class StudentDTO {
             message = "Phone number must be valid (e.g., 0771234567 or +94771234567)"
     )
     private String phoneNumber;
+
+    @NotBlank(message = "Designation is required")
+    private String designation;
 
     private LocalDateTime createdAt;
 
