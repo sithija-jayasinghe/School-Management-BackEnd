@@ -43,6 +43,11 @@ public class StudentMapper {
             dto.setUserId(student.getUser().getId());
         }
 
+        if (student.getCurrentClass() != null) {
+            dto.setCurrentClassId(student.getCurrentClass().getId());
+            dto.setCurrentClassName(student.getCurrentClass().getName());
+        }
+
         return dto;
     }
 

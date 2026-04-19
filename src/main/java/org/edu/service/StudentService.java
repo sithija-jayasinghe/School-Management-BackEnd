@@ -15,4 +15,5 @@ public interface StudentService {
     StudentDTO getStudentById(Long id);
     Page<StudentDTO> searchStudents(String name, Pageable pageable);
     List<StudentDTO> getAllActiveStudents();
+    List<StudentDTO> getStudentsByClassId(Long classId);
 }

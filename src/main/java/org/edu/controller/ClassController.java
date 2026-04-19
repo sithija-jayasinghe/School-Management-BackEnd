@@ -7,6 +7,8 @@ import org.edu.service.ClassService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+import org.edu.dto.StudentDTO;
+import org.edu.service.StudentService;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
 public class ClassController {
 
     private final ClassService classService;
+    private final StudentService studentService;
 
     @PostMapping
     public ClassDTO createClass(@Valid @RequestBody ClassDTO classDTO) {
@@ -52,5 +55,10 @@ public class ClassController {
     @GetMapping("/active")
     public List<ClassDTO> getActiveClasses() {
         return classService.getAllActiveClasses();
+    }
+
+    @GetMapping("/{id}/students")
+    public List<StudentDTO> getStudentsByClass(@PathVariable Long id) {
+        return studentService.getStudentsByClassId(id);
     }
 }

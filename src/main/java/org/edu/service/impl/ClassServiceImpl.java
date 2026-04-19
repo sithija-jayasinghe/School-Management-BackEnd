@@ -6,6 +6,8 @@ import org.edu.entity.Class;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.ClassMapper;
 import org.edu.repository.ClassRepository;
+import org.edu.repository.StaffRepository;
+import org.edu.entity.Staff;
 import org.edu.service.ClassService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +23,19 @@ public class ClassServiceImpl implements ClassService {
 
     private final ClassRepository classRepository;
     private final ClassMapper classMapper;
+    private final StaffRepository staffRepository;
 
     @Override
     public ClassDTO createClass(ClassDTO classDTO) {
 
         Class clazz = classMapper.toEntity(classDTO);
         clazz.setActive(true);
+
+        if (classDTO.getClassTeacherId() != null) {
+            Staff teacher = staffRepository.findById(classDTO.getClassTeacherId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + classDTO.getClassTeacherId()));
+            clazz.setClassTeacher(teacher);
+        }
 
         return classMapper.toDTO(classRepository.save(clazz));
     }
@@ -40,6 +49,12 @@ public class ClassServiceImpl implements ClassService {
         if (classDTO.getName() != null) {
             clazz.setName(classDTO.getName());
         }
+
+        if (classDTO.getClassTeacherId() != null) {
+            Staff teacher = staffRepository.findById(classDTO.getClassTeacherId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + classDTO.getClassTeacherId()));
+            clazz.setClassTeacher(teacher);
+        } // Handle assigning null? Can add a separate method or assume if null, it's ignored for partial update
 
         return classMapper.toDTO(clazz);
     }
