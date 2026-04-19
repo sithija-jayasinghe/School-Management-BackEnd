@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
 import org.edu.entity.Student;
 import org.edu.entity.User;
+import org.edu.entity.Class;
 import org.edu.exception.InvalidAgeException;
 import org.edu.exception.InvalidStudentDataException;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.StudentMapper;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.UserRepository;
+import org.edu.repository.ClassRepository;
 import org.edu.service.StudentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
     private final UserRepository userRepository;
+    private final ClassRepository classRepository;
 
     @Override
     public StudentDTO createStudent(StudentDTO studentDTO) {
@@ -50,6 +53,12 @@ public class StudentServiceImpl implements StudentService {
         student.setUser(user);
         student.setActive(true);
 
+        if (studentDTO.getCurrentClassId() != null) {
+            Class clazz = classRepository.findById(studentDTO.getCurrentClassId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
+            student.setCurrentClass(clazz);
+        }
+
         return studentMapper.toDTO(studentRepository.save(student));
     }
 
@@ -72,6 +81,12 @@ public class StudentServiceImpl implements StudentService {
 
         if (studentDTO.getPhoneNumber() != null) {
             student.setPhoneNumber(studentDTO.getPhoneNumber());
+        }
+
+        if (studentDTO.getCurrentClassId() != null) {
+            Class clazz = classRepository.findById(studentDTO.getCurrentClassId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
+            student.setCurrentClass(clazz);
         }
 
         return studentMapper.toDTO(student);
@@ -114,6 +129,17 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository.findAll()
                 .stream()
+                .map(studentMapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<StudentDTO> getStudentsByClassId(Long classId) {
+        Class clazz = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + classId));
+
+        return clazz.getStudents().stream()
+                .filter(Student::isActive)
                 .map(studentMapper::toDTO)
                 .toList();
     }

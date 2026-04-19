@@ -38,6 +38,10 @@ public class Student {
         @Column(nullable = false)
         private boolean active = true;
 
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "class_id")
+        private Class currentClass;
+
         @Column(nullable = false, length = 15)
         private String phoneNumber;
 

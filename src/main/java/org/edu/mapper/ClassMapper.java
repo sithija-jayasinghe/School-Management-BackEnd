@@ -31,6 +31,12 @@ public class ClassMapper {
         dto.setId(clazz.getId());
         dto.setName(clazz.getName());
         dto.setActive(clazz.isActive());
+
+        if (clazz.getClassTeacher() != null) {
+            dto.setClassTeacherId(clazz.getClassTeacher().getId());
+            dto.setClassTeacherName(clazz.getClassTeacher().getName());
+        }
+
         dto.setCreatedAt(clazz.getCreatedAt());
         dto.setUpdatedAt(clazz.getUpdatedAt());
 

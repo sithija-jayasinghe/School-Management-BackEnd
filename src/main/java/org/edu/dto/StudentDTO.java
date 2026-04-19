@@ -39,6 +39,10 @@ public class StudentDTO {
     )
     private String phoneNumber;
 
+    private Long currentClassId;
+
+    private String currentClassName;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

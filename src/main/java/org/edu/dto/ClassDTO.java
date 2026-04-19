@@ -19,6 +19,10 @@ public class ClassDTO {
     @NotBlank(message = "Name is required")
     private String name;
 
+    private Long classTeacherId;
+
+    private String classTeacherName;
+
     private boolean active;
 
     private LocalDateTime createdAt;
