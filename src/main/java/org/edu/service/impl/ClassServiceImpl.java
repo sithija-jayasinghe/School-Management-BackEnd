@@ -32,7 +32,7 @@ public class ClassServiceImpl implements ClassService {
         clazz.setActive(true);
 
         if (classDTO.getClassTeacherId() != null) {
-            Staff teacher = staffRepository.findById(classDTO.getClassTeacherId())
+            Staff teacher = staffRepository.findByIdAndActiveTrue(classDTO.getClassTeacherId())
                     .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + classDTO.getClassTeacherId()));
             clazz.setClassTeacher(teacher);
         }
@@ -43,18 +43,16 @@ public class ClassServiceImpl implements ClassService {
     @Override
     public ClassDTO updateClass(Long id, ClassDTO classDTO) {
 
-        Class clazz = classRepository.findById(id)
+        Class clazz = classRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + id));
 
-        if (classDTO.getName() != null) {
-            clazz.setName(classDTO.getName());
-        }
+        classMapper.updateEntityFromDTO(classDTO, clazz);
 
         if (classDTO.getClassTeacherId() != null) {
-            Staff teacher = staffRepository.findById(classDTO.getClassTeacherId())
+            Staff teacher = staffRepository.findByIdAndActiveTrue(classDTO.getClassTeacherId())
                     .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + classDTO.getClassTeacherId()));
             clazz.setClassTeacher(teacher);
-        } // Handle assigning null? Can add a separate method or assume if null, it's ignored for partial update
+        }
 
         return classMapper.toDTO(clazz);
     }
@@ -82,7 +80,7 @@ public class ClassServiceImpl implements ClassService {
     @Override
     public ClassDTO getClassById(Long id) {
 
-        Class clazz = classRepository.findById(id)
+        Class clazz = classRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + id));
 
         return classMapper.toDTO(clazz);

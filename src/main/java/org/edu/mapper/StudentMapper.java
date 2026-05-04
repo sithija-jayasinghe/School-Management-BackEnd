@@ -1,71 +1,39 @@
 package org.edu.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
 import org.edu.entity.Student;
-import org.springframework.stereotype.Component;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-@RequiredArgsConstructor
-public class StudentMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface StudentMapper extends BaseMapper<StudentDTO, Student> {
 
-    public Student toEntity(StudentDTO dto) {
-        if (dto == null) {
-            return null;
-        }
+    @Override
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "currentClass", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    Student toEntity(StudentDTO dto);
 
-        Student student = new Student();
+    @Override
+    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "currentClassId", source = "currentClass.id")
+    @Mapping(target = "currentClassName", source = "currentClass.name")
+    StudentDTO toDTO(Student student);
 
-        student.setName(dto.getName());
-        student.setDateOfBirth(dto.getDateOfBirth());
-        student.setActive(dto.isActive());
-        student.setPhoneNumber(dto.getPhoneNumber());
-        return student;
-    }
-
-    public StudentDTO toDTO(Student student) {
-        if (student == null) {
-            return null;
-        }
-
-        StudentDTO dto = new StudentDTO();
-
-        dto.setId(student.getId());
-        dto.setName(student.getName());
-        dto.setDateOfBirth(student.getDateOfBirth());
-        dto.setActive(student.isActive());
-        dto.setPhoneNumber(student.getPhoneNumber());
-        dto.setCreatedAt(student.getCreatedAt());
-        dto.setUpdatedAt(student.getUpdatedAt());
-
-        // 🔗 Map userId
-        if (student.getUser() != null) {
-            dto.setUserId(student.getUser().getId());
-        }
-
-        if (student.getCurrentClass() != null) {
-            dto.setCurrentClassId(student.getCurrentClass().getId());
-            dto.setCurrentClassName(student.getCurrentClass().getName());
-        }
-
-        return dto;
-    }
-
-    public void updateEntityFromDTO(StudentDTO dto, Student student) {
-        if (dto == null || student == null) {
-            return;
-        }
-
-        if (dto.getName() != null) {
-            student.setName(dto.getName());
-        }
-
-        if (dto.getDateOfBirth() != null) {
-            student.setDateOfBirth(dto.getDateOfBirth());
-        }
-
-        if (dto.getPhoneNumber() != null) {
-            student.setPhoneNumber(dto.getPhoneNumber());
-        }
-    }
+    @Override
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "currentClass", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void updateEntityFromDTO(StudentDTO dto, @MappingTarget Student student);
 }

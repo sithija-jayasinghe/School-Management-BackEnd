@@ -13,6 +13,7 @@ import org.edu.repository.StudentRepository;
 import org.edu.repository.UserRepository;
 import org.edu.repository.ClassRepository;
 import org.edu.service.StudentService;
+import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class StudentServiceImpl implements StudentService {
             throw new InvalidStudentDataException("User already assigned to a student");
         }
 
-        if (!user.getRole().name().equals("STUDENT")) {
+        if (user.getRole() != Role.STUDENT) {
             throw new InvalidStudentDataException("User must have STUDENT role");
         }
 
@@ -54,7 +55,7 @@ public class StudentServiceImpl implements StudentService {
         student.setActive(true);
 
         if (studentDTO.getCurrentClassId() != null) {
-            Class clazz = classRepository.findById(studentDTO.getCurrentClassId())
+            Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
                     .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
             student.setCurrentClass(clazz);
         }
@@ -65,26 +66,19 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public StudentDTO updateStudent(Long id, StudentDTO studentDTO) {
 
-        Student student = studentRepository.findById(id)
+        Student student = studentRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
-
-        if (studentDTO.getName() != null) {
-            student.setName(studentDTO.getName());
-        }
 
         if (studentDTO.getDateOfBirth() != null) {
             if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
                 throw new InvalidAgeException("Invalid student age: Must be at least 3 years old");
             }
-            student.setDateOfBirth(studentDTO.getDateOfBirth());
         }
 
-        if (studentDTO.getPhoneNumber() != null) {
-            student.setPhoneNumber(studentDTO.getPhoneNumber());
-        }
+        studentMapper.updateEntityFromDTO(studentDTO, student);
 
         if (studentDTO.getCurrentClassId() != null) {
-            Class clazz = classRepository.findById(studentDTO.getCurrentClassId())
+            Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
                     .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
             student.setCurrentClass(clazz);
         }
@@ -94,23 +88,27 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public void deleteStudent(Long id) {
-        if (!studentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Student not found with id: " + id);
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+
+        if (!student.isActive()) {
+            throw new IllegalStateException("Student already inactive");
         }
-        studentRepository.deleteById(id);
+
+        student.setActive(false);
     }
 
     @Override
     public Page<StudentDTO> getAllStudents(Pageable pageable) {
 
-        return studentRepository.findAll(pageable)
+        return studentRepository.findByActiveTrue(pageable)
                 .map(studentMapper::toDTO);
     }
 
     @Override
     public StudentDTO getStudentById(Long id) {
 
-        Student student = studentRepository.findById(id)
+        Student student = studentRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
 
         return studentMapper.toDTO(student);
@@ -120,14 +118,14 @@ public class StudentServiceImpl implements StudentService {
     public Page<StudentDTO> searchStudents(String name, Pageable pageable) {
 
         return studentRepository
-                .findByNameContainingIgnoreCase(name, pageable)
+                .findByNameContainingIgnoreCaseAndActiveTrue(name, pageable)
                 .map(studentMapper::toDTO);
     }
 
     @Override
     public List<StudentDTO> getAllActiveStudents() {
 
-        return studentRepository.findAll()
+        return studentRepository.findByActiveTrue()
                 .stream()
                 .map(studentMapper::toDTO)
                 .toList();
@@ -135,7 +133,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<StudentDTO> getStudentsByClassId(Long classId) {
-        Class clazz = classRepository.findById(classId)
+        Class clazz = classRepository.findByIdAndActiveTrue(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + classId));
 
         return clazz.getStudents().stream()

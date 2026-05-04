@@ -1,55 +1,38 @@
 package org.edu.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.edu.dto.ClassDTO;
 import org.edu.entity.Class;
-import org.springframework.stereotype.Component;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-@RequiredArgsConstructor
-public class ClassMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ClassMapper extends BaseMapper<ClassDTO, Class> {
 
-    public Class toEntity(ClassDTO dto) {
-        if (dto == null) {
-            return null;
-        }
+    @Override
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "classTeacher", ignore = true)
+    @Mapping(target = "students", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    Class toEntity(ClassDTO dto);
 
-        Class clazz = new Class();
+    @Override
+    @Mapping(target = "classTeacherId", source = "classTeacher.id")
+    @Mapping(target = "classTeacherName", source = "classTeacher.name")
+    ClassDTO toDTO(Class clazz);
 
-        clazz.setName(dto.getName());
-        clazz.setActive(dto.isActive());
-        return clazz;
-    }
-
-    public ClassDTO toDTO(Class clazz) {
-        if (clazz == null) {
-            return null;
-        }
-
-        ClassDTO dto = new ClassDTO();
-
-        dto.setId(clazz.getId());
-        dto.setName(clazz.getName());
-        dto.setActive(clazz.isActive());
-
-        if (clazz.getClassTeacher() != null) {
-            dto.setClassTeacherId(clazz.getClassTeacher().getId());
-            dto.setClassTeacherName(clazz.getClassTeacher().getName());
-        }
-
-        dto.setCreatedAt(clazz.getCreatedAt());
-        dto.setUpdatedAt(clazz.getUpdatedAt());
-
-        return dto;
-    }
-
-    public void updateEntityFromDTO(ClassDTO dto, Class clazz) {
-        if (dto == null || clazz == null) {
-            return;
-        }
-
-        if (dto.getName() != null) {
-            clazz.setName(dto.getName());
-        }
-    }
+    @Override
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "classTeacher", ignore = true)
+    @Mapping(target = "students", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void updateEntityFromDTO(ClassDTO dto, @MappingTarget Class clazz);
 }
