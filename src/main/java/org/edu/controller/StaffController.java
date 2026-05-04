@@ -4,7 +4,6 @@ package org.edu.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.StaffDTO;
-import org.edu.dto.StudentDTO;
 import org.edu.service.StaffService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +30,7 @@ public class StaffController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteStudent(@PathVariable Long id) {
+    public void deleteStaff(@PathVariable Long id) {
         staffService.deleteStaff(id);
     }
 

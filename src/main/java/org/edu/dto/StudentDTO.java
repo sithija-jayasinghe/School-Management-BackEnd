@@ -27,7 +27,7 @@ public class StudentDTO {
     private String name;
 
     @NotNull(message = "Date of birth is required")
-    @JsonFormat(pattern = "yyyy-mm-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
     private boolean active;

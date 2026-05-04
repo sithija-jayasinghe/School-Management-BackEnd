@@ -1,6 +1,7 @@
 package org.edu.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.edu.dto.StudentDTO;
+import org.edu.entity.Student;
 import org.edu.entity.User;
 import org.edu.exception.InvalidStudentDataException;
 import org.edu.exception.ResourceNotFoundException;
@@ -81,5 +83,18 @@ class StudentServiceImplTest {
         );
 
         verify(studentRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void shouldSoftDeleteActiveStudent() {
+        Student student = new Student();
+        student.setId(1L);
+        student.setActive(true);
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+
+        studentService.deleteStudent(1L);
+
+        assertFalse(student.isActive());
     }
 }

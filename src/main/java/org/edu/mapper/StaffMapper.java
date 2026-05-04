@@ -1,61 +1,36 @@
 package org.edu.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.edu.dto.StaffDTO;
 import org.edu.entity.Staff;
-import org.edu.repository.StaffRepository;
-import org.springframework.stereotype.Component;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-@RequiredArgsConstructor
-public class StaffMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface StaffMapper extends BaseMapper<StaffDTO, Staff> {
 
-    public Staff toEntity(StaffDTO dto) {
-        if (dto == null) return null;
+    @Override
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    Staff toEntity(StaffDTO dto);
 
-        Staff staff = new Staff();
-        staff.setStaffId(dto.getStaffId());
-        staff.setName(dto.getName());
-        staff.setActive(dto.isActive());
-        staff.setPhoneNumber(dto.getPhoneNumber());
-        staff.setDesignation(dto.getDesignation());
+    @Override
+    @Mapping(target = "userId", source = "user.id")
+    StaffDTO toDTO(Staff staff);
 
-        return staff;
-    }
-
-    public StaffDTO toDTO(Staff staff) {
-        if (staff == null) return null;
-
-        StaffDTO dto = new StaffDTO();
-        dto.setId(staff.getId());
-        dto.setStaffId(staff.getStaffId());
-        dto.setName(staff.getName());
-        dto.setActive(staff.isActive());
-        dto.setPhoneNumber(staff.getPhoneNumber());
-        dto.setDesignation(staff.getDesignation());
-        dto.setCreatedAt(staff.getCreatedAt());
-        dto.setUpdatedAt(staff.getUpdatedAt());
-
-        if (staff.getUser() != null) {
-            dto.setUserId(staff.getUser().getId());
-        }
-
-        return dto;
-    }
-
-    public void updateEntityFromDTO(StaffDTO dto, Staff staff) {
-        if (dto == null || staff == null) return;
-
-        if (dto.getName() != null) {
-            staff.setName(dto.getName());
-        }
-
-        if (dto.getPhoneNumber() != null) {
-            staff.setPhoneNumber(dto.getPhoneNumber());
-        }
-
-        if (dto.getDesignation() != null) {
-            staff.setDesignation(dto.getDesignation());
-        }
-    }
+    @Override
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "staffId", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void updateEntityFromDTO(StaffDTO dto, @MappingTarget Staff staff);
 }
