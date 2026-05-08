@@ -17,4 +17,6 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
     Page<Class> findByActiveTrue(Pageable pageable);
 
     Page<Class> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
+
+
 }

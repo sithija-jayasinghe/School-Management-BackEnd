@@ -6,7 +6,9 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "classes")
@@ -32,6 +34,14 @@ public class Class {
 
     @OneToMany(mappedBy = "currentClass")
     private List<Student> students;
+
+    @ManyToMany
+    @JoinTable(
+            name = "class_subjects",
+            joinColumns = @JoinColumn(name = "class_id"),
+            inverseJoinColumns = @JoinColumn(name = "subject_id")
+    )
+    private List<Subject> subjects;
 
     @CreatedDate
     private LocalDateTime createdAt;
