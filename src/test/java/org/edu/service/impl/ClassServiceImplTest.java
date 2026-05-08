@@ -13,6 +13,7 @@ import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.ClassMapper;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.StaffRepository;
+import org.edu.repository.SubjectRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +31,9 @@ class ClassServiceImplTest {
 
     @Mock
     private StaffRepository staffRepository;
+
+    @Mock
+    private SubjectRepository subjectRepository;
 
     @InjectMocks
     private ClassServiceImpl classService;
