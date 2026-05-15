@@ -8,7 +8,6 @@ import org.edu.entity.Class;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.ClassMapper;
 import org.edu.mapper.SubjectMapper;
-import org.edu.mapper.SubjectMapperImpl;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.SubjectRepository;
 import org.edu.service.SubjectService;
@@ -32,7 +31,18 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     public SubjectDTO createSubjects(SubjectDTO dto) {
         Subject subject = subjectMapper.toEntity(dto);
-        return subjectMapper.toDTO(subjectRepository.save(subject));
+        Subject savedSubject = subjectRepository.save(subject);
+
+        if (dto.getClassIds() != null && !dto.getClassIds().isEmpty()) {
+            List<Class> classes = classRepository.findAllById(dto.getClassIds());
+            if (classes.size() != dto.getClassIds().size()) {
+                throw new ResourceNotFoundException("One or more classes not found");
+            }
+            savedSubject.setClasses(classes);
+            savedSubject = subjectRepository.save(savedSubject);
+        }
+
+        return subjectMapper.toDTO(savedSubject);
     }
 
     @Override
@@ -54,6 +64,18 @@ public class SubjectServiceImpl implements SubjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         subjectMapper.updateEntityFromDTO(dto, subject);
+
+        if (dto.getClassIds() != null) {
+            if (dto.getClassIds().isEmpty()) {
+                subject.setClasses(new java.util.ArrayList<>());
+            } else {
+                List<Class> classes = classRepository.findAllById(dto.getClassIds());
+                if (classes.size() != dto.getClassIds().size()) {
+                    throw new ResourceNotFoundException("One or more classes not found");
+                }
+                subject.setClasses(classes);
+            }
+        }
 
         Subject updated = subjectRepository.save(subject);
 

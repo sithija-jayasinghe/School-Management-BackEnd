@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Setter
 @Getter
@@ -38,6 +39,8 @@ public class ParentDTO {
     private String occupation;
 
     private boolean active;
+
+    private List<Long> studentIds;
 
     private LocalDateTime createdAt;
 
