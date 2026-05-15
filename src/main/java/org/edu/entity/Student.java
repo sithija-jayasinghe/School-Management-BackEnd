@@ -35,7 +35,7 @@ public class Student {
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "class_id")
-        private Class currentClass;
+        private org.edu.entity.Class currentClass;
 
         @Column(nullable = false, length = 15)
         private String phoneNumber;

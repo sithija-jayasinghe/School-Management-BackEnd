@@ -21,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.edu.repository.ParentRepository;
+import org.edu.repository.ParentStudentRepository;
+import org.edu.entity.Parent;
+import org.edu.entity.ParentStudent;
 
 @Service
 @Transactional
@@ -31,6 +35,8 @@ public class StudentServiceImpl implements StudentService {
     private final StudentMapper studentMapper;
     private final UserRepository userRepository;
     private final ClassRepository classRepository;
+    private final ParentRepository parentRepository;
+    private final ParentStudentRepository parentStudentRepository;
 
     @Override
     public StudentDTO createStudent(StudentDTO studentDTO) {
@@ -60,7 +66,22 @@ public class StudentServiceImpl implements StudentService {
             student.setCurrentClass(clazz);
         }
 
-        return studentMapper.toDTO(studentRepository.save(student));
+        Student savedStudent = studentRepository.save(student);
+
+        if (studentDTO.getParentIds() != null && !studentDTO.getParentIds().isEmpty()) {
+            for (Long parentId : studentDTO.getParentIds()) {
+                Parent parent = parentRepository.findById(parentId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Parent not found with id: " + parentId));
+                ParentStudent ps = new ParentStudent();
+                ps.setParent(parent);
+                ps.setStudent(savedStudent);
+                ps.setRelationshipType("Parent"); // Default
+                ps.setPrimaryContact(true); // Default
+                parentStudentRepository.save(ps);
+            }
+        }
+
+        return studentMapper.toDTO(savedStudent);
     }
 
     @Override

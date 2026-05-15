@@ -11,6 +11,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Setter
 @Getter
@@ -42,6 +43,8 @@ public class StudentDTO {
     private Long currentClassId;
 
     private String currentClassName;
+
+    private List<Long> parentIds;
 
     private LocalDateTime createdAt;
 
