@@ -32,7 +32,7 @@ public class SubjectServiceImpl implements SubjectService {
     public SubjectDTO createSubjects(SubjectDTO dto) {
         Subject subject = subjectMapper.toEntity(dto);
         Subject savedSubject = subjectRepository.save(subject);
-
+        
         if (dto.getClassIds() != null && !dto.getClassIds().isEmpty()) {
             List<Class> classes = classRepository.findAllById(dto.getClassIds());
             if (classes.size() != dto.getClassIds().size()) {
@@ -41,7 +41,7 @@ public class SubjectServiceImpl implements SubjectService {
             savedSubject.setClasses(classes);
             savedSubject = subjectRepository.save(savedSubject);
         }
-
+        
         return subjectMapper.toDTO(savedSubject);
     }
 

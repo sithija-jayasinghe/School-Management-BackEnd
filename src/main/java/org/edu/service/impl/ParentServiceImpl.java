@@ -53,22 +53,7 @@ public class ParentServiceImpl implements ParentService {
         parent.setUser(user);
         parent.setActive(true);
 
-        Parent savedParent = parentRepository.save(parent);
-
-        if (parentDTO.getStudentIds() != null && !parentDTO.getStudentIds().isEmpty()) {
-            for (Long studentId : parentDTO.getStudentIds()) {
-                Student student = studentRepository.findById(studentId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
-                ParentStudent ps = new ParentStudent();
-                ps.setParent(savedParent);
-                ps.setStudent(student);
-                ps.setRelationshipType("Parent"); // Default
-                ps.setPrimaryContact(true); // Default
-                parentStudentRepository.save(ps);
-            }
-        }
-
-        return parentMapper.toDTO(savedParent);
+        return parentMapper.toDTO(parentRepository.save(parent));
     }
 
     @Override
