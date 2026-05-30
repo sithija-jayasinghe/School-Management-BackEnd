@@ -19,6 +19,10 @@ Production-ready authentication module for a Spring Boot based school management
 - `GET /api/users/me` - get the current authenticated user
 - `DELETE /api/auth/tokens` - logout by blacklisting the JWT until it expires
 
+## Module Architecture
+
+Use [docs/MODULE_ARCHITECTURE.md](docs/MODULE_ARCHITECTURE.md) when adding a new module. It explains the project layers, naming rules, build order, and includes copy-ready templates in `docs/module-template`.
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.
