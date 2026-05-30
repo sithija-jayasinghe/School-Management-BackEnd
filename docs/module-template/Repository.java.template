@@ -1,0 +1,11 @@
+package org.edu.repository;
+
+import org.edu.entity.{{Module}};
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface {{Module}}Repository extends JpaRepository<{{Module}}, Long> {
+
+    Page<{{Module}}> findByNameContainingIgnoreCase(String keyword, Pageable pageable);
+}
