@@ -1,0 +1,20 @@
+package org.edu.service;
+
+import org.edu.dto.{{ModuleDTO}};
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+public interface {{Module}}Service {
+
+    {{ModuleDTO}} create{{Module}}({{ModuleDTO}} dto);
+
+    Page<{{ModuleDTO}}> getAll{{Module}}s(Pageable pageable);
+
+    {{ModuleDTO}} get{{Module}}ById(Long id);
+
+    {{ModuleDTO}} update{{Module}}(Long id, {{ModuleDTO}} dto);
+
+    void delete{{Module}}(Long id);
+
+    Page<{{ModuleDTO}}> search{{Module}}s(String keyword, Pageable pageable);
+}

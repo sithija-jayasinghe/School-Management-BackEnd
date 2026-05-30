@@ -1,0 +1,69 @@
+package org.edu.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import org.edu.dto.{{ModuleDTO}};
+import org.edu.entity.{{Module}};
+import org.edu.exception.ResourceNotFoundException;
+import org.edu.mapper.{{Module}}Mapper;
+import org.edu.repository.{{Module}}Repository;
+import org.edu.service.{{Module}}Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class {{Module}}ServiceImpl implements {{Module}}Service {
+
+    private final {{Module}}Repository {{module}}Repository;
+    private final {{Module}}Mapper {{module}}Mapper;
+
+    @Override
+    public {{ModuleDTO}} create{{Module}}({{ModuleDTO}} dto) {
+        {{Module}} {{module}} = {{module}}Mapper.toEntity(dto);
+        {{Module}} saved{{Module}} = {{module}}Repository.save({{module}});
+        return {{module}}Mapper.toDTO(saved{{Module}});
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<{{ModuleDTO}}> getAll{{Module}}s(Pageable pageable) {
+        return {{module}}Repository.findAll(pageable)
+                .map({{module}}Mapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public {{ModuleDTO}} get{{Module}}ById(Long id) {
+        {{Module}} {{module}} = find{{Module}}OrThrow(id);
+        return {{module}}Mapper.toDTO({{module}});
+    }
+
+    @Override
+    public {{ModuleDTO}} update{{Module}}(Long id, {{ModuleDTO}} dto) {
+        {{Module}} {{module}} = find{{Module}}OrThrow(id);
+        {{module}}Mapper.updateEntityFromDTO(dto, {{module}});
+        {{Module}} updated{{Module}} = {{module}}Repository.save({{module}});
+        return {{module}}Mapper.toDTO(updated{{Module}});
+    }
+
+    @Override
+    public void delete{{Module}}(Long id) {
+        {{Module}} {{module}} = find{{Module}}OrThrow(id);
+        {{module}}Repository.delete({{module}});
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<{{ModuleDTO}}> search{{Module}}s(String keyword, Pageable pageable) {
+        return {{module}}Repository.findByNameContainingIgnoreCase(keyword, pageable)
+                .map({{module}}Mapper::toDTO);
+    }
+
+    private {{Module}} find{{Module}}OrThrow(Long id) {
+        return {{module}}Repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("{{Module}} not found with id: " + id));
+    }
+}

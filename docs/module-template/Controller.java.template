@@ -1,0 +1,58 @@
+package org.edu.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.edu.dto.{{ModuleDTO}};
+import org.edu.service.{{Module}}Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/{{modules}}")
+@RequiredArgsConstructor
+public class {{Module}}Controller {
+
+    private final {{Module}}Service {{module}}Service;
+
+    @PostMapping
+    public {{ModuleDTO}} create{{Module}}(@Valid @RequestBody {{ModuleDTO}} dto) {
+        return {{module}}Service.create{{Module}}(dto);
+    }
+
+    @GetMapping
+    public Page<{{ModuleDTO}}> getAll{{Module}}s(Pageable pageable) {
+        return {{module}}Service.getAll{{Module}}s(pageable);
+    }
+
+    @GetMapping("/{id}")
+    public {{ModuleDTO}} get{{Module}}ById(@PathVariable Long id) {
+        return {{module}}Service.get{{Module}}ById(id);
+    }
+
+    @PatchMapping("/{id}")
+    public {{ModuleDTO}} update{{Module}}(
+            @PathVariable Long id,
+            @Valid @RequestBody {{ModuleDTO}} dto
+    ) {
+        return {{module}}Service.update{{Module}}(id, dto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete{{Module}}(@PathVariable Long id) {
+        {{module}}Service.delete{{Module}}(id);
+    }
+
+    @GetMapping("/search")
+    public Page<{{ModuleDTO}}> search{{Module}}s(@RequestParam String keyword, Pageable pageable) {
+        return {{module}}Service.search{{Module}}s(keyword, pageable);
+    }
+}
