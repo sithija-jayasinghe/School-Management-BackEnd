@@ -23,5 +23,7 @@ public interface ParentRepository extends JpaRepository<Parent, Long> {
 
     Optional<Parent> findByUser_Id(Long userId);
 
+    Optional<Parent> findByUser_IdAndActiveTrue(Long userId);
+
     boolean existsByUser(User user);
 }

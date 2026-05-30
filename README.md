@@ -23,6 +23,17 @@ Production-ready authentication module for a Spring Boot based school management
 
 Use [docs/MODULE_ARCHITECTURE.md](docs/MODULE_ARCHITECTURE.md) when adding a new module. It explains the project layers, naming rules, build order, and includes copy-ready templates in `docs/module-template`.
 
+## Parent Portal
+
+Parent users can access their own portal data through `/api/parent-portal`. These endpoints are protected with the `PARENT` role and resolve the parent profile from the authenticated JWT user, so parents cannot request another parent's data by changing a URL parameter.
+
+- `GET /api/parent-portal/profile` - current parent profile
+- `GET /api/parent-portal/dashboard` - parent profile plus linked student summary
+- `GET /api/parent-portal/students` - linked active students
+- `GET /api/parent-portal/students/{studentId}` - linked student details
+- `GET /api/parent-portal/students/{studentId}/subjects` - linked student's class subjects
+- `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.

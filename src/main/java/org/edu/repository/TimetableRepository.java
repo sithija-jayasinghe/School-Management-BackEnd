@@ -14,6 +14,17 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     // Useful for showing a Class's schedule
     List<Timetable> findByStudentClassIdOrderByDayOfWeekAscStartTimeAsc(Long classId);
 
+    @Query("""
+            select t
+            from Timetable t
+            join fetch t.studentClass studentClass
+            join fetch t.subject subject
+            join fetch t.staff staff
+            where studentClass.id = :classId
+            order by t.dayOfWeek asc, t.startTime asc
+            """)
+    List<Timetable> findPortalTimetableByClassId(@Param("classId") Long classId);
+
     // Useful for showing a Teacher's schedule
     List<Timetable> findByStaffIdOrderByDayOfWeekAscStartTimeAsc(Long staffId);
 
@@ -33,4 +44,3 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
                                        @Param("startTime") LocalTime startTime,
                                        @Param("endTime") LocalTime endTime);
 }
-

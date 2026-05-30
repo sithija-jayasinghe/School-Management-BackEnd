@@ -1,0 +1,66 @@
+package org.edu.controller;
+
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalProfileDTO;
+import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
+import org.edu.dto.parentportal.ParentPortalStudentSummaryDTO;
+import org.edu.dto.parentportal.ParentPortalSubjectDTO;
+import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
+import org.edu.security.UserPrincipal;
+import org.edu.service.ParentPortalService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/parent-portal")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('PARENT')")
+public class ParentPortalController {
+
+    private final ParentPortalService parentPortalService;
+
+    @GetMapping("/profile")
+    public ParentPortalProfileDTO getProfile(@AuthenticationPrincipal UserPrincipal principal) {
+        return parentPortalService.getProfile(principal.getUser().getId());
+    }
+
+    @GetMapping("/dashboard")
+    public ParentPortalDashboardDTO getDashboard(@AuthenticationPrincipal UserPrincipal principal) {
+        return parentPortalService.getDashboard(principal.getUser().getId());
+    }
+
+    @GetMapping("/students")
+    public List<ParentPortalStudentSummaryDTO> getLinkedStudents(@AuthenticationPrincipal UserPrincipal principal) {
+        return parentPortalService.getLinkedStudents(principal.getUser().getId());
+    }
+
+    @GetMapping("/students/{studentId}")
+    public ParentPortalStudentDetailDTO getStudentDetail(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId
+    ) {
+        return parentPortalService.getStudentDetail(principal.getUser().getId(), studentId);
+    }
+
+    @GetMapping("/students/{studentId}/subjects")
+    public List<ParentPortalSubjectDTO> getStudentSubjects(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId
+    ) {
+        return parentPortalService.getStudentSubjects(principal.getUser().getId(), studentId);
+    }
+
+    @GetMapping("/students/{studentId}/timetable")
+    public List<ParentPortalTimetableEntryDTO> getStudentTimetable(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId
+    ) {
+        return parentPortalService.getStudentTimetable(principal.getUser().getId(), studentId);
+    }
+}
