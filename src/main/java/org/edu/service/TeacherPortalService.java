@@ -1,13 +1,19 @@
 package org.edu.service;
 
+import java.time.LocalDate;
 import java.util.List;
+import org.edu.dto.AttendanceDTO;
+import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
+import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
 import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface TeacherPortalService {
 
@@ -24,4 +30,12 @@ public interface TeacherPortalService {
     List<TeacherPortalStudentDTO> getClassStudents(Long authenticatedUserId, Long classId);
 
     List<TeacherPortalExamDTO> getExams(Long authenticatedUserId);
+
+    Page<AttendanceDTO> getClassAttendanceByDate(Long authenticatedUserId, Long classId, LocalDate attendanceDate, Pageable pageable);
+
+    Page<AttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, Pageable pageable);
+
+    AttendanceSummaryDTO getStudentAttendanceSummary(Long authenticatedUserId, Long studentId, LocalDate fromDate, LocalDate toDate);
+
+    List<AttendanceDTO> markClassAttendance(Long authenticatedUserId, Long classId, TeacherPortalBulkAttendanceRequest request);
 }

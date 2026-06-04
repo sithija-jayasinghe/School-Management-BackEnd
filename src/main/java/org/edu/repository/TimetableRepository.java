@@ -41,6 +41,8 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 
     boolean existsByStaffIdAndStudentClassId(Long staffId, Long classId);
 
+    boolean existsByIdAndStaffIdAndStudentClassId(Long id, Long staffId, Long classId);
+
     // Conflict Check #1: Is the teacher already teaching somewhere else at this time?
     @Query("SELECT t FROM Timetable t WHERE t.staff.id = :staffId AND t.dayOfWeek = :dayOfWeek " +
            "AND ((t.startTime < :endTime AND t.endTime > :startTime))")
