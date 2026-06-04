@@ -20,4 +20,6 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     List<Class> findByClassTeacherIdAndActiveTrueOrderByNameAsc(Long classTeacherId);
 
+    boolean existsByIdAndClassTeacherIdAndActiveTrue(Long id, Long classTeacherId);
+
 }
