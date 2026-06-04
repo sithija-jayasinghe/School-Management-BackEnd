@@ -1,8 +1,13 @@
 package org.edu.controller;
 
+import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AttendanceDTO;
+import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
+import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
@@ -11,11 +16,17 @@ import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
 import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
 import org.edu.service.TeacherPortalService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -62,5 +73,43 @@ public class TeacherPortalController {
     @GetMapping("/exams")
     public List<TeacherPortalExamDTO> getExams(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getExams(principal.getUser().getId());
+    }
+
+    @GetMapping("/classes/{classId}/attendance")
+    public Page<AttendanceDTO> getClassAttendanceByDate(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long classId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            Pageable pageable
+    ) {
+        return teacherPortalService.getClassAttendanceByDate(principal.getUser().getId(), classId, date, pageable);
+    }
+
+    @PostMapping("/classes/{classId}/attendance")
+    public List<AttendanceDTO> markClassAttendance(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long classId,
+            @Valid @RequestBody TeacherPortalBulkAttendanceRequest request
+    ) {
+        return teacherPortalService.markClassAttendance(principal.getUser().getId(), classId, request);
+    }
+
+    @GetMapping("/students/{studentId}/attendance")
+    public Page<AttendanceDTO> getStudentAttendance(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            Pageable pageable
+    ) {
+        return teacherPortalService.getStudentAttendance(principal.getUser().getId(), studentId, pageable);
+    }
+
+    @GetMapping("/students/{studentId}/attendance/summary")
+    public AttendanceSummaryDTO getStudentAttendanceSummary(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return teacherPortalService.getStudentAttendanceSummary(principal.getUser().getId(), studentId, from, to);
     }
 }

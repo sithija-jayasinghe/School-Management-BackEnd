@@ -144,6 +144,10 @@ Core endpoints:
 - `GET /api/teacher-portal/subjects` - subjects taught by the teacher with class and session counts
 - `GET /api/teacher-portal/classes/{classId}/students` - active students in a teacher-accessible class
 - `GET /api/teacher-portal/exams` - active exams relevant to the teacher's timetable subjects and classes
+- `GET /api/teacher-portal/classes/{classId}/attendance?date=2026-01-05` - attendance records for a teacher-accessible class on a given date
+- `POST /api/teacher-portal/classes/{classId}/attendance` - bulk mark attendance using the authenticated teacher context
+- `GET /api/teacher-portal/students/{studentId}/attendance` - attendance history for a student in a teacher-accessible class
+- `GET /api/teacher-portal/students/{studentId}/attendance/summary?from=2026-01-01&to=2026-01-31` - attendance summary for a student in a teacher-accessible class
 
 ## Run
 

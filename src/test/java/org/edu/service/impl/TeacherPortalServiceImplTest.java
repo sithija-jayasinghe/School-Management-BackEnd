@@ -2,6 +2,8 @@ package org.edu.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,7 +13,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import org.edu.dto.AttendanceDTO;
+import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.request.BulkAttendanceStudentRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
+import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
@@ -31,12 +37,16 @@ import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AttendanceService;
+import org.edu.util.AttendanceStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.edu.util.ExamType;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class TeacherPortalServiceImplTest {
@@ -55,6 +65,9 @@ class TeacherPortalServiceImplTest {
 
     @Mock
     private ExamRepository examRepository;
+
+    @Mock
+    private AttendanceService attendanceService;
 
     @InjectMocks
     private TeacherPortalServiceImpl teacherPortalService;
@@ -186,6 +199,115 @@ class TeacherPortalServiceImplTest {
         assertEquals("Term 1 Science Test", exams.get(0).getExamName());
         assertEquals("Science", exams.get(0).getSubjectName());
         assertEquals("Grade 10A", exams.get(0).getClassName());
+    }
+
+    @Test
+    void shouldReturnClassAttendanceForTeacherAccessibleClass() {
+        Staff staff = teacherWithUser(10L, 100L);
+        AttendanceDTO attendance = new AttendanceDTO();
+        attendance.setId(1L);
+        attendance.setClassId(30L);
+        attendance.setAttendanceDate(LocalDate.of(2026, 1, 5));
+        attendance.setStatus(AttendanceStatus.PRESENT);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
+        when(attendanceService.getClassAttendanceByDate(30L, LocalDate.of(2026, 1, 5), Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(attendance)));
+
+        var page = teacherPortalService.getClassAttendanceByDate(
+                100L,
+                30L,
+                LocalDate.of(2026, 1, 5),
+                Pageable.unpaged()
+        );
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals(AttendanceStatus.PRESENT, page.getContent().get(0).getStatus());
+    }
+
+    @Test
+    void shouldReturnStudentAttendanceSummaryForAccessibleStudent() {
+        Staff staff = teacherWithUser(10L, 100L);
+        Student student = student(20L, "Amal", 30L, "Grade 10A");
+        AttendanceSummaryDTO summary = new AttendanceSummaryDTO(
+                20L,
+                "Amal",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 1, 31),
+                10,
+                8,
+                1,
+                1,
+                0,
+                90.0
+        );
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(false);
+        when(timetableRepository.existsByStaffIdAndStudentClassId(10L, 30L)).thenReturn(true);
+        when(attendanceService.getStudentAttendanceSummary(
+                20L,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 1, 31)
+        )).thenReturn(summary);
+
+        AttendanceSummaryDTO result = teacherPortalService.getStudentAttendanceSummary(
+                100L,
+                20L,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 1, 31)
+        );
+
+        assertEquals(90.0, result.getAttendancePercentage());
+        assertEquals("Amal", result.getStudentName());
+    }
+
+    @Test
+    void shouldMarkClassAttendanceUsingAuthenticatedTeacher() {
+        Staff staff = teacherWithUser(10L, 100L);
+        TeacherPortalBulkAttendanceRequest request = new TeacherPortalBulkAttendanceRequest(
+                null,
+                60L,
+                LocalDate.of(2026, 1, 5),
+                List.of(new BulkAttendanceStudentRequest(20L, AttendanceStatus.PRESENT, "On time"))
+        );
+
+        AttendanceDTO savedAttendance = new AttendanceDTO();
+        savedAttendance.setId(1L);
+        savedAttendance.setMarkedByStaffId(10L);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(timetableRepository.existsByIdAndStaffIdAndStudentClassId(60L, 10L, 30L)).thenReturn(true);
+        when(attendanceService.markClassAttendance(any())).thenReturn(List.of(savedAttendance));
+
+        List<AttendanceDTO> saved = teacherPortalService.markClassAttendance(100L, 30L, request);
+
+        assertEquals(1, saved.size());
+        verify(attendanceService).markClassAttendance(argThat(bulkRequest ->
+                bulkRequest.getClassId().equals(30L)
+                        && bulkRequest.getMarkedByStaffId().equals(10L)
+                        && bulkRequest.getTimetableId().equals(60L)
+                        && bulkRequest.getStudents().size() == 1
+        ));
+    }
+
+    @Test
+    void shouldRejectDailyAttendanceMarkingForNonClassTeacher() {
+        Staff staff = teacherWithUser(10L, 100L);
+        TeacherPortalBulkAttendanceRequest request = new TeacherPortalBulkAttendanceRequest(
+                null,
+                null,
+                LocalDate.of(2026, 1, 5),
+                List.of(new BulkAttendanceStudentRequest(20L, AttendanceStatus.PRESENT, null))
+        );
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> teacherPortalService.markClassAttendance(100L, 30L, request));
     }
 
     private Staff teacherWithUser(Long staffPk, Long userId) {
