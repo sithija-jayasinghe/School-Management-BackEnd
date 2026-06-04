@@ -82,6 +82,27 @@ Core endpoints:
 - `GET /api/exams/classes/{classId}` - list exams by class
 - `GET /api/exams/academic-terms/{academicTermId}` - list exams by academic term
 
+## Student Marks Module
+
+Marks are managed through `/api/student-marks` for `ADMIN` and `TEACHER` users. The system calculates percentage, grade, and pass/fail status automatically from the exam's max marks and pass marks.
+
+Grade rules:
+
+- `A` - 75% and above
+- `B` - 65% to 74.99%
+- `C` - 55% to 64.99%
+- `S` - 40% to 54.99%
+- `F` - below 40%
+
+Core endpoints:
+
+- `POST /api/student-marks` - enter marks for a student exam
+- `PATCH /api/student-marks/{id}` - update entered marks
+- `DELETE /api/student-marks/{id}` - delete entered marks
+- `GET /api/student-marks/{id}` - get one mark record
+- `GET /api/student-marks/exams/{examId}` - result sheet for an exam
+- `GET /api/student-marks/students/{studentId}` - marks history for a student
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.
