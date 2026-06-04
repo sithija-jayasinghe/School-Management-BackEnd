@@ -58,6 +58,30 @@ Core endpoints:
 - `GET /api/attendance/classes/{classId}?date=2026-01-05` - class attendance for a date
 - `GET /api/attendance/students/{studentId}/summary?from=2026-01-01&to=2026-01-31` - student attendance summary
 
+## Exam Module
+
+Exams are managed through `/api/exams` for `ADMIN` and `TEACHER` users. An exam belongs to an academic year, academic term, class, and subject.
+
+Exam types:
+
+- `UNIT_TEST`
+- `TERM_TEST`
+- `FINAL_EXAM`
+- `ASSIGNMENT`
+- `PRACTICAL`
+
+Core endpoints:
+
+- `POST /api/exams` - create an exam
+- `PATCH /api/exams/{id}` - update an exam
+- `DELETE /api/exams/{id}` - deactivate an exam
+- `POST /api/exams/{id}/activate` - reactivate an exam
+- `GET /api/exams` - list active exams
+- `GET /api/exams/{id}` - get one active exam
+- `GET /api/exams/search?name=Term` - search active exams
+- `GET /api/exams/classes/{classId}` - list exams by class
+- `GET /api/exams/academic-terms/{academicTermId}` - list exams by academic term
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.
