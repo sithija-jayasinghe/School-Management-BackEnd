@@ -1,9 +1,11 @@
 package org.edu.service.impl;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.NoticeDTO;
+import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.entity.Notice;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.NoticeMapper;
@@ -113,6 +115,19 @@ public class NoticeServiceImpl implements NoticeService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParentPortalNoticeDTO> getParentPortalNotices(List<Long> classIds) {
+        List<Long> safeClassIds = classIds == null || classIds.isEmpty()
+                ? Collections.singletonList(-1L)
+                : classIds;
+
+        return noticeRepository.findParentPortalNotices(safeClassIds, LocalDate.now())
+                .stream()
+                .map(this::toParentPortalNotice)
+                .toList();
+    }
+
     private Notice getNotice(Long id) {
         return noticeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notice not found with id: " + id));
@@ -150,5 +165,18 @@ public class NoticeServiceImpl implements NoticeService {
         resolved.setPublishDate(dto.getPublishDate() == null ? notice.getPublishDate() : dto.getPublishDate());
         resolved.setExpiryDate(dto.getExpiryDate() == null ? notice.getExpiryDate() : dto.getExpiryDate());
         return resolved;
+    }
+
+    private ParentPortalNoticeDTO toParentPortalNotice(Notice notice) {
+        return new ParentPortalNoticeDTO(
+                notice.getId(),
+                notice.getTitle(),
+                notice.getMessage(),
+                notice.getAudience(),
+                notice.getTargetClass() == null ? null : notice.getTargetClass().getId(),
+                notice.getTargetClass() == null ? null : notice.getTargetClass().getName(),
+                notice.getPublishDate(),
+                notice.getExpiryDate()
+        );
     }
 }

@@ -10,8 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.edu.dto.NoticeDTO;
+import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.entity.Notice;
 import org.edu.mapper.NoticeMapper;
 import org.edu.repository.ClassRepository;
@@ -126,6 +128,22 @@ class NoticeServiceImplTest {
         noticeService.deleteNotice(1L);
 
         assertFalse(notice.isActive());
+    }
+
+    @Test
+    void shouldReturnParentPortalNotices() {
+        Notice notice = notice(NoticeAudience.PARENTS);
+        notice.setPublished(true);
+        notice.setPublishDate(LocalDate.now());
+
+        when(noticeRepository.findParentPortalNotices(List.of(5L), LocalDate.now()))
+                .thenReturn(List.of(notice));
+
+        List<ParentPortalNoticeDTO> notices = noticeService.getParentPortalNotices(List.of(5L));
+
+        assertEquals(1, notices.size());
+        assertEquals("School Meeting", notices.get(0).getTitle());
+        assertEquals(NoticeAudience.PARENTS, notices.get(0).getAudience());
     }
 
     private NoticeDTO noticeRequest(NoticeAudience audience) {

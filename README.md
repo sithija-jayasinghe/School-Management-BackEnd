@@ -29,6 +29,7 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 
 - `GET /api/parent-portal/profile` - current parent profile
 - `GET /api/parent-portal/dashboard` - parent profile plus linked student summary
+- `GET /api/parent-portal/notices` - notices relevant to parents and linked student classes
 - `GET /api/parent-portal/students` - linked active students
 - `GET /api/parent-portal/students/{studentId}` - linked student details
 - `GET /api/parent-portal/students/{studentId}/subjects` - linked student's class subjects

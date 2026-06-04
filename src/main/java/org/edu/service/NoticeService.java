@@ -2,6 +2,7 @@ package org.edu.service;
 
 import java.util.List;
 import org.edu.dto.NoticeDTO;
+import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.util.NoticeAudience;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,4 +28,6 @@ public interface NoticeService {
     Page<NoticeDTO> getNoticesByAudience(NoticeAudience audience, Pageable pageable);
 
     List<NoticeDTO> getClassNotices(Long classId);
+
+    List<ParentPortalNoticeDTO> getParentPortalNotices(List<Long> classIds);
 }
