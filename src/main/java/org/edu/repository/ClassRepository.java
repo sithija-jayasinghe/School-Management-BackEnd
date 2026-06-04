@@ -18,5 +18,6 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     Page<Class> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
 
+    List<Class> findByClassTeacherIdAndActiveTrueOrderByNameAsc(Long classTeacherId);
 
 }

@@ -1,0 +1,18 @@
+package org.edu.dto.teacherportal;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class TeacherPortalClassSummaryDTO {
+
+    private Long classId;
+    private String className;
+    private int studentCount;
+    private int subjectCount;
+}

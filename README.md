@@ -131,6 +131,17 @@ Core endpoints:
 - `GET /api/notices/audience/{audience}` - list notices by audience
 - `GET /api/notices/classes/{classId}` - list class notices
 
+## Teacher Portal
+
+Teacher users can access their own portal data through `/api/teacher-portal`. These endpoints are protected with the `TEACHER` role and resolve the teacher profile from the authenticated JWT user.
+
+Core endpoints:
+
+- `GET /api/teacher-portal/profile` - current teacher profile
+- `GET /api/teacher-portal/dashboard` - teacher profile, assigned class summary, and weekly schedule
+- `GET /api/teacher-portal/classes` - active classes assigned to the teacher as class teacher
+- `GET /api/teacher-portal/schedule` - weekly timetable entries assigned to the teacher
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.

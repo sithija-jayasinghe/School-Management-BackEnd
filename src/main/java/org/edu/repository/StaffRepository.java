@@ -13,6 +13,8 @@ public interface StaffRepository extends JpaRepository<Staff, Long> {
 
     Optional<Staff> findByIdAndActiveTrue(Long id);
 
+    Optional<Staff> findByUser_IdAndActiveTrue(Long userId);
+
     Page<Staff> findByActiveTrue(Pageable pageable);
 
     List<Staff> findByActiveTrue();

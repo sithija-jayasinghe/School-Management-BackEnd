@@ -142,7 +142,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
         return noticeService.getParentPortalNotices(classIds);
     }
 
-
+    @Override
     public List<ParentPortalResultDTO> getStudentResults(Long authenticatedUserId, Long studentId) {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), studentId);

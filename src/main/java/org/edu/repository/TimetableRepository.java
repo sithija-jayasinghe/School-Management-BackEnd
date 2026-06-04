@@ -28,6 +28,17 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     // Useful for showing a Teacher's schedule
     List<Timetable> findByStaffIdOrderByDayOfWeekAscStartTimeAsc(Long staffId);
 
+    @Query("""
+            select t
+            from Timetable t
+            join fetch t.studentClass studentClass
+            join fetch t.subject subject
+            join fetch t.staff staff
+            where staff.id = :staffId
+            order by t.dayOfWeek asc, t.startTime asc
+            """)
+    List<Timetable> findTeacherPortalScheduleByStaffId(@Param("staffId") Long staffId);
+
     // Conflict Check #1: Is the teacher already teaching somewhere else at this time?
     @Query("SELECT t FROM Timetable t WHERE t.staff.id = :staffId AND t.dayOfWeek = :dayOfWeek " +
            "AND ((t.startTime < :endTime AND t.endTime > :startTime))")
