@@ -33,6 +33,29 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 - `GET /api/parent-portal/students/{studentId}` - linked student details
 - `GET /api/parent-portal/students/{studentId}/subjects` - linked student's class subjects
 - `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
+- `GET /api/parent-portal/students/{studentId}/attendance?from=2026-01-01&to=2026-01-31` - linked student's attendance history
+
+## Attendance Module
+
+Attendance is managed through `/api/attendance` for `ADMIN` and `TEACHER` users. Parent users can only view attendance for their own linked children through the Parent Portal.
+
+Attendance statuses:
+
+- `PRESENT`
+- `ABSENT`
+- `LATE`
+- `EXCUSED`
+
+Core endpoints:
+
+- `POST /api/attendance` - mark attendance
+- `GET /api/attendance` - list attendance records
+- `GET /api/attendance/{id}` - get one attendance record
+- `PATCH /api/attendance/{id}` - update attendance
+- `DELETE /api/attendance/{id}` - delete attendance
+- `GET /api/attendance/students/{studentId}` - student attendance history
+- `GET /api/attendance/classes/{classId}?date=2026-01-05` - class attendance for a date
+- `GET /api/attendance/students/{studentId}/summary?from=2026-01-01&to=2026-01-31` - student attendance summary
 
 ## Run
 

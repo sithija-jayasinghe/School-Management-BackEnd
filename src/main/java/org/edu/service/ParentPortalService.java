@@ -1,6 +1,8 @@
 package org.edu.service;
 
+import java.time.LocalDate;
 import java.util.List;
+import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
@@ -21,4 +23,6 @@ public interface ParentPortalService {
     List<ParentPortalSubjectDTO> getStudentSubjects(Long authenticatedUserId, Long studentId);
 
     List<ParentPortalTimetableEntryDTO> getStudentTimetable(Long authenticatedUserId, Long studentId);
+
+    List<ParentPortalAttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, LocalDate fromDate, LocalDate toDate);
 }
