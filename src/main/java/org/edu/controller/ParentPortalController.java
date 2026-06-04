@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
-import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalStudentSummaryDTO;
 import org.edu.dto.parentportal.ParentPortalSubjectDTO;
@@ -77,13 +76,5 @@ public class ParentPortalController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         return parentPortalService.getStudentAttendance(principal.getUser().getId(), studentId, from, to);
-    }
-
-    @GetMapping("/students/{studentId}/results")
-    public List<ParentPortalResultDTO> getStudentResults(
-            @AuthenticationPrincipal UserPrincipal principal,
-            @PathVariable Long studentId
-    ) {
-        return parentPortalService.getStudentResults(principal.getUser().getId(), studentId);
     }
 }

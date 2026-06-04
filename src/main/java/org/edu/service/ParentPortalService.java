@@ -5,7 +5,6 @@ import java.util.List;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
-import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalStudentSummaryDTO;
 import org.edu.dto.parentportal.ParentPortalSubjectDTO;
@@ -26,6 +25,4 @@ public interface ParentPortalService {
     List<ParentPortalTimetableEntryDTO> getStudentTimetable(Long authenticatedUserId, Long studentId);
 
     List<ParentPortalAttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, LocalDate fromDate, LocalDate toDate);
-
-    List<ParentPortalResultDTO> getStudentResults(Long authenticatedUserId, Long studentId);
 }
