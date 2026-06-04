@@ -124,7 +124,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
         return attendanceService.getPortalAttendance(studentId, fromDate, toDate);
     }
 
-    @Override
+
     public List<ParentPortalResultDTO> getStudentResults(Long authenticatedUserId, Long studentId) {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), studentId);
