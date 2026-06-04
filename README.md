@@ -34,6 +34,7 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 - `GET /api/parent-portal/students/{studentId}/subjects` - linked student's class subjects
 - `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
 - `GET /api/parent-portal/students/{studentId}/attendance?from=2026-01-01&to=2026-01-31` - linked student's attendance history
+- `GET /api/parent-portal/students/{studentId}/results` - linked student's exam results
 
 ## Attendance Module
 
@@ -57,6 +58,52 @@ Core endpoints:
 - `GET /api/attendance/students/{studentId}` - student attendance history
 - `GET /api/attendance/classes/{classId}?date=2026-01-05` - class attendance for a date
 - `GET /api/attendance/students/{studentId}/summary?from=2026-01-01&to=2026-01-31` - student attendance summary
+
+## Exam Module
+
+Exams are managed through `/api/exams` for `ADMIN` and `TEACHER` users. An exam belongs to an academic year, academic term, class, and subject.
+
+Exam types:
+
+- `UNIT_TEST`
+- `TERM_TEST`
+- `FINAL_EXAM`
+- `ASSIGNMENT`
+- `PRACTICAL`
+
+Core endpoints:
+
+- `POST /api/exams` - create an exam
+- `PATCH /api/exams/{id}` - update an exam
+- `DELETE /api/exams/{id}` - deactivate an exam
+- `POST /api/exams/{id}/activate` - reactivate an exam
+- `GET /api/exams` - list active exams
+- `GET /api/exams/{id}` - get one active exam
+- `GET /api/exams/search?name=Term` - search active exams
+- `GET /api/exams/classes/{classId}` - list exams by class
+- `GET /api/exams/academic-terms/{academicTermId}` - list exams by academic term
+
+## Student Marks Module
+
+Marks are managed through `/api/student-marks` for `ADMIN` and `TEACHER` users. The system calculates percentage, grade, and pass/fail status automatically from the exam's max marks and pass marks.
+
+Grade rules:
+
+- `A` - 75% and above
+- `B` - 65% to 74.99%
+- `C` - 55% to 64.99%
+- `S` - 40% to 54.99%
+- `F` - below 40%
+
+Core endpoints:
+
+- `POST /api/student-marks` - enter marks for a student exam
+- `PATCH /api/student-marks/{id}` - update entered marks
+- `DELETE /api/student-marks/{id}` - delete entered marks
+- `GET /api/student-marks/{id}` - get one mark record
+- `GET /api/student-marks/exams/{examId}` - result sheet for an exam
+- `GET /api/student-marks/exams/{examId}/summary` - exam result summary report
+- `GET /api/student-marks/students/{studentId}` - marks history for a student
 
 ## Run
 
