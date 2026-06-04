@@ -105,6 +105,31 @@ Core endpoints:
 - `GET /api/student-marks/exams/{examId}/summary` - exam result summary report
 - `GET /api/student-marks/students/{studentId}` - marks history for a student
 
+## Notice Module
+
+Notices are managed through `/api/notices` for `ADMIN` and `TEACHER` users.
+
+Notice audiences:
+
+- `ALL`
+- `PARENTS`
+- `STUDENTS`
+- `TEACHERS`
+- `CLASS`
+
+Core endpoints:
+
+- `POST /api/notices` - create a notice
+- `PATCH /api/notices/{id}` - update a notice
+- `DELETE /api/notices/{id}` - deactivate a notice
+- `POST /api/notices/{id}/publish` - publish a notice
+- `POST /api/notices/{id}/unpublish` - unpublish a notice
+- `GET /api/notices` - list active notices
+- `GET /api/notices/{id}` - get one notice
+- `GET /api/notices/search?title=Meeting` - search notices
+- `GET /api/notices/audience/{audience}` - list notices by audience
+- `GET /api/notices/classes/{classId}` - list class notices
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.
