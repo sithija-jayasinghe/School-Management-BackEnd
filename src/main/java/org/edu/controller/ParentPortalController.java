@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalStudentSummaryDTO;
@@ -37,6 +38,11 @@ public class ParentPortalController {
     @GetMapping("/dashboard")
     public ParentPortalDashboardDTO getDashboard(@AuthenticationPrincipal UserPrincipal principal) {
         return parentPortalService.getDashboard(principal.getUser().getId());
+    }
+
+    @GetMapping("/notices")
+    public List<ParentPortalNoticeDTO> getNotices(@AuthenticationPrincipal UserPrincipal principal) {
+        return parentPortalService.getNotices(principal.getUser().getId());
     }
 
     @GetMapping("/students")

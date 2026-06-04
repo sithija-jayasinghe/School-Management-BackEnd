@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
@@ -22,6 +23,7 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.NoticeService;
 import org.edu.service.ParentPortalService;
 import org.edu.service.StudentMarkService;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final ParentStudentRepository parentStudentRepository;
     private final TimetableRepository timetableRepository;
     private final AttendanceService attendanceService;
+    private final NoticeService noticeService;
     private final StudentMarkService studentMarkService;
 
     @Override
@@ -122,6 +125,21 @@ public class ParentPortalServiceImpl implements ParentPortalService {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), studentId);
         return attendanceService.getPortalAttendance(studentId, fromDate, toDate);
+    }
+
+    @Override
+    public List<ParentPortalNoticeDTO> getNotices(Long authenticatedUserId) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        List<Long> classIds = parentStudentRepository.findActiveStudentLinksByParentId(parent.getId())
+                .stream()
+                .map(ParentStudent::getStudent)
+                .map(Student::getCurrentClass)
+                .filter(java.util.Objects::nonNull)
+                .map(org.edu.entity.Class::getId)
+                .distinct()
+                .toList();
+
+        return noticeService.getParentPortalNotices(classIds);
     }
 
 

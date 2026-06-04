@@ -29,6 +29,7 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 
 - `GET /api/parent-portal/profile` - current parent profile
 - `GET /api/parent-portal/dashboard` - parent profile plus linked student summary
+- `GET /api/parent-portal/notices` - notices relevant to parents and linked student classes
 - `GET /api/parent-portal/students` - linked active students
 - `GET /api/parent-portal/students/{studentId}` - linked student details
 - `GET /api/parent-portal/students/{studentId}/subjects` - linked student's class subjects
@@ -104,6 +105,31 @@ Core endpoints:
 - `GET /api/student-marks/exams/{examId}` - result sheet for an exam
 - `GET /api/student-marks/exams/{examId}/summary` - exam result summary report
 - `GET /api/student-marks/students/{studentId}` - marks history for a student
+
+## Notice Module
+
+Notices are managed through `/api/notices` for `ADMIN` and `TEACHER` users.
+
+Notice audiences:
+
+- `ALL`
+- `PARENTS`
+- `STUDENTS`
+- `TEACHERS`
+- `CLASS`
+
+Core endpoints:
+
+- `POST /api/notices` - create a notice
+- `PATCH /api/notices/{id}` - update a notice
+- `DELETE /api/notices/{id}` - deactivate a notice
+- `POST /api/notices/{id}/publish` - publish a notice
+- `POST /api/notices/{id}/unpublish` - unpublish a notice
+- `GET /api/notices` - list active notices
+- `GET /api/notices/{id}` - get one notice
+- `GET /api/notices/search?title=Meeting` - search notices
+- `GET /api/notices/audience/{audience}` - list notices by audience
+- `GET /api/notices/classes/{classId}` - list class notices
 
 ## Run
 

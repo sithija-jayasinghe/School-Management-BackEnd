@@ -26,6 +26,8 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.NoticeService;
+import org.edu.service.StudentMarkService;
 import org.edu.util.AttendanceStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +49,12 @@ class ParentPortalServiceImplTest {
 
     @Mock
     private AttendanceService attendanceService;
+
+    @Mock
+    private NoticeService noticeService;
+
+    @Mock
+    private StudentMarkService studentMarkService;
 
     @InjectMocks
     private ParentPortalServiceImpl parentPortalService;
@@ -146,6 +154,19 @@ class ParentPortalServiceImplTest {
 
         assertEquals(1, result.size());
         assertEquals(AttendanceStatus.PRESENT, result.get(0).getStatus());
+    }
+
+    @Test
+    void shouldReturnParentPortalNoticesForLinkedStudentClasses() {
+        Parent parent = parentWithUser(10L, 100L);
+        ParentStudent link = parentStudentLink(parent, studentWithClass(20L, 30L));
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinksByParentId(10L)).thenReturn(List.of(link));
+        when(noticeService.getParentPortalNotices(List.of(30L))).thenReturn(List.of());
+
+        assertEquals(0, parentPortalService.getNotices(100L).size());
+        verify(noticeService).getParentPortalNotices(List.of(30L));
     }
 
     private Parent parentWithUser(Long parentId, Long userId) {
