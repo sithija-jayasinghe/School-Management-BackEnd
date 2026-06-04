@@ -2,9 +2,11 @@ package org.edu.controller;
 
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.request.BulkAttendanceRequest;
 import org.edu.service.AttendanceService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +33,11 @@ public class AttendanceController {
     @PostMapping
     public AttendanceDTO createAttendance(@Valid @RequestBody AttendanceDTO dto) {
         return attendanceService.createAttendance(dto);
+    }
+
+    @PostMapping("/bulk")
+    public List<AttendanceDTO> markClassAttendance(@Valid @RequestBody BulkAttendanceRequest request) {
+        return attendanceService.markClassAttendance(request);
     }
 
     @GetMapping

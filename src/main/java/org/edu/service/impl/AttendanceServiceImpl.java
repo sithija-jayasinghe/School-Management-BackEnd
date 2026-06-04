@@ -1,11 +1,16 @@
 package org.edu.service.impl;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
+import org.edu.dto.request.BulkAttendanceRequest;
+import org.edu.dto.request.BulkAttendanceStudentRequest;
 import org.edu.entity.Attendance;
 import org.edu.entity.Staff;
 import org.edu.entity.Student;
@@ -14,6 +19,7 @@ import org.edu.entity.Timetable;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AttendanceMapper;
 import org.edu.repository.AttendanceRepository;
+import org.edu.repository.ClassRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.SubjectRepository;
@@ -31,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
+    private final ClassRepository classRepository;
     private final StudentRepository studentRepository;
     private final SubjectRepository subjectRepository;
     private final TimetableRepository timetableRepository;
@@ -48,6 +55,46 @@ public class AttendanceServiceImpl implements AttendanceService {
         applyRelations(attendance, dto, student);
 
         return attendanceMapper.toDTO(attendanceRepository.save(attendance));
+    }
+
+    @Override
+    public List<AttendanceDTO> markClassAttendance(BulkAttendanceRequest request) {
+        org.edu.entity.Class studentClass = classRepository.findByIdAndActiveTrue(request.getClassId())
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + request.getClassId()));
+        validateUniqueStudents(request.getStudents());
+
+        Timetable timetable = resolveTimetable(request.getTimetableId(), studentClass.getId());
+        Subject subject = timetable == null ? resolveSubject(request.getSubjectId()) : timetable.getSubject();
+        Staff markedBy = resolveMarkedBy(request.getMarkedByStaffId());
+
+        List<Attendance> attendanceRecords = new ArrayList<>();
+
+        for (BulkAttendanceStudentRequest studentRequest : request.getStudents()) {
+            Student student = getActiveStudent(studentRequest.getStudentId());
+            validateStudentBelongsToClass(student, studentClass.getId());
+
+            AttendanceDTO duplicateCheck = new AttendanceDTO();
+            duplicateCheck.setStudentId(student.getId());
+            duplicateCheck.setAttendanceDate(request.getAttendanceDate());
+            duplicateCheck.setTimetableId(request.getTimetableId());
+            validateDuplicate(duplicateCheck, null);
+
+            Attendance attendance = new Attendance();
+            attendance.setStudent(student);
+            attendance.setStudentClass(studentClass);
+            attendance.setSubject(subject);
+            attendance.setTimetable(timetable);
+            attendance.setMarkedBy(markedBy);
+            attendance.setAttendanceDate(request.getAttendanceDate());
+            attendance.setStatus(studentRequest.getStatus());
+            attendance.setRemarks(studentRequest.getRemarks());
+            attendanceRecords.add(attendance);
+        }
+
+        return attendanceRepository.saveAll(attendanceRecords)
+                .stream()
+                .map(attendanceMapper::toDTO)
+                .toList();
     }
 
     @Override
@@ -164,6 +211,22 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
     }
 
+    private void validateStudentBelongsToClass(Student student, Long classId) {
+        validateStudentHasClass(student);
+        if (!student.getCurrentClass().getId().equals(classId)) {
+            throw new IllegalArgumentException("Student " + student.getId() + " does not belong to class " + classId);
+        }
+    }
+
+    private void validateUniqueStudents(List<BulkAttendanceStudentRequest> students) {
+        Set<Long> studentIds = new HashSet<>();
+        for (BulkAttendanceStudentRequest student : students) {
+            if (!studentIds.add(student.getStudentId())) {
+                throw new IllegalArgumentException("Duplicate student in attendance request: " + student.getStudentId());
+            }
+        }
+    }
+
     private void validateDuplicate(AttendanceDTO dto, Long currentId) {
         if (dto.getTimetableId() == null) {
             boolean exists = currentId == null
@@ -230,6 +293,35 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (!timetable.getStudentClass().getId().equals(student.getCurrentClass().getId())) {
             throw new IllegalArgumentException("Timetable period does not belong to the student's current class");
         }
+    }
+
+    private Timetable resolveTimetable(Long timetableId, Long classId) {
+        if (timetableId == null) {
+            return null;
+        }
+
+        Timetable timetable = timetableRepository.findById(timetableId)
+                .orElseThrow(() -> new ResourceNotFoundException("Timetable not found with id: " + timetableId));
+        if (!timetable.getStudentClass().getId().equals(classId)) {
+            throw new IllegalArgumentException("Timetable period does not belong to class " + classId);
+        }
+        return timetable;
+    }
+
+    private Subject resolveSubject(Long subjectId) {
+        if (subjectId == null) {
+            return null;
+        }
+        return subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + subjectId));
+    }
+
+    private Staff resolveMarkedBy(Long markedByStaffId) {
+        if (markedByStaffId == null) {
+            return null;
+        }
+        return staffRepository.findByIdAndActiveTrue(markedByStaffId)
+                .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + markedByStaffId));
     }
 
     private AttendanceDTO dtoWithResolvedFields(AttendanceDTO dto, Attendance attendance, Long studentId) {

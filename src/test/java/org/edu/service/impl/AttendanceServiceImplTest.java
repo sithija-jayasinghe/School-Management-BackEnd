@@ -7,10 +7,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.request.BulkAttendanceRequest;
+import org.edu.dto.request.BulkAttendanceStudentRequest;
 import org.edu.entity.Attendance;
 import org.edu.entity.Student;
 import org.edu.entity.Subject;
@@ -18,6 +21,7 @@ import org.edu.entity.Timetable;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AttendanceMapper;
 import org.edu.repository.AttendanceRepository;
+import org.edu.repository.ClassRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.SubjectRepository;
@@ -35,6 +39,9 @@ class AttendanceServiceImplTest {
 
     @Mock
     private AttendanceRepository attendanceRepository;
+
+    @Mock
+    private ClassRepository classRepository;
 
     @Mock
     private StudentRepository studentRepository;
@@ -55,6 +62,7 @@ class AttendanceServiceImplTest {
         AttendanceMapper attendanceMapper = Mappers.getMapper(AttendanceMapper.class);
         attendanceService = new AttendanceServiceImpl(
                 attendanceRepository,
+                classRepository,
                 studentRepository,
                 subjectRepository,
                 timetableRepository,
@@ -118,6 +126,67 @@ class AttendanceServiceImplTest {
     }
 
     @Test
+    void shouldBulkMarkClassAttendance() {
+        org.edu.entity.Class studentClass = studentClass(10L);
+        Student firstStudent = activeStudentWithClass(1L, 10L);
+        Student secondStudent = activeStudentWithClass(2L, 10L);
+        BulkAttendanceRequest request = bulkAttendanceRequest(10L, List.of(
+                new BulkAttendanceStudentRequest(1L, AttendanceStatus.PRESENT, "On time"),
+                new BulkAttendanceStudentRequest(2L, AttendanceStatus.ABSENT, "Sick")
+        ));
+
+        when(classRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(studentClass));
+        when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(firstStudent));
+        when(studentRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(secondStudent));
+        when(attendanceRepository.existsByStudentIdAndAttendanceDateAndTimetableIsNull(1L, request.getAttendanceDate()))
+                .thenReturn(false);
+        when(attendanceRepository.existsByStudentIdAndAttendanceDateAndTimetableIsNull(2L, request.getAttendanceDate()))
+                .thenReturn(false);
+        when(attendanceRepository.saveAll(org.mockito.Mockito.anyList()))
+                .thenAnswer(invocation -> {
+                    List<Attendance> records = new ArrayList<>(invocation.getArgument(0));
+                    records.get(0).setId(101L);
+                    records.get(1).setId(102L);
+                    return records;
+                });
+
+        List<AttendanceDTO> saved = attendanceService.markClassAttendance(request);
+
+        assertEquals(2, saved.size());
+        assertEquals(101L, saved.get(0).getId());
+        assertEquals(AttendanceStatus.ABSENT, saved.get(1).getStatus());
+    }
+
+    @Test
+    void shouldRejectBulkAttendanceWhenStudentIsOutsideClass() {
+        org.edu.entity.Class studentClass = studentClass(10L);
+        Student student = activeStudentWithClass(1L, 20L);
+        BulkAttendanceRequest request = bulkAttendanceRequest(10L, List.of(
+                new BulkAttendanceStudentRequest(1L, AttendanceStatus.PRESENT, null)
+        ));
+
+        when(classRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(studentClass));
+        when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(student));
+
+        assertThrows(IllegalArgumentException.class, () -> attendanceService.markClassAttendance(request));
+        verify(attendanceRepository, never()).saveAll(org.mockito.Mockito.anyList());
+    }
+
+    @Test
+    void shouldRejectDuplicateStudentInsideBulkAttendanceRequest() {
+        org.edu.entity.Class studentClass = studentClass(10L);
+        BulkAttendanceRequest request = bulkAttendanceRequest(10L, List.of(
+                new BulkAttendanceStudentRequest(1L, AttendanceStatus.PRESENT, null),
+                new BulkAttendanceStudentRequest(1L, AttendanceStatus.ABSENT, null)
+        ));
+
+        when(classRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(studentClass));
+
+        assertThrows(IllegalArgumentException.class, () -> attendanceService.markClassAttendance(request));
+        verify(attendanceRepository, never()).saveAll(org.mockito.Mockito.anyList());
+    }
+
+    @Test
     void shouldBuildStudentAttendanceSummary() {
         Student student = activeStudentWithClass(1L, 10L);
         LocalDate from = LocalDate.of(2026, 1, 1);
@@ -161,6 +230,17 @@ class AttendanceServiceImplTest {
         dto.setStatus(AttendanceStatus.PRESENT);
         dto.setRemarks("On time");
         return dto;
+    }
+
+    private BulkAttendanceRequest bulkAttendanceRequest(
+            Long classId,
+            List<BulkAttendanceStudentRequest> students
+    ) {
+        BulkAttendanceRequest request = new BulkAttendanceRequest();
+        request.setClassId(classId);
+        request.setAttendanceDate(LocalDate.of(2026, 1, 5));
+        request.setStudents(students);
+        return request;
     }
 
     private Student activeStudentWithClass(Long studentId, Long classId) {

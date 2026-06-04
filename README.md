@@ -49,6 +49,7 @@ Attendance statuses:
 Core endpoints:
 
 - `POST /api/attendance` - mark attendance
+- `POST /api/attendance/bulk` - mark attendance for multiple students in a class
 - `GET /api/attendance` - list attendance records
 - `GET /api/attendance/{id}` - get one attendance record
 - `PATCH /api/attendance/{id}` - update attendance

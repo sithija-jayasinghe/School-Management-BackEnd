@@ -5,12 +5,15 @@ import java.util.List;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
+import org.edu.dto.request.BulkAttendanceRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AttendanceService {
 
     AttendanceDTO createAttendance(AttendanceDTO dto);
+
+    List<AttendanceDTO> markClassAttendance(BulkAttendanceRequest request);
 
     AttendanceDTO updateAttendance(Long id, AttendanceDTO dto);
 
