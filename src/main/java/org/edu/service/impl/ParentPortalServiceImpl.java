@@ -1,8 +1,10 @@
 package org.edu.service.impl;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
@@ -18,6 +20,7 @@ import org.edu.exception.ResourceNotFoundException;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AttendanceService;
 import org.edu.service.ParentPortalService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final TimetableRepository timetableRepository;
+    private final AttendanceService attendanceService;
 
     @Override
     public ParentPortalProfileDTO getProfile(Long authenticatedUserId) {
@@ -103,6 +107,18 @@ public class ParentPortalServiceImpl implements ParentPortalService {
                 .stream()
                 .map(this::toTimetableEntry)
                 .toList();
+    }
+
+    @Override
+    public List<ParentPortalAttendanceDTO> getStudentAttendance(
+            Long authenticatedUserId,
+            Long studentId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), studentId);
+        return attendanceService.getPortalAttendance(studentId, fromDate, toDate);
     }
 
     private Parent getActiveParentByUserId(Long authenticatedUserId) {

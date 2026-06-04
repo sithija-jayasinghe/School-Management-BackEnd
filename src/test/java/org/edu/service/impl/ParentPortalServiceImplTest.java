@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
@@ -24,6 +25,8 @@ import org.edu.exception.ResourceNotFoundException;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AttendanceService;
+import org.edu.util.AttendanceStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,6 +44,9 @@ class ParentPortalServiceImplTest {
 
     @Mock
     private TimetableRepository timetableRepository;
+
+    @Mock
+    private AttendanceService attendanceService;
 
     @InjectMocks
     private ParentPortalServiceImpl parentPortalService;
@@ -111,6 +117,35 @@ class ParentPortalServiceImplTest {
         assertEquals(1, timetableEntries.size());
         assertEquals("Science", timetableEntries.get(0).getSubjectName());
         assertEquals("Nimal Perera", timetableEntries.get(0).getTeacherName());
+    }
+
+    @Test
+    void shouldReturnAttendanceOnlyAfterLinkedStudentAuthorization() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        LocalDate from = LocalDate.of(2026, 1, 1);
+        LocalDate to = LocalDate.of(2026, 1, 31);
+
+        ParentPortalAttendanceDTO attendance = new ParentPortalAttendanceDTO(
+                1L,
+                LocalDate.of(2026, 1, 5),
+                AttendanceStatus.PRESENT,
+                "Grade 10A",
+                "Science",
+                "Nimal Perera",
+                "On time"
+        );
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(attendanceService.getPortalAttendance(20L, from, to)).thenReturn(List.of(attendance));
+
+        List<ParentPortalAttendanceDTO> result = parentPortalService.getStudentAttendance(100L, 20L, from, to);
+
+        assertEquals(1, result.size());
+        assertEquals(AttendanceStatus.PRESENT, result.get(0).getStatus());
     }
 
     private Parent parentWithUser(Long parentId, Long userId) {

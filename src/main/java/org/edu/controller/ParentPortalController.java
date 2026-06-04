@@ -1,7 +1,9 @@
 package org.edu.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
@@ -10,11 +12,13 @@ import org.edu.dto.parentportal.ParentPortalSubjectDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
 import org.edu.service.ParentPortalService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -62,5 +66,15 @@ public class ParentPortalController {
             @PathVariable Long studentId
     ) {
         return parentPortalService.getStudentTimetable(principal.getUser().getId(), studentId);
+    }
+
+    @GetMapping("/students/{studentId}/attendance")
+    public List<ParentPortalAttendanceDTO> getStudentAttendance(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return parentPortalService.getStudentAttendance(principal.getUser().getId(), studentId, from, to);
     }
 }

@@ -17,6 +17,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     List<Student> findByActiveTrue();
 
+    List<Student> findByCurrentClassIdAndActiveTrueOrderByNameAsc(Long classId);
+
     Page<Student> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
 
     boolean existsByUser(User user);
