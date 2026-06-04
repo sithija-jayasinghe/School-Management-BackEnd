@@ -8,10 +8,12 @@ import static org.mockito.Mockito.when;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.edu.entity.Parent;
@@ -29,6 +31,7 @@ import org.edu.service.AttendanceService;
 import org.edu.service.NoticeService;
 import org.edu.service.StudentMarkService;
 import org.edu.util.AttendanceStatus;
+import org.edu.util.ExamType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -167,6 +170,39 @@ class ParentPortalServiceImplTest {
 
         assertEquals(0, parentPortalService.getNotices(100L).size());
         verify(noticeService).getParentPortalNotices(List.of(30L));
+    }
+
+    @Test
+    void shouldReturnResultsOnlyAfterLinkedStudentAuthorization() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        ParentPortalResultDTO result = new ParentPortalResultDTO(
+                1L,
+                2L,
+                "Term 1 Science Test",
+                ExamType.TERM_TEST,
+                LocalDate.of(2026, 3, 15),
+                "Term 1",
+                "Science",
+                BigDecimal.valueOf(85),
+                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(85),
+                "A",
+                true,
+                "Strong performance"
+        );
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(studentMarkService.getPortalResults(20L)).thenReturn(List.of(result));
+
+        List<ParentPortalResultDTO> results = parentPortalService.getStudentResults(100L, 20L);
+
+        assertEquals(1, results.size());
+        assertEquals("Science", results.get(0).getSubjectName());
+        assertEquals("A", results.get(0).getGrade());
     }
 
     private Parent parentWithUser(Long parentId, Long userId) {
