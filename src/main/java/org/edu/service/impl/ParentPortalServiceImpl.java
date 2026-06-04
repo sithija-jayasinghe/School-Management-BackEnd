@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
+import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalStudentSummaryDTO;
 import org.edu.dto.parentportal.ParentPortalSubjectDTO;
@@ -22,6 +23,7 @@ import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
 import org.edu.service.ParentPortalService;
+import org.edu.service.StudentMarkService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final ParentStudentRepository parentStudentRepository;
     private final TimetableRepository timetableRepository;
     private final AttendanceService attendanceService;
+    private final StudentMarkService studentMarkService;
 
     @Override
     public ParentPortalProfileDTO getProfile(Long authenticatedUserId) {
@@ -119,6 +122,13 @@ public class ParentPortalServiceImpl implements ParentPortalService {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), studentId);
         return attendanceService.getPortalAttendance(studentId, fromDate, toDate);
+    }
+
+    @Override
+    public List<ParentPortalResultDTO> getStudentResults(Long authenticatedUserId, Long studentId) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), studentId);
+        return studentMarkService.getPortalResults(studentId);
     }
 
     private Parent getActiveParentByUserId(Long authenticatedUserId) {

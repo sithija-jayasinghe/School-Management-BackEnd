@@ -34,6 +34,7 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 - `GET /api/parent-portal/students/{studentId}/subjects` - linked student's class subjects
 - `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
 - `GET /api/parent-portal/students/{studentId}/attendance?from=2026-01-01&to=2026-01-31` - linked student's attendance history
+- `GET /api/parent-portal/students/{studentId}/results` - linked student's exam results
 
 ## Attendance Module
 
@@ -101,6 +102,7 @@ Core endpoints:
 - `DELETE /api/student-marks/{id}` - delete entered marks
 - `GET /api/student-marks/{id}` - get one mark record
 - `GET /api/student-marks/exams/{examId}` - result sheet for an exam
+- `GET /api/student-marks/exams/{examId}/summary` - exam result summary report
 - `GET /api/student-marks/students/{studentId}` - marks history for a student
 
 ## Run

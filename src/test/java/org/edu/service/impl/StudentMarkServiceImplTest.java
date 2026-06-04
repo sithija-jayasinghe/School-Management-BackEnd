@@ -10,7 +10,10 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import org.edu.dto.ExamResultSummaryDTO;
+import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.StudentMarkDTO;
 import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
@@ -162,6 +165,48 @@ class StudentMarkServiceImplTest {
         assertFalse(saved.isPassed());
     }
 
+    @Test
+    void shouldBuildExamResultSummary() {
+        Exam exam = exam();
+        Student firstStudent = student(20L, 30L);
+        Student secondStudent = student(21L, 30L);
+        StudentMark firstMark = existingMark(exam, firstStudent, BigDecimal.valueOf(80));
+        firstMark.setPassed(true);
+        StudentMark secondMark = existingMark(exam, secondStudent, BigDecimal.valueOf(30));
+        secondMark.setPassed(false);
+
+        when(examRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(exam));
+        when(studentMarkRepository.findByExamId(10L)).thenReturn(List.of(firstMark, secondMark));
+
+        ExamResultSummaryDTO summary = studentMarkService.getExamResultSummary(10L);
+
+        assertEquals(2, summary.getTotalStudentsMarked());
+        assertEquals(1, summary.getPassCount());
+        assertEquals(1, summary.getFailCount());
+        assertEquals(BigDecimal.valueOf(55).setScale(2), summary.getAverageMarks());
+        assertEquals(BigDecimal.valueOf(80).setScale(2), summary.getHighestMarks());
+        assertEquals(BigDecimal.valueOf(30).setScale(2), summary.getLowestMarks());
+    }
+
+    @Test
+    void shouldReturnPortalResultsForStudent() {
+        Exam exam = exam();
+        Student student = student(20L, 30L);
+        StudentMark mark = existingMark(exam, student, BigDecimal.valueOf(82));
+        mark.setPercentage(BigDecimal.valueOf(82).setScale(2));
+        mark.setGrade("A");
+        mark.setPassed(true);
+
+        when(studentMarkRepository.findPortalResultsByStudentId(20L)).thenReturn(List.of(mark));
+
+        List<ParentPortalResultDTO> results = studentMarkService.getPortalResults(20L);
+
+        assertEquals(1, results.size());
+        assertEquals("Term Test 1", results.get(0).getExamName());
+        assertEquals("Mathematics", results.get(0).getSubjectName());
+        assertEquals("A", results.get(0).getGrade());
+    }
+
     private StudentMarkDTO markRequest(BigDecimal marks) {
         StudentMarkDTO dto = new StudentMarkDTO();
         dto.setExamId(10L);
@@ -190,7 +235,7 @@ class StudentMarkServiceImplTest {
         exam.setType(ExamType.TERM_TEST);
         exam.setExamDate(LocalDate.of(2026, 3, 15));
         exam.setAcademicYear(new AcademicYear());
-        exam.setAcademicTerm(new AcademicTerm());
+        exam.setAcademicTerm(academicTerm());
         exam.setStudentClass(studentClass(30L));
         exam.setSubject(subject());
         exam.setMaxMarks(BigDecimal.valueOf(100));
@@ -222,5 +267,12 @@ class StudentMarkServiceImplTest {
         subject.setCode("MATH");
         subject.setName("Mathematics");
         return subject;
+    }
+
+    private AcademicTerm academicTerm() {
+        AcademicTerm term = new AcademicTerm();
+        term.setId(2L);
+        term.setName("Term 1");
+        return term;
     }
 }

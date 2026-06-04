@@ -2,6 +2,7 @@ package org.edu.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.ExamResultSummaryDTO;
 import org.edu.dto.StudentMarkDTO;
 import org.edu.service.StudentMarkService;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,11 @@ public class StudentMarkController {
     @GetMapping("/exams/{examId}")
     public Page<StudentMarkDTO> getMarksByExam(@PathVariable Long examId, Pageable pageable) {
         return studentMarkService.getMarksByExam(examId, pageable);
+    }
+
+    @GetMapping("/exams/{examId}/summary")
+    public ExamResultSummaryDTO getExamResultSummary(@PathVariable Long examId) {
+        return studentMarkService.getExamResultSummary(examId);
     }
 
     @GetMapping("/students/{studentId}")

@@ -2,8 +2,12 @@ package org.edu.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.ExamResultSummaryDTO;
 import org.edu.dto.StudentMarkDTO;
+import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.entity.Exam;
 import org.edu.entity.Staff;
 import org.edu.entity.Student;
@@ -98,6 +102,56 @@ public class StudentMarkServiceImpl implements StudentMarkService {
                 .map(studentMarkMapper::toDTO);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ExamResultSummaryDTO getExamResultSummary(Long examId) {
+        Exam exam = getActiveExam(examId);
+        List<StudentMark> marks = studentMarkRepository.findByExamId(examId);
+        long passCount = marks.stream().filter(StudentMark::isPassed).count();
+        long failCount = marks.size() - passCount;
+
+        BigDecimal average = marks.isEmpty()
+                ? BigDecimal.ZERO.setScale(2)
+                : marks.stream()
+                        .map(StudentMark::getMarksObtained)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(marks.size()), 2, RoundingMode.HALF_UP);
+        BigDecimal highest = marks.stream()
+                .map(StudentMark::getMarksObtained)
+                .max(Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO)
+                .setScale(2);
+        BigDecimal lowest = marks.stream()
+                .map(StudentMark::getMarksObtained)
+                .min(Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO)
+                .setScale(2);
+
+        return new ExamResultSummaryDTO(
+                exam.getId(),
+                exam.getName(),
+                exam.getStudentClass().getId(),
+                exam.getStudentClass().getName(),
+                exam.getSubject().getId(),
+                exam.getSubject().getName(),
+                marks.size(),
+                passCount,
+                failCount,
+                average,
+                highest,
+                lowest
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParentPortalResultDTO> getPortalResults(Long studentId) {
+        return studentMarkRepository.findPortalResultsByStudentId(studentId)
+                .stream()
+                .map(this::toPortalResult)
+                .toList();
+    }
+
     private StudentMark getStudentMark(Long id) {
         return studentMarkRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student mark not found with id: " + id));
@@ -173,6 +227,25 @@ public class StudentMarkServiceImpl implements StudentMarkService {
             return "S";
         }
         return "F";
+    }
+
+    private ParentPortalResultDTO toPortalResult(StudentMark studentMark) {
+        Exam exam = studentMark.getExam();
+        return new ParentPortalResultDTO(
+                studentMark.getId(),
+                exam.getId(),
+                exam.getName(),
+                exam.getType(),
+                exam.getExamDate(),
+                exam.getAcademicTerm().getName(),
+                exam.getSubject().getName(),
+                studentMark.getMarksObtained(),
+                exam.getMaxMarks(),
+                studentMark.getPercentage(),
+                studentMark.getGrade(),
+                studentMark.isPassed(),
+                studentMark.getRemarks()
+        );
     }
 
     private StudentMarkDTO resolveForUpdate(
