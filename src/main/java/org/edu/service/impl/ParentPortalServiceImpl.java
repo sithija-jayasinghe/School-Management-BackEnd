@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalResultDTO;
@@ -23,9 +25,12 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.LeaveRequestService;
 import org.edu.service.NoticeService;
 import org.edu.service.ParentPortalService;
 import org.edu.service.StudentMarkService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +45,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final AttendanceService attendanceService;
     private final NoticeService noticeService;
     private final StudentMarkService studentMarkService;
+    private final LeaveRequestService leaveRequestService;
 
     @Override
     public ParentPortalProfileDTO getProfile(Long authenticatedUserId) {
@@ -147,6 +153,25 @@ public class ParentPortalServiceImpl implements ParentPortalService {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), studentId);
         return studentMarkService.getPortalResults(studentId);
+    }
+
+    @Override
+    public LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), dto.getStudentId());
+        return leaveRequestService.createParentLeaveRequest(authenticatedUserId, dto);
+    }
+
+    @Override
+    public Page<LeaveRequestDTO> getLeaveRequests(Long authenticatedUserId, Pageable pageable) {
+        getActiveParentByUserId(authenticatedUserId);
+        return leaveRequestService.getParentLeaveRequests(authenticatedUserId, pageable);
+    }
+
+    @Override
+    public LeaveRequestDTO cancelLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String remarks) {
+        getActiveParentByUserId(authenticatedUserId);
+        return leaveRequestService.cancelParentLeaveRequest(authenticatedUserId, leaveRequestId, remarks);
     }
 
     private Parent getActiveParentByUserId(Long authenticatedUserId) {

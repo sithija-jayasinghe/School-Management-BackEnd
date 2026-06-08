@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.EnumSet;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.LeaveRequestDTO;
+import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.request.LeaveRequestReviewRequest;
 import org.edu.entity.LeaveRequest;
 import org.edu.entity.Parent;
@@ -140,6 +141,41 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .map(leaveRequestMapper::toDTO);
     }
 
+    @Override
+    public LeaveRequestDTO createParentLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+
+        LeaveRequestDTO leaveRequestDTO = new LeaveRequestDTO();
+        leaveRequestDTO.setParentId(parent.getId());
+        leaveRequestDTO.setStudentId(dto.getStudentId());
+        leaveRequestDTO.setStartDate(dto.getStartDate());
+        leaveRequestDTO.setEndDate(dto.getEndDate());
+        leaveRequestDTO.setReason(dto.getReason());
+        leaveRequestDTO.setNote(dto.getNote());
+
+        return createLeaveRequest(leaveRequestDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<LeaveRequestDTO> getParentLeaveRequests(Long authenticatedUserId, Pageable pageable) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        return leaveRequestRepository.findByParentIdOrderByCreatedAtDesc(parent.getId(), pageable)
+                .map(leaveRequestMapper::toDTO);
+    }
+
+    @Override
+    public LeaveRequestDTO cancelParentLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String remarks) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        LeaveRequest leaveRequest = getLeaveRequest(leaveRequestId);
+
+        if (!leaveRequest.getParent().getId().equals(parent.getId())) {
+            throw new ResourceNotFoundException("Leave request not found in current parent portal");
+        }
+
+        return cancelLeaveRequest(leaveRequestId, remarks);
+    }
+
     private LeaveRequest getLeaveRequest(Long id) {
         return leaveRequestRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave request not found with id: " + id));
@@ -148,6 +184,11 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private Parent getActiveParent(Long parentId) {
         return parentRepository.findByIdAndActiveTrue(parentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Active parent not found with id: " + parentId));
+    }
+
+    private Parent getActiveParentByUserId(Long authenticatedUserId) {
+        return parentRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active parent profile not found for current user"));
     }
 
     private Student getActiveStudent(Long studentId) {

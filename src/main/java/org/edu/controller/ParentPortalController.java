@@ -1,10 +1,13 @@
 package org.edu.controller;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import org.edu.dto.LeaveRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
 import org.edu.dto.parentportal.ParentPortalResultDTO;
@@ -14,11 +17,15 @@ import org.edu.dto.parentportal.ParentPortalSubjectDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
 import org.edu.service.ParentPortalService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -91,5 +98,30 @@ public class ParentPortalController {
             @PathVariable Long studentId
     ) {
         return parentPortalService.getStudentResults(principal.getUser().getId(), studentId);
+    }
+
+    @PostMapping("/leave-requests")
+    public LeaveRequestDTO createLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody ParentPortalLeaveRequestCreateDTO dto
+    ) {
+        return parentPortalService.createLeaveRequest(principal.getUser().getId(), dto);
+    }
+
+    @GetMapping("/leave-requests")
+    public Page<LeaveRequestDTO> getLeaveRequests(
+            @AuthenticationPrincipal UserPrincipal principal,
+            Pageable pageable
+    ) {
+        return parentPortalService.getLeaveRequests(principal.getUser().getId(), pageable);
+    }
+
+    @PostMapping("/leave-requests/{leaveRequestId}/cancel")
+    public LeaveRequestDTO cancelLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long leaveRequestId,
+            @RequestParam(required = false) String remarks
+    ) {
+        return parentPortalService.cancelLeaveRequest(principal.getUser().getId(), leaveRequestId, remarks);
     }
 }

@@ -36,6 +36,9 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 - `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
 - `GET /api/parent-portal/students/{studentId}/attendance?from=2026-01-01&to=2026-01-31` - linked student's attendance history
 - `GET /api/parent-portal/students/{studentId}/results` - linked student's exam results
+- `POST /api/parent-portal/leave-requests` - submit a leave request for a linked student
+- `GET /api/parent-portal/leave-requests` - list the authenticated parent's leave requests
+- `POST /api/parent-portal/leave-requests/{leaveRequestId}/cancel?remarks=...` - cancel the authenticated parent's pending leave request
 
 ## Attendance Module
 
