@@ -180,6 +180,29 @@ Core endpoints:
 - `GET /api/leave-requests/students/{studentId}` - list leave requests by student
 - `GET /api/leave-requests/parents/{parentId}` - list leave requests by parent
 
+## Document Module
+
+Documents are managed through `/api/documents` for `ADMIN` and `TEACHER` users. Files are stored on the server filesystem with metadata linked to a student record. Teacher access is limited to students in classes they teach or own.
+
+Document types:
+
+- `REPORT_CARD`
+- `MEDICAL_RECORD`
+- `LEAVE_LETTER`
+- `CERTIFICATE`
+- `TRANSFER_LETTER`
+- `STUDENT_RECORD`
+- `OTHER`
+
+Core endpoints:
+
+- `POST /api/documents` - upload a student document with metadata and file content
+- `PATCH /api/documents/{documentId}` - update document metadata
+- `DELETE /api/documents/{documentId}` - deactivate a document and remove the stored file
+- `GET /api/documents/{documentId}` - get one accessible document
+- `GET /api/documents/students/{studentId}` - list active documents for a student
+- `GET /api/documents/{documentId}/download` - download the stored document file
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.
