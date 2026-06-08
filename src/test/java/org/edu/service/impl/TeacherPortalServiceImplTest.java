@@ -15,10 +15,14 @@ import java.util.List;
 import java.util.Optional;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.DocumentDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.BulkAttendanceStudentRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
+import org.edu.dto.teacherportal.TeacherPortalDocumentCreateRequest;
+import org.edu.dto.teacherportal.TeacherPortalDocumentDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
@@ -40,6 +44,7 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
 import org.edu.util.AttendanceStatus;
 import org.junit.jupiter.api.Test;
@@ -48,9 +53,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.edu.util.ExamType;
+import org.edu.util.DocumentType;
 import org.edu.util.LeaveRequestStatus;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockMultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 class TeacherPortalServiceImplTest {
@@ -72,6 +80,9 @@ class TeacherPortalServiceImplTest {
 
     @Mock
     private AttendanceService attendanceService;
+
+    @Mock
+    private DocumentService documentService;
 
     @Mock
     private LeaveRequestService leaveRequestService;
@@ -269,6 +280,140 @@ class TeacherPortalServiceImplTest {
 
         assertEquals(90.0, result.getAttendancePercentage());
         assertEquals("Amal", result.getStudentName());
+    }
+
+    @Test
+    void shouldReturnStudentDocumentsForAccessibleStudent() {
+        Staff staff = teacherWithUser(10L, 100L);
+        Student student = student(20L, "Amal", 30L, "Grade 10A");
+        DocumentDTO document = new DocumentDTO(
+                1L,
+                20L,
+                "Amal",
+                30L,
+                "Grade 10A",
+                100L,
+                "Teacher User",
+                org.edu.util.Role.TEACHER,
+                DocumentType.REPORT_CARD,
+                "Term Report",
+                "Report description",
+                "report.pdf",
+                "application/pdf",
+                1200L,
+                true,
+                true,
+                null,
+                null
+        );
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
+        when(documentService.getDocumentsByStudent(100L, 20L, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(document)));
+
+        var page = teacherPortalService.getStudentDocuments(100L, 20L, Pageable.unpaged());
+
+        assertEquals(1, page.getTotalElements());
+        TeacherPortalDocumentDTO result = page.getContent().get(0);
+        assertEquals("Term Report", result.getTitle());
+        assertEquals("Amal", result.getStudentName());
+    }
+
+    @Test
+    void shouldUploadStudentDocumentForAccessibleStudent() {
+        Staff staff = teacherWithUser(10L, 100L);
+        Student student = student(20L, "Amal", 30L, "Grade 10A");
+        TeacherPortalDocumentCreateRequest request = new TeacherPortalDocumentCreateRequest(
+                DocumentType.CERTIFICATE,
+                "Sports Certificate",
+                "Inter-school event",
+                true
+        );
+        MockMultipartFile file = new MockMultipartFile("file", "certificate.pdf", "application/pdf", "pdf".getBytes());
+        DocumentDTO saved = new DocumentDTO(
+                1L,
+                20L,
+                "Amal",
+                30L,
+                "Grade 10A",
+                100L,
+                "Teacher User",
+                org.edu.util.Role.TEACHER,
+                DocumentType.CERTIFICATE,
+                "Sports Certificate",
+                "Inter-school event",
+                "certificate.pdf",
+                "application/pdf",
+                300L,
+                true,
+                true,
+                null,
+                null
+        );
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
+        when(documentService.uploadDocument(org.mockito.ArgumentMatchers.eq(100L), any(), org.mockito.ArgumentMatchers.eq(file)))
+                .thenReturn(saved);
+
+        TeacherPortalDocumentDTO result = teacherPortalService.uploadStudentDocument(100L, 20L, request, file);
+
+        assertEquals("Sports Certificate", result.getTitle());
+        verify(documentService).uploadDocument(
+                org.mockito.ArgumentMatchers.eq(100L),
+                argThat(createRequest ->
+                        createRequest.getStudentId().equals(20L)
+                                && createRequest.getDocumentType() == DocumentType.CERTIFICATE
+                                && createRequest.isVisibleToParent()
+                ),
+                org.mockito.ArgumentMatchers.eq(file)
+        );
+    }
+
+    @Test
+    void shouldDownloadStudentDocumentForAccessibleStudent() {
+        Staff staff = teacherWithUser(10L, 100L);
+        Student student = student(20L, "Amal", 30L, "Grade 10A");
+        DocumentDTO document = new DocumentDTO(
+                1L,
+                20L,
+                "Amal",
+                30L,
+                "Grade 10A",
+                100L,
+                "Teacher User",
+                org.edu.util.Role.TEACHER,
+                DocumentType.REPORT_CARD,
+                "Term Report",
+                "Report description",
+                "report.pdf",
+                "application/pdf",
+                1200L,
+                true,
+                true,
+                null,
+                null
+        );
+        DocumentFileResponse fileResponse = new DocumentFileResponse(
+                "report.pdf",
+                "application/pdf",
+                1200L,
+                new ByteArrayResource("file".getBytes())
+        );
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
+        when(documentService.getDocument(100L, 1L)).thenReturn(document);
+        when(documentService.downloadDocument(100L, 1L)).thenReturn(fileResponse);
+
+        DocumentFileResponse result = teacherPortalService.downloadStudentDocument(100L, 20L, 1L);
+
+        assertEquals("report.pdf", result.getFileName());
+        verify(documentService).downloadDocument(100L, 1L);
     }
 
     @Test

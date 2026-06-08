@@ -4,10 +4,13 @@ import java.time.LocalDate;
 import java.util.List;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
+import org.edu.dto.teacherportal.TeacherPortalDocumentCreateRequest;
+import org.edu.dto.teacherportal.TeacherPortalDocumentDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
@@ -39,6 +42,17 @@ public interface TeacherPortalService {
     Page<AttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, Pageable pageable);
 
     AttendanceSummaryDTO getStudentAttendanceSummary(Long authenticatedUserId, Long studentId, LocalDate fromDate, LocalDate toDate);
+
+    Page<TeacherPortalDocumentDTO> getStudentDocuments(Long authenticatedUserId, Long studentId, Pageable pageable);
+
+    TeacherPortalDocumentDTO uploadStudentDocument(
+            Long authenticatedUserId,
+            Long studentId,
+            TeacherPortalDocumentCreateRequest request,
+            org.springframework.web.multipart.MultipartFile file
+    );
+
+    DocumentFileResponse downloadStudentDocument(Long authenticatedUserId, Long studentId, Long documentId);
 
     List<AttendanceDTO> markClassAttendance(Long authenticatedUserId, Long classId, TeacherPortalBulkAttendanceRequest request);
 

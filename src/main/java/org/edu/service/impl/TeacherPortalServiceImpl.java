@@ -7,11 +7,15 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.DocumentDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.BulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
+import org.edu.dto.teacherportal.TeacherPortalDocumentCreateRequest;
+import org.edu.dto.teacherportal.TeacherPortalDocumentDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
@@ -31,6 +35,7 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
 import org.edu.service.TeacherPortalService;
 import org.edu.util.LeaveRequestStatus;
@@ -38,6 +43,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional(readOnly = true)
@@ -50,6 +56,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     private final StudentRepository studentRepository;
     private final ExamRepository examRepository;
     private final AttendanceService attendanceService;
+    private final DocumentService documentService;
     private final LeaveRequestService leaveRequestService;
 
     @Override
@@ -151,6 +158,47 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
         Student student = getAccessibleStudent(staff.getId(), studentId);
         return attendanceService.getStudentAttendanceSummary(student.getId(), fromDate, toDate);
+    }
+
+    @Override
+    public Page<TeacherPortalDocumentDTO> getStudentDocuments(Long authenticatedUserId, Long studentId, Pageable pageable) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        Student student = getAccessibleStudent(staff.getId(), studentId);
+        return documentService.getDocumentsByStudent(authenticatedUserId, student.getId(), pageable)
+                .map(this::toTeacherPortalDocument);
+    }
+
+    @Override
+    @Transactional
+    public TeacherPortalDocumentDTO uploadStudentDocument(
+            Long authenticatedUserId,
+            Long studentId,
+            TeacherPortalDocumentCreateRequest request,
+            MultipartFile file
+    ) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        Student student = getAccessibleStudent(staff.getId(), studentId);
+
+        org.edu.dto.request.DocumentCreateRequest createRequest = new org.edu.dto.request.DocumentCreateRequest(
+                student.getId(),
+                request.getDocumentType(),
+                request.getTitle(),
+                request.getDescription(),
+                request.isVisibleToParent()
+        );
+
+        return toTeacherPortalDocument(documentService.uploadDocument(authenticatedUserId, createRequest, file));
+    }
+
+    @Override
+    public DocumentFileResponse downloadStudentDocument(Long authenticatedUserId, Long studentId, Long documentId) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        Student student = getAccessibleStudent(staff.getId(), studentId);
+        DocumentDTO document = documentService.getDocument(authenticatedUserId, documentId);
+        if (!student.getId().equals(document.getStudentId())) {
+            throw new ResourceNotFoundException("Document not found in current teacher portal");
+        }
+        return documentService.downloadDocument(authenticatedUserId, documentId);
     }
 
     @Override
@@ -313,6 +361,23 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
                 exam.getMaxMarks(),
                 exam.getPassMarks(),
                 exam.isActive()
+        );
+    }
+
+    private TeacherPortalDocumentDTO toTeacherPortalDocument(DocumentDTO document) {
+        return new TeacherPortalDocumentDTO(
+                document.getId(),
+                document.getStudentId(),
+                document.getStudentName(),
+                document.getDocumentType(),
+                document.getTitle(),
+                document.getDescription(),
+                document.getOriginalFileName(),
+                document.getContentType(),
+                document.getFileSize(),
+                document.isVisibleToParent(),
+                document.getCreatedAt(),
+                document.getUpdatedAt()
         );
     }
 

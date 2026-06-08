@@ -6,10 +6,13 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
+import org.edu.dto.teacherportal.TeacherPortalDocumentCreateRequest;
+import org.edu.dto.teacherportal.TeacherPortalDocumentDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
 import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
@@ -19,9 +22,13 @@ import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
 import org.edu.service.TeacherPortalService;
 import org.edu.util.LeaveRequestStatus;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,8 +36,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/teacher-portal")
@@ -114,6 +123,43 @@ public class TeacherPortalController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         return teacherPortalService.getStudentAttendanceSummary(principal.getUser().getId(), studentId, from, to);
+    }
+
+    @GetMapping("/students/{studentId}/documents")
+    public Page<TeacherPortalDocumentDTO> getStudentDocuments(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            Pageable pageable
+    ) {
+        return teacherPortalService.getStudentDocuments(principal.getUser().getId(), studentId, pageable);
+    }
+
+    @PostMapping(value = "/students/{studentId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public TeacherPortalDocumentDTO uploadStudentDocument(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @Valid @RequestPart("metadata") TeacherPortalDocumentCreateRequest request,
+            @RequestPart("file") MultipartFile file
+    ) {
+        return teacherPortalService.uploadStudentDocument(principal.getUser().getId(), studentId, request, file);
+    }
+
+    @GetMapping("/students/{studentId}/documents/{documentId}/download")
+    public ResponseEntity<Resource> downloadStudentDocument(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @PathVariable Long documentId
+    ) {
+        DocumentFileResponse fileResponse = teacherPortalService.downloadStudentDocument(
+                principal.getUser().getId(),
+                studentId,
+                documentId
+        );
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(fileResponse.getContentType()))
+                .contentLength(fileResponse.getFileSize())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResponse.getFileName() + "\"")
+                .body(fileResponse.getResource());
     }
 
     @GetMapping("/leave-requests")

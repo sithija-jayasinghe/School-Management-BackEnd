@@ -153,6 +153,9 @@ Core endpoints:
 - `POST /api/teacher-portal/classes/{classId}/attendance` - bulk mark attendance using the authenticated teacher context
 - `GET /api/teacher-portal/students/{studentId}/attendance` - attendance history for a student in a teacher-accessible class
 - `GET /api/teacher-portal/students/{studentId}/attendance/summary?from=2026-01-01&to=2026-01-31` - attendance summary for a student in a teacher-accessible class
+- `GET /api/teacher-portal/students/{studentId}/documents` - documents for a student in a teacher-accessible class
+- `POST /api/teacher-portal/students/{studentId}/documents` - upload a document for a student in a teacher-accessible class
+- `GET /api/teacher-portal/students/{studentId}/documents/{documentId}/download` - download a document for a student in a teacher-accessible class
 - `GET /api/teacher-portal/leave-requests?status=PENDING` - leave requests for teacher-accessible classes
 - `POST /api/teacher-portal/leave-requests/{leaveRequestId}/approve` - approve a leave request as the authenticated teacher
 - `POST /api/teacher-portal/leave-requests/{leaveRequestId}/reject` - reject a leave request as the authenticated teacher
