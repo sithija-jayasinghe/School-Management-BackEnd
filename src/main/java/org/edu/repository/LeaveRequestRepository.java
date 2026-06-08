@@ -21,6 +21,56 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
     Page<LeaveRequest> findByParentIdOrderByCreatedAtDesc(Long parentId, Pageable pageable);
 
     @Query("""
+            select lr
+            from LeaveRequest lr
+            where exists (
+                select 1
+                from Class c
+                where c.id = lr.student.currentClass.id
+                  and c.active = true
+                  and c.classTeacher.id = :staffId
+            )
+            or exists (
+                select 1
+                from Timetable t
+                where t.staff.id = :staffId
+                  and t.studentClass.id = lr.student.currentClass.id
+            )
+            order by lr.createdAt desc
+            """)
+    Page<LeaveRequest> findTeacherPortalLeaveRequestsByStaffId(
+            @Param("staffId") Long staffId,
+            Pageable pageable
+    );
+
+    @Query("""
+            select lr
+            from LeaveRequest lr
+            where lr.status = :status
+              and (
+                  exists (
+                      select 1
+                      from Class c
+                      where c.id = lr.student.currentClass.id
+                        and c.active = true
+                        and c.classTeacher.id = :staffId
+                  )
+                  or exists (
+                      select 1
+                      from Timetable t
+                      where t.staff.id = :staffId
+                        and t.studentClass.id = lr.student.currentClass.id
+                  )
+              )
+            order by lr.createdAt desc
+            """)
+    Page<LeaveRequest> findTeacherPortalLeaveRequestsByStaffIdAndStatus(
+            @Param("staffId") Long staffId,
+            @Param("status") LeaveRequestStatus status,
+            Pageable pageable
+    );
+
+    @Query("""
             select (count(lr) > 0)
             from LeaveRequest lr
             where lr.student.id = :studentId

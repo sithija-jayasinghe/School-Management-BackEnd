@@ -18,11 +18,13 @@ import org.edu.entity.Parent;
 import org.edu.entity.Staff;
 import org.edu.entity.Student;
 import org.edu.mapper.LeaveRequestMapper;
+import org.edu.repository.ClassRepository;
 import org.edu.repository.LeaveRequestRepository;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TimetableRepository;
 import org.edu.util.LeaveRequestStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +53,12 @@ class LeaveRequestServiceImplTest {
     @Mock
     private StaffRepository staffRepository;
 
+    @Mock
+    private ClassRepository classRepository;
+
+    @Mock
+    private TimetableRepository timetableRepository;
+
     private LeaveRequestServiceImpl leaveRequestService;
 
     @BeforeEach
@@ -62,6 +70,8 @@ class LeaveRequestServiceImplTest {
                 studentRepository,
                 parentStudentRepository,
                 staffRepository,
+                classRepository,
+                timetableRepository,
                 leaveRequestMapper
         );
     }
@@ -217,6 +227,51 @@ class LeaveRequestServiceImplTest {
 
         assertThrows(org.edu.exception.ResourceNotFoundException.class,
                 () -> leaveRequestService.cancelParentLeaveRequest(100L, 1L, "No longer needed"));
+    }
+
+    @Test
+    void shouldReturnTeacherPortalLeaveRequests() {
+        Staff staff = activeStaff(50L);
+        LeaveRequest leaveRequest = pendingLeaveRequest();
+
+        when(staffRepository.findByUser_IdAndActiveTrue(200L)).thenReturn(Optional.of(staff));
+        when(leaveRequestRepository.findTeacherPortalLeaveRequestsByStaffId(50L, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(leaveRequest)));
+
+        var page = leaveRequestService.getTeacherLeaveRequests(200L, null, Pageable.unpaged());
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals(20L, page.getContent().get(0).getStudentId());
+    }
+
+    @Test
+    void shouldApproveTeacherAccessibleLeaveRequest() {
+        LeaveRequest leaveRequest = pendingLeaveRequest();
+        Staff teacher = activeStaff(50L);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(200L)).thenReturn(Optional.of(teacher));
+        when(leaveRequestRepository.findById(1L)).thenReturn(Optional.of(leaveRequest));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 50L)).thenReturn(true);
+        when(staffRepository.findByIdAndActiveTrue(50L)).thenReturn(Optional.of(teacher));
+
+        LeaveRequestDTO approved = leaveRequestService.approveTeacherLeaveRequest(200L, 1L, "Approved");
+
+        assertEquals(LeaveRequestStatus.APPROVED, approved.getStatus());
+        assertEquals(50L, approved.getReviewedByStaffId());
+    }
+
+    @Test
+    void shouldRejectTeacherReviewForInaccessibleLeaveRequest() {
+        LeaveRequest leaveRequest = pendingLeaveRequest();
+        Staff teacher = activeStaff(50L);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(200L)).thenReturn(Optional.of(teacher));
+        when(leaveRequestRepository.findById(1L)).thenReturn(Optional.of(leaveRequest));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 50L)).thenReturn(false);
+        when(timetableRepository.existsByStaffIdAndStudentClassId(50L, 30L)).thenReturn(false);
+
+        assertThrows(org.edu.exception.ResourceNotFoundException.class,
+                () -> leaveRequestService.rejectTeacherLeaveRequest(200L, 1L, "Not your class"));
     }
 
     private LeaveRequestDTO leaveRequestRequest() {

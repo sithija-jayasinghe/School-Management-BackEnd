@@ -6,16 +6,19 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
+import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
 import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
 import org.edu.service.TeacherPortalService;
+import org.edu.util.LeaveRequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -111,5 +114,32 @@ public class TeacherPortalController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         return teacherPortalService.getStudentAttendanceSummary(principal.getUser().getId(), studentId, from, to);
+    }
+
+    @GetMapping("/leave-requests")
+    public Page<LeaveRequestDTO> getLeaveRequests(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) LeaveRequestStatus status,
+            Pageable pageable
+    ) {
+        return teacherPortalService.getLeaveRequests(principal.getUser().getId(), status, pageable);
+    }
+
+    @PostMapping("/leave-requests/{leaveRequestId}/approve")
+    public LeaveRequestDTO approveLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long leaveRequestId,
+            @RequestBody(required = false) TeacherPortalLeaveReviewRequest request
+    ) {
+        return teacherPortalService.approveLeaveRequest(principal.getUser().getId(), leaveRequestId, request);
+    }
+
+    @PostMapping("/leave-requests/{leaveRequestId}/reject")
+    public LeaveRequestDTO rejectLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long leaveRequestId,
+            @RequestBody(required = false) TeacherPortalLeaveReviewRequest request
+    ) {
+        return teacherPortalService.rejectLeaveRequest(principal.getUser().getId(), leaveRequestId, request);
     }
 }

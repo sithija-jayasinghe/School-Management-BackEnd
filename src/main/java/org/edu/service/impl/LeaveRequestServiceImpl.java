@@ -8,14 +8,17 @@ import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.request.LeaveRequestReviewRequest;
 import org.edu.entity.LeaveRequest;
 import org.edu.entity.Parent;
+import org.edu.entity.Staff;
 import org.edu.entity.Student;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.LeaveRequestMapper;
+import org.edu.repository.ClassRepository;
 import org.edu.repository.LeaveRequestRepository;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TimetableRepository;
 import org.edu.service.LeaveRequestService;
 import org.edu.util.LeaveRequestStatus;
 import org.springframework.data.domain.Page;
@@ -33,6 +36,8 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private final StudentRepository studentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final StaffRepository staffRepository;
+    private final ClassRepository classRepository;
+    private final TimetableRepository timetableRepository;
     private final LeaveRequestMapper leaveRequestMapper;
 
     @Override
@@ -176,6 +181,36 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         return cancelLeaveRequest(leaveRequestId, remarks);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<LeaveRequestDTO> getTeacherLeaveRequests(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable) {
+        Staff staff = getActiveStaffByUserId(authenticatedUserId);
+        Page<LeaveRequest> page = status == null
+                ? leaveRequestRepository.findTeacherPortalLeaveRequestsByStaffId(staff.getId(), pageable)
+                : leaveRequestRepository.findTeacherPortalLeaveRequestsByStaffIdAndStatus(staff.getId(), status, pageable);
+        return page.map(leaveRequestMapper::toDTO);
+    }
+
+    @Override
+    public LeaveRequestDTO approveTeacherLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String reviewerRemarks) {
+        Staff staff = getActiveStaffByUserId(authenticatedUserId);
+        LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
+        return approveLeaveRequest(
+                leaveRequest.getId(),
+                new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
+        );
+    }
+
+    @Override
+    public LeaveRequestDTO rejectTeacherLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String reviewerRemarks) {
+        Staff staff = getActiveStaffByUserId(authenticatedUserId);
+        LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
+        return rejectLeaveRequest(
+                leaveRequest.getId(),
+                new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
+        );
+    }
+
     private LeaveRequest getLeaveRequest(Long id) {
         return leaveRequestRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave request not found with id: " + id));
@@ -189,6 +224,11 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private Parent getActiveParentByUserId(Long authenticatedUserId) {
         return parentRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Active parent profile not found for current user"));
+    }
+
+    private Staff getActiveStaffByUserId(Long authenticatedUserId) {
+        return staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"));
     }
 
     private Student getActiveStudent(Long studentId) {
@@ -241,6 +281,23 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         leaveRequest.setReviewerRemarks(request.getReviewerRemarks());
         leaveRequest.setReviewedAt(LocalDateTime.now());
         leaveRequest.setStatus(status);
+    }
+
+    private LeaveRequest getTeacherAccessibleLeaveRequest(Long staffId, Long leaveRequestId) {
+        LeaveRequest leaveRequest = getLeaveRequest(leaveRequestId);
+        if (leaveRequest.getStudent().getCurrentClass() == null) {
+            throw new ResourceNotFoundException("Leave request not found in current teacher portal");
+        }
+
+        Long classId = leaveRequest.getStudent().getCurrentClass().getId();
+        boolean classTeacherAccess = classRepository.existsByIdAndClassTeacherIdAndActiveTrue(classId, staffId);
+        boolean teachingAccess = timetableRepository.existsByStaffIdAndStudentClassId(staffId, classId);
+
+        if (!classTeacherAccess && !teachingAccess) {
+            throw new ResourceNotFoundException("Leave request not found in current teacher portal");
+        }
+
+        return leaveRequest;
     }
 
     private LeaveRequestDTO resolveForUpdate(LeaveRequestDTO dto, LeaveRequest leaveRequest, Long parentId, Long studentId) {

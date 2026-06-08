@@ -34,4 +34,10 @@ public interface LeaveRequestService {
     Page<LeaveRequestDTO> getParentLeaveRequests(Long authenticatedUserId, Pageable pageable);
 
     LeaveRequestDTO cancelParentLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String remarks);
+
+    Page<LeaveRequestDTO> getTeacherLeaveRequests(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable);
+
+    LeaveRequestDTO approveTeacherLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String reviewerRemarks);
+
+    LeaveRequestDTO rejectTeacherLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String reviewerRemarks);
 }

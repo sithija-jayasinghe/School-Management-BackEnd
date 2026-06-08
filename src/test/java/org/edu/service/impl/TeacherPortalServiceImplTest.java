@@ -15,10 +15,12 @@ import java.util.List;
 import java.util.Optional;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.BulkAttendanceStudentRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
+import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
@@ -38,6 +40,7 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.LeaveRequestService;
 import org.edu.util.AttendanceStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +48,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.edu.util.ExamType;
+import org.edu.util.LeaveRequestStatus;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -68,6 +72,9 @@ class TeacherPortalServiceImplTest {
 
     @Mock
     private AttendanceService attendanceService;
+
+    @Mock
+    private LeaveRequestService leaveRequestService;
 
     @InjectMocks
     private TeacherPortalServiceImpl teacherPortalService;
@@ -308,6 +315,68 @@ class TeacherPortalServiceImplTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> teacherPortalService.markClassAttendance(100L, 30L, request));
+    }
+
+    @Test
+    void shouldReturnTeacherAccessibleLeaveRequests() {
+        Staff staff = teacherWithUser(10L, 100L);
+        LeaveRequestDTO leaveRequest = new LeaveRequestDTO();
+        leaveRequest.setId(1L);
+        leaveRequest.setStudentId(20L);
+        leaveRequest.setStatus(LeaveRequestStatus.PENDING);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(leaveRequestService.getTeacherLeaveRequests(100L, LeaveRequestStatus.PENDING, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(leaveRequest)));
+
+        var page = teacherPortalService.getLeaveRequests(100L, LeaveRequestStatus.PENDING, Pageable.unpaged());
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals(LeaveRequestStatus.PENDING, page.getContent().get(0).getStatus());
+    }
+
+    @Test
+    void shouldApproveTeacherAccessibleLeaveRequest() {
+        Staff staff = teacherWithUser(10L, 100L);
+        LeaveRequestDTO leaveRequest = new LeaveRequestDTO();
+        leaveRequest.setId(1L);
+        leaveRequest.setReviewedByStaffId(10L);
+        leaveRequest.setStatus(LeaveRequestStatus.APPROVED);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(leaveRequestService.approveTeacherLeaveRequest(100L, 1L, "Approved"))
+                .thenReturn(leaveRequest);
+
+        LeaveRequestDTO approved = teacherPortalService.approveLeaveRequest(
+                100L,
+                1L,
+                new TeacherPortalLeaveReviewRequest("Approved")
+        );
+
+        assertEquals(LeaveRequestStatus.APPROVED, approved.getStatus());
+        assertEquals(10L, approved.getReviewedByStaffId());
+    }
+
+    @Test
+    void shouldRejectTeacherAccessibleLeaveRequest() {
+        Staff staff = teacherWithUser(10L, 100L);
+        LeaveRequestDTO leaveRequest = new LeaveRequestDTO();
+        leaveRequest.setId(2L);
+        leaveRequest.setReviewedByStaffId(10L);
+        leaveRequest.setStatus(LeaveRequestStatus.REJECTED);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(leaveRequestService.rejectTeacherLeaveRequest(100L, 2L, "Insufficient detail"))
+                .thenReturn(leaveRequest);
+
+        LeaveRequestDTO rejected = teacherPortalService.rejectLeaveRequest(
+                100L,
+                2L,
+                new TeacherPortalLeaveReviewRequest("Insufficient detail")
+        );
+
+        assertEquals(LeaveRequestStatus.REJECTED, rejected.getStatus());
+        assertEquals(10L, rejected.getReviewedByStaffId());
     }
 
     private Staff teacherWithUser(Long staffPk, Long userId) {
