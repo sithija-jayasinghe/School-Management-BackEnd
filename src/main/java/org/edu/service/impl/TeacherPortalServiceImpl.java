@@ -7,11 +7,13 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
+import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.BulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalExamDTO;
+import org.edu.dto.teacherportal.TeacherPortalLeaveReviewRequest;
 import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
@@ -29,7 +31,9 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.LeaveRequestService;
 import org.edu.service.TeacherPortalService;
+import org.edu.util.LeaveRequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,6 +50,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     private final StudentRepository studentRepository;
     private final ExamRepository examRepository;
     private final AttendanceService attendanceService;
+    private final LeaveRequestService leaveRequestService;
 
     @Override
     public TeacherPortalProfileDTO getProfile(Long authenticatedUserId) {
@@ -167,6 +172,46 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
         bulkRequest.setStudents(request.getStudents());
 
         return attendanceService.markClassAttendance(bulkRequest);
+    }
+
+    @Override
+    public Page<LeaveRequestDTO> getLeaveRequests(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return leaveRequestService.getTeacherLeaveRequests(authenticatedUserId, status, pageable);
+    }
+
+    @Override
+    public LeaveRequestDTO approveLeaveRequest(
+            Long authenticatedUserId,
+            Long leaveRequestId,
+            TeacherPortalLeaveReviewRequest request
+    ) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return leaveRequestService.approveTeacherLeaveRequest(
+                authenticatedUserId,
+                leaveRequestId,
+                request == null ? null : request.getReviewerRemarks()
+        );
+    }
+
+    @Override
+    public LeaveRequestDTO rejectLeaveRequest(
+            Long authenticatedUserId,
+            Long leaveRequestId,
+            TeacherPortalLeaveReviewRequest request
+    ) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return leaveRequestService.rejectTeacherLeaveRequest(
+                authenticatedUserId,
+                leaveRequestId,
+                request == null ? null : request.getReviewerRemarks()
+        );
+    }
+
+    @Override
+    public LeaveRequestDTO applyLeaveToAttendance(Long authenticatedUserId, Long leaveRequestId) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return leaveRequestService.applyApprovedLeaveToAttendance(authenticatedUserId, leaveRequestId);
     }
 
     private Staff getActiveTeacherByUserId(Long authenticatedUserId) {

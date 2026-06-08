@@ -11,8 +11,10 @@ import java.time.LocalTime;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
@@ -28,6 +30,7 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.LeaveRequestService;
 import org.edu.service.NoticeService;
 import org.edu.service.StudentMarkService;
 import org.edu.util.AttendanceStatus;
@@ -37,6 +40,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class ParentPortalServiceImplTest {
@@ -58,6 +63,9 @@ class ParentPortalServiceImplTest {
 
     @Mock
     private StudentMarkService studentMarkService;
+
+    @Mock
+    private LeaveRequestService leaveRequestService;
 
     @InjectMocks
     private ParentPortalServiceImpl parentPortalService;
@@ -203,6 +211,68 @@ class ParentPortalServiceImplTest {
         assertEquals(1, results.size());
         assertEquals("Science", results.get(0).getSubjectName());
         assertEquals("A", results.get(0).getGrade());
+    }
+
+    @Test
+    void shouldCreateLeaveRequestOnlyForLinkedStudent() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        ParentPortalLeaveRequestCreateDTO request = new ParentPortalLeaveRequestCreateDTO(
+                20L,
+                LocalDate.of(2026, 6, 10),
+                LocalDate.of(2026, 6, 12),
+                "Medical appointment",
+                "Clinic visit"
+        );
+        LeaveRequestDTO response = new LeaveRequestDTO();
+        response.setId(1L);
+        response.setParentId(10L);
+        response.setStudentId(20L);
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(leaveRequestService.createParentLeaveRequest(100L, request)).thenReturn(response);
+
+        LeaveRequestDTO created = parentPortalService.createLeaveRequest(100L, request);
+
+        assertEquals(1L, created.getId());
+        assertEquals(20L, created.getStudentId());
+    }
+
+    @Test
+    void shouldReturnAuthenticatedParentLeaveRequests() {
+        Parent parent = parentWithUser(10L, 100L);
+        LeaveRequestDTO leaveRequest = new LeaveRequestDTO();
+        leaveRequest.setId(1L);
+        leaveRequest.setParentId(10L);
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(leaveRequestService.getParentLeaveRequests(100L, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(leaveRequest)));
+
+        var page = parentPortalService.getLeaveRequests(100L, Pageable.unpaged());
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals(10L, page.getContent().get(0).getParentId());
+    }
+
+    @Test
+    void shouldCancelLeaveRequestForAuthenticatedParent() {
+        Parent parent = parentWithUser(10L, 100L);
+        LeaveRequestDTO leaveRequest = new LeaveRequestDTO();
+        leaveRequest.setId(1L);
+        leaveRequest.setParentId(10L);
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(leaveRequestService.cancelParentLeaveRequest(100L, 1L, "No longer needed"))
+                .thenReturn(leaveRequest);
+
+        LeaveRequestDTO cancelled = parentPortalService.cancelLeaveRequest(100L, 1L, "No longer needed");
+
+        assertEquals(1L, cancelled.getId());
+        verify(leaveRequestService).cancelParentLeaveRequest(100L, 1L, "No longer needed");
     }
 
     private Parent parentWithUser(Long parentId, Long userId) {

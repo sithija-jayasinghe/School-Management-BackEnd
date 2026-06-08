@@ -36,6 +36,9 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 - `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
 - `GET /api/parent-portal/students/{studentId}/attendance?from=2026-01-01&to=2026-01-31` - linked student's attendance history
 - `GET /api/parent-portal/students/{studentId}/results` - linked student's exam results
+- `POST /api/parent-portal/leave-requests` - submit a leave request for a linked student
+- `GET /api/parent-portal/leave-requests` - list the authenticated parent's leave requests
+- `POST /api/parent-portal/leave-requests/{leaveRequestId}/cancel?remarks=...` - cancel the authenticated parent's pending leave request
 
 ## Attendance Module
 
@@ -148,6 +151,34 @@ Core endpoints:
 - `POST /api/teacher-portal/classes/{classId}/attendance` - bulk mark attendance using the authenticated teacher context
 - `GET /api/teacher-portal/students/{studentId}/attendance` - attendance history for a student in a teacher-accessible class
 - `GET /api/teacher-portal/students/{studentId}/attendance/summary?from=2026-01-01&to=2026-01-31` - attendance summary for a student in a teacher-accessible class
+- `GET /api/teacher-portal/leave-requests?status=PENDING` - leave requests for teacher-accessible classes
+- `POST /api/teacher-portal/leave-requests/{leaveRequestId}/approve` - approve a leave request as the authenticated teacher
+- `POST /api/teacher-portal/leave-requests/{leaveRequestId}/reject` - reject a leave request as the authenticated teacher
+- `POST /api/teacher-portal/leave-requests/{leaveRequestId}/apply-attendance` - convert an approved leave request into `EXCUSED` attendance records
+
+## Leave Request Module
+
+Leave requests are managed through `/api/leave-requests` for `ADMIN` and `TEACHER` users in the core workflow layer. Requests are validated against active parent-student links, prevent overlapping pending or approved periods for the same student, and move through a controlled status flow.
+
+Statuses:
+
+- `PENDING`
+- `APPROVED`
+- `REJECTED`
+- `CANCELLED`
+
+Core endpoints:
+
+- `POST /api/leave-requests` - create a leave request
+- `PATCH /api/leave-requests/{id}` - update a pending leave request
+- `POST /api/leave-requests/{id}/approve` - approve a pending leave request
+- `POST /api/leave-requests/{id}/reject` - reject a pending leave request
+- `POST /api/leave-requests/{id}/cancel?remarks=...` - cancel a pending leave request
+- `GET /api/leave-requests` - list leave requests
+- `GET /api/leave-requests/{id}` - get one leave request
+- `GET /api/leave-requests/status/{status}` - list leave requests by status
+- `GET /api/leave-requests/students/{studentId}` - list leave requests by student
+- `GET /api/leave-requests/parents/{parentId}` - list leave requests by parent
 
 ## Run
 
