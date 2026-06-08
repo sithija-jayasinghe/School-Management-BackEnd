@@ -21,4 +21,8 @@ public interface DocumentService {
     Page<DocumentDTO> getDocumentsByStudent(Long authenticatedUserId, Long studentId, Pageable pageable);
 
     DocumentFileResponse downloadDocument(Long authenticatedUserId, Long documentId);
+
+    Page<DocumentDTO> getVisibleDocumentsByStudent(Long studentId, Pageable pageable);
+
+    DocumentFileResponse downloadVisibleDocument(Long studentId, Long documentId);
 }

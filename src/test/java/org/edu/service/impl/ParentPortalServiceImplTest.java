@@ -11,9 +11,12 @@ import java.time.LocalTime;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import org.edu.dto.DocumentDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalDocumentDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalResultDTO;
 import org.edu.dto.parentportal.ParentPortalStudentDetailDTO;
@@ -30,6 +33,7 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
 import org.edu.service.NoticeService;
 import org.edu.service.StudentMarkService;
@@ -40,6 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -57,6 +62,9 @@ class ParentPortalServiceImplTest {
 
     @Mock
     private AttendanceService attendanceService;
+
+    @Mock
+    private DocumentService documentService;
 
     @Mock
     private NoticeService noticeService;
@@ -211,6 +219,69 @@ class ParentPortalServiceImplTest {
         assertEquals(1, results.size());
         assertEquals("Science", results.get(0).getSubjectName());
         assertEquals("A", results.get(0).getGrade());
+    }
+
+    @Test
+    void shouldReturnVisibleDocumentsOnlyAfterLinkedStudentAuthorization() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        DocumentDTO document = new DocumentDTO(
+                1L,
+                20L,
+                "Student User",
+                30L,
+                "Grade 10A",
+                100L,
+                "Admin User",
+                org.edu.util.Role.ADMIN,
+                org.edu.util.DocumentType.REPORT_CARD,
+                "Term 1 Report",
+                "Visible report",
+                "report.pdf",
+                "application/pdf",
+                1200L,
+                true,
+                true,
+                null,
+                null
+        );
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(documentService.getVisibleDocumentsByStudent(20L, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(document)));
+
+        var page = parentPortalService.getStudentDocuments(100L, 20L, Pageable.unpaged());
+
+        assertEquals(1, page.getTotalElements());
+        ParentPortalDocumentDTO result = page.getContent().get(0);
+        assertEquals("Term 1 Report", result.getTitle());
+        assertEquals("report.pdf", result.getOriginalFileName());
+    }
+
+    @Test
+    void shouldDownloadVisibleDocumentOnlyAfterLinkedStudentAuthorization() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        DocumentFileResponse response = new DocumentFileResponse(
+                "report.pdf",
+                "application/pdf",
+                1200L,
+                new ByteArrayResource("file".getBytes())
+        );
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(documentService.downloadVisibleDocument(20L, 1L)).thenReturn(response);
+
+        DocumentFileResponse result = parentPortalService.downloadStudentDocument(100L, 20L, 1L);
+
+        assertEquals("report.pdf", result.getFileName());
+        verify(documentService).downloadVisibleDocument(20L, 1L);
     }
 
     @Test

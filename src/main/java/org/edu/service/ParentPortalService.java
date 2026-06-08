@@ -5,6 +5,7 @@ import java.util.List;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalDocumentDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
@@ -15,6 +16,7 @@ import org.edu.dto.parentportal.ParentPortalSubjectDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.edu.dto.DocumentFileResponse;
 
 public interface ParentPortalService {
 
@@ -35,6 +37,10 @@ public interface ParentPortalService {
     List<ParentPortalNoticeDTO> getNotices(Long authenticatedUserId);
 
     List<ParentPortalResultDTO> getStudentResults(Long authenticatedUserId, Long studentId);
+
+    Page<ParentPortalDocumentDTO> getStudentDocuments(Long authenticatedUserId, Long studentId, Pageable pageable);
+
+    DocumentFileResponse downloadStudentDocument(Long authenticatedUserId, Long studentId, Long documentId);
 
     LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto);
 

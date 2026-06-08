@@ -4,9 +4,12 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.DocumentDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalDocumentDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
@@ -25,6 +28,7 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AttendanceService;
+import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
 import org.edu.service.NoticeService;
 import org.edu.service.ParentPortalService;
@@ -43,6 +47,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final ParentStudentRepository parentStudentRepository;
     private final TimetableRepository timetableRepository;
     private final AttendanceService attendanceService;
+    private final DocumentService documentService;
     private final NoticeService noticeService;
     private final StudentMarkService studentMarkService;
     private final LeaveRequestService leaveRequestService;
@@ -156,6 +161,25 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     }
 
     @Override
+    public org.springframework.data.domain.Page<ParentPortalDocumentDTO> getStudentDocuments(
+            Long authenticatedUserId,
+            Long studentId,
+            Pageable pageable
+    ) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), studentId);
+        return documentService.getVisibleDocumentsByStudent(studentId, pageable)
+                .map(this::toParentPortalDocument);
+    }
+
+    @Override
+    public DocumentFileResponse downloadStudentDocument(Long authenticatedUserId, Long studentId, Long documentId) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), studentId);
+        return documentService.downloadVisibleDocument(studentId, documentId);
+    }
+
+    @Override
     public LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto) {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), dto.getStudentId());
@@ -246,6 +270,21 @@ public class ParentPortalServiceImpl implements ParentPortalService {
                 timetable.getSubject().getName(),
                 timetable.getStaff().getId(),
                 timetable.getStaff().getName()
+        );
+    }
+
+    private ParentPortalDocumentDTO toParentPortalDocument(DocumentDTO document) {
+        return new ParentPortalDocumentDTO(
+                document.getId(),
+                document.getStudentId(),
+                document.getTitle(),
+                document.getDescription(),
+                document.getDocumentType(),
+                document.getOriginalFileName(),
+                document.getContentType(),
+                document.getFileSize(),
+                document.getCreatedAt(),
+                document.getUpdatedAt()
         );
     }
 

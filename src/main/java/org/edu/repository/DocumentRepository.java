@@ -10,6 +10,8 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     Optional<Document> findByIdAndActiveTrue(Long id);
 
+    Optional<Document> findByIdAndStudentIdAndVisibleToParentTrueAndActiveTrue(Long id, Long studentId);
+
     Page<Document> findByStudentIdAndActiveTrueOrderByCreatedAtDesc(Long studentId, Pageable pageable);
 
     Page<Document> findByStudentIdAndVisibleToParentTrueAndActiveTrueOrderByCreatedAtDesc(Long studentId, Pageable pageable);

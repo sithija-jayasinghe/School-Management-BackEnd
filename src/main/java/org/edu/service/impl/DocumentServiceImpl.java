@@ -133,6 +133,28 @@ public class DocumentServiceImpl implements DocumentService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DocumentDTO> getVisibleDocumentsByStudent(Long studentId, Pageable pageable) {
+        getActiveStudent(studentId);
+        return documentRepository.findByStudentIdAndVisibleToParentTrueAndActiveTrueOrderByCreatedAtDesc(studentId, pageable)
+                .map(documentMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DocumentFileResponse downloadVisibleDocument(Long studentId, Long documentId) {
+        getActiveStudent(studentId);
+        Document document = documentRepository.findByIdAndStudentIdAndVisibleToParentTrueAndActiveTrue(documentId, studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+        return new DocumentFileResponse(
+                document.getOriginalFileName(),
+                document.getContentType(),
+                document.getFileSize(),
+                documentStorageService.loadAsResource(document.getStoredFileName())
+        );
+    }
+
     private User getUser(Long authenticatedUserId) {
         return userRepository.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));

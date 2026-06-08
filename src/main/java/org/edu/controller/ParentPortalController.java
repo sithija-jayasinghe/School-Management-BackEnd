@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import org.edu.dto.LeaveRequestDTO;
+import org.edu.dto.DocumentFileResponse;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalDocumentDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
@@ -20,6 +22,10 @@ import org.edu.service.ParentPortalService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -98,6 +104,33 @@ public class ParentPortalController {
             @PathVariable Long studentId
     ) {
         return parentPortalService.getStudentResults(principal.getUser().getId(), studentId);
+    }
+
+    @GetMapping("/students/{studentId}/documents")
+    public Page<ParentPortalDocumentDTO> getStudentDocuments(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            Pageable pageable
+    ) {
+        return parentPortalService.getStudentDocuments(principal.getUser().getId(), studentId, pageable);
+    }
+
+    @GetMapping("/students/{studentId}/documents/{documentId}/download")
+    public ResponseEntity<Resource> downloadStudentDocument(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @PathVariable Long documentId
+    ) {
+        DocumentFileResponse fileResponse = parentPortalService.downloadStudentDocument(
+                principal.getUser().getId(),
+                studentId,
+                documentId
+        );
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(fileResponse.getContentType()))
+                .contentLength(fileResponse.getFileSize())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResponse.getFileName() + "\"")
+                .body(fileResponse.getResource());
     }
 
     @PostMapping("/leave-requests")
