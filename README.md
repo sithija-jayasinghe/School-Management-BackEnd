@@ -149,6 +149,30 @@ Core endpoints:
 - `GET /api/teacher-portal/students/{studentId}/attendance` - attendance history for a student in a teacher-accessible class
 - `GET /api/teacher-portal/students/{studentId}/attendance/summary?from=2026-01-01&to=2026-01-31` - attendance summary for a student in a teacher-accessible class
 
+## Leave Request Module
+
+Leave requests are managed through `/api/leave-requests` for `ADMIN` and `TEACHER` users in the core workflow layer. Requests are validated against active parent-student links, prevent overlapping pending or approved periods for the same student, and move through a controlled status flow.
+
+Statuses:
+
+- `PENDING`
+- `APPROVED`
+- `REJECTED`
+- `CANCELLED`
+
+Core endpoints:
+
+- `POST /api/leave-requests` - create a leave request
+- `PATCH /api/leave-requests/{id}` - update a pending leave request
+- `POST /api/leave-requests/{id}/approve` - approve a pending leave request
+- `POST /api/leave-requests/{id}/reject` - reject a pending leave request
+- `POST /api/leave-requests/{id}/cancel?remarks=...` - cancel a pending leave request
+- `GET /api/leave-requests` - list leave requests
+- `GET /api/leave-requests/{id}` - get one leave request
+- `GET /api/leave-requests/status/{status}` - list leave requests by status
+- `GET /api/leave-requests/students/{studentId}` - list leave requests by student
+- `GET /api/leave-requests/parents/{parentId}` - list leave requests by parent
+
 ## Run
 
 1. Create a MySQL database or allow auto-creation with the configured JDBC URL.
