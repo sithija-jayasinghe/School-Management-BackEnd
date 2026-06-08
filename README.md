@@ -154,6 +154,7 @@ Core endpoints:
 - `GET /api/teacher-portal/leave-requests?status=PENDING` - leave requests for teacher-accessible classes
 - `POST /api/teacher-portal/leave-requests/{leaveRequestId}/approve` - approve a leave request as the authenticated teacher
 - `POST /api/teacher-portal/leave-requests/{leaveRequestId}/reject` - reject a leave request as the authenticated teacher
+- `POST /api/teacher-portal/leave-requests/{leaveRequestId}/apply-attendance` - convert an approved leave request into `EXCUSED` attendance records
 
 ## Leave Request Module
 

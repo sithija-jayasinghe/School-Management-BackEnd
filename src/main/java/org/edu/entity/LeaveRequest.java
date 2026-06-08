@@ -67,6 +67,11 @@ public class LeaveRequest {
 
     private LocalDateTime reviewedAt;
 
+    @Column(nullable = false)
+    private boolean attendanceApplied = false;
+
+    private LocalDateTime attendanceAppliedAt;
+
     @CreatedDate
     private LocalDateTime createdAt;
 

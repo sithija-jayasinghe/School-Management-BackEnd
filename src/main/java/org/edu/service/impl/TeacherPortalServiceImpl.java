@@ -208,6 +208,12 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
         );
     }
 
+    @Override
+    public LeaveRequestDTO applyLeaveToAttendance(Long authenticatedUserId, Long leaveRequestId) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return leaveRequestService.applyApprovedLeaveToAttendance(authenticatedUserId, leaveRequestId);
+    }
+
     private Staff getActiveTeacherByUserId(Long authenticatedUserId) {
         return staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"));

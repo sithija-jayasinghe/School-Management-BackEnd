@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.request.LeaveRequestReviewRequest;
+import org.edu.dto.AttendanceDTO;
 import org.edu.entity.LeaveRequest;
 import org.edu.entity.Parent;
 import org.edu.entity.Staff;
@@ -25,6 +26,7 @@ import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AttendanceService;
 import org.edu.util.LeaveRequestStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,6 +61,9 @@ class LeaveRequestServiceImplTest {
     @Mock
     private TimetableRepository timetableRepository;
 
+    @Mock
+    private AttendanceService attendanceService;
+
     private LeaveRequestServiceImpl leaveRequestService;
 
     @BeforeEach
@@ -72,6 +77,7 @@ class LeaveRequestServiceImplTest {
                 staffRepository,
                 classRepository,
                 timetableRepository,
+                attendanceService,
                 leaveRequestMapper
         );
     }
@@ -272,6 +278,43 @@ class LeaveRequestServiceImplTest {
 
         assertThrows(org.edu.exception.ResourceNotFoundException.class,
                 () -> leaveRequestService.rejectTeacherLeaveRequest(200L, 1L, "Not your class"));
+    }
+
+    @Test
+    void shouldApplyApprovedLeaveToAttendanceForTeacherAccessibleRequest() {
+        LeaveRequest leaveRequest = pendingLeaveRequest();
+        leaveRequest.setStatus(LeaveRequestStatus.APPROVED);
+        Staff teacher = activeStaff(50L);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(200L)).thenReturn(Optional.of(teacher));
+        when(leaveRequestRepository.findById(1L)).thenReturn(Optional.of(leaveRequest));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 50L)).thenReturn(true);
+        when(attendanceService.createAttendance(org.mockito.Mockito.any(AttendanceDTO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        LeaveRequestDTO applied = leaveRequestService.applyApprovedLeaveToAttendance(200L, 1L);
+
+        assertEquals(true, applied.isAttendanceApplied());
+        assertNotNull(applied.getAttendanceAppliedAt());
+        verify(attendanceService, org.mockito.Mockito.times(3))
+                .createAttendance(org.mockito.Mockito.argThat(attendance ->
+                        attendance.getStudentId().equals(20L)
+                                && attendance.getStatus() == org.edu.util.AttendanceStatus.EXCUSED
+                                && attendance.getMarkedByStaffId().equals(50L)
+                ));
+    }
+
+    @Test
+    void shouldRejectApplyingAttendanceForNonApprovedLeaveRequest() {
+        LeaveRequest leaveRequest = pendingLeaveRequest();
+        Staff teacher = activeStaff(50L);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(200L)).thenReturn(Optional.of(teacher));
+        when(leaveRequestRepository.findById(1L)).thenReturn(Optional.of(leaveRequest));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 50L)).thenReturn(true);
+
+        assertThrows(IllegalStateException.class,
+                () -> leaveRequestService.applyApprovedLeaveToAttendance(200L, 1L));
     }
 
     private LeaveRequestDTO leaveRequestRequest() {

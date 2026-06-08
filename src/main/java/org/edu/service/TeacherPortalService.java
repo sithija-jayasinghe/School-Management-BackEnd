@@ -47,4 +47,6 @@ public interface TeacherPortalService {
     LeaveRequestDTO approveLeaveRequest(Long authenticatedUserId, Long leaveRequestId, TeacherPortalLeaveReviewRequest request);
 
     LeaveRequestDTO rejectLeaveRequest(Long authenticatedUserId, Long leaveRequestId, TeacherPortalLeaveReviewRequest request);
+
+    LeaveRequestDTO applyLeaveToAttendance(Long authenticatedUserId, Long leaveRequestId);
 }

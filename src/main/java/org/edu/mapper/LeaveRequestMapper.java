@@ -19,6 +19,8 @@ public interface LeaveRequestMapper extends BaseMapper<LeaveRequestDTO, LeaveReq
     @Mapping(target = "reviewedBy", ignore = true)
     @Mapping(target = "reviewedAt", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "attendanceApplied", ignore = true)
+    @Mapping(target = "attendanceAppliedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     LeaveRequest toEntity(LeaveRequestDTO dto);
@@ -42,6 +44,8 @@ public interface LeaveRequestMapper extends BaseMapper<LeaveRequestDTO, LeaveReq
     @Mapping(target = "reviewedBy", ignore = true)
     @Mapping(target = "reviewedAt", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "attendanceApplied", ignore = true)
+    @Mapping(target = "attendanceAppliedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromDTO(LeaveRequestDTO dto, @MappingTarget LeaveRequest entity);

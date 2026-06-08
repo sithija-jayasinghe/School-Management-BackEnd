@@ -46,6 +46,8 @@ public class LeaveRequestDTO {
     private String reviewedByStaffName;
     private String reviewerRemarks;
     private LocalDateTime reviewedAt;
+    private boolean attendanceApplied;
+    private LocalDateTime attendanceAppliedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

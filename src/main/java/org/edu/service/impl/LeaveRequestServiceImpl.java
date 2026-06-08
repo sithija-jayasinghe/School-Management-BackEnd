@@ -3,6 +3,7 @@ package org.edu.service.impl;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AttendanceDTO;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.request.LeaveRequestReviewRequest;
@@ -19,7 +20,9 @@ import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AttendanceService;
 import org.edu.service.LeaveRequestService;
+import org.edu.util.AttendanceStatus;
 import org.edu.util.LeaveRequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +41,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private final StaffRepository staffRepository;
     private final ClassRepository classRepository;
     private final TimetableRepository timetableRepository;
+    private final AttendanceService attendanceService;
     private final LeaveRequestMapper leaveRequestMapper;
 
     @Override
@@ -209,6 +213,35 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 leaveRequest.getId(),
                 new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
         );
+    }
+
+    @Override
+    public LeaveRequestDTO applyApprovedLeaveToAttendance(Long authenticatedUserId, Long leaveRequestId) {
+        Staff staff = getActiveStaffByUserId(authenticatedUserId);
+        LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
+
+        if (leaveRequest.getStatus() != LeaveRequestStatus.APPROVED) {
+            throw new IllegalStateException("Only approved leave requests can be applied to attendance");
+        }
+        if (leaveRequest.isAttendanceApplied()) {
+            throw new IllegalStateException("Attendance has already been applied for this leave request");
+        }
+
+        java.time.LocalDate current = leaveRequest.getStartDate();
+        while (!current.isAfter(leaveRequest.getEndDate())) {
+            AttendanceDTO attendanceDTO = new AttendanceDTO();
+            attendanceDTO.setStudentId(leaveRequest.getStudent().getId());
+            attendanceDTO.setAttendanceDate(current);
+            attendanceDTO.setStatus(AttendanceStatus.EXCUSED);
+            attendanceDTO.setMarkedByStaffId(staff.getId());
+            attendanceDTO.setRemarks("Applied from approved leave request #" + leaveRequest.getId());
+            attendanceService.createAttendance(attendanceDTO);
+            current = current.plusDays(1);
+        }
+
+        leaveRequest.setAttendanceApplied(true);
+        leaveRequest.setAttendanceAppliedAt(LocalDateTime.now());
+        return leaveRequestMapper.toDTO(leaveRequest);
     }
 
     private LeaveRequest getLeaveRequest(Long id) {

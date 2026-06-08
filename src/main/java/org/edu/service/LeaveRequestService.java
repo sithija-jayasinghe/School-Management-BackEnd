@@ -40,4 +40,6 @@ public interface LeaveRequestService {
     LeaveRequestDTO approveTeacherLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String reviewerRemarks);
 
     LeaveRequestDTO rejectTeacherLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String reviewerRemarks);
+
+    LeaveRequestDTO applyApprovedLeaveToAttendance(Long authenticatedUserId, Long leaveRequestId);
 }

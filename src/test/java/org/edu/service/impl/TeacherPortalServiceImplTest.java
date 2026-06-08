@@ -379,6 +379,22 @@ class TeacherPortalServiceImplTest {
         assertEquals(10L, rejected.getReviewedByStaffId());
     }
 
+    @Test
+    void shouldApplyApprovedLeaveToAttendance() {
+        Staff staff = teacherWithUser(10L, 100L);
+        LeaveRequestDTO leaveRequest = new LeaveRequestDTO();
+        leaveRequest.setId(3L);
+        leaveRequest.setAttendanceApplied(true);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(leaveRequestService.applyApprovedLeaveToAttendance(100L, 3L)).thenReturn(leaveRequest);
+
+        LeaveRequestDTO applied = teacherPortalService.applyLeaveToAttendance(100L, 3L);
+
+        assertEquals(3L, applied.getId());
+        assertEquals(true, applied.isAttendanceApplied());
+    }
+
     private Staff teacherWithUser(Long staffPk, Long userId) {
         User user = new User();
         user.setId(userId);

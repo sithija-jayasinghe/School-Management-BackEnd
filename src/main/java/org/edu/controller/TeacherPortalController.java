@@ -142,4 +142,12 @@ public class TeacherPortalController {
     ) {
         return teacherPortalService.rejectLeaveRequest(principal.getUser().getId(), leaveRequestId, request);
     }
+
+    @PostMapping("/leave-requests/{leaveRequestId}/apply-attendance")
+    public LeaveRequestDTO applyLeaveToAttendance(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long leaveRequestId
+    ) {
+        return teacherPortalService.applyLeaveToAttendance(principal.getUser().getId(), leaveRequestId);
+    }
 }
