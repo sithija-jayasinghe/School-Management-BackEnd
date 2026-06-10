@@ -48,7 +48,7 @@ public class DocumentController {
     public DocumentDTO updateDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId,
-            @RequestBody DocumentUpdateRequest request
+            @Valid @RequestBody DocumentUpdateRequest request
     ) {
         return documentService.updateDocument(principal.getUser().getId(), documentId, request);
     }

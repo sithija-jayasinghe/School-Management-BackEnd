@@ -215,7 +215,7 @@ public class TeacherPortalController {
     public AcademicReportDTO updateAcademicReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId,
-            @RequestBody AcademicReportUpdateRequest request
+            @Valid @RequestBody AcademicReportUpdateRequest request
     ) {
         return teacherPortalService.updateAcademicReport(principal.getUser().getId(), reportId, request);
     }
@@ -257,7 +257,7 @@ public class TeacherPortalController {
     public LeaveRequestDTO approveLeaveRequest(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long leaveRequestId,
-            @RequestBody(required = false) TeacherPortalLeaveReviewRequest request
+            @Valid @RequestBody(required = false) TeacherPortalLeaveReviewRequest request
     ) {
         return teacherPortalService.approveLeaveRequest(principal.getUser().getId(), leaveRequestId, request);
     }
@@ -266,7 +266,7 @@ public class TeacherPortalController {
     public LeaveRequestDTO rejectLeaveRequest(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long leaveRequestId,
-            @RequestBody(required = false) TeacherPortalLeaveReviewRequest request
+            @Valid @RequestBody(required = false) TeacherPortalLeaveReviewRequest request
     ) {
         return teacherPortalService.rejectLeaveRequest(principal.getUser().getId(), leaveRequestId, request);
     }

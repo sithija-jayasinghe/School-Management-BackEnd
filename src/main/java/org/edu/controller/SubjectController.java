@@ -1,5 +1,6 @@
 package org.edu.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.SubjectDTO;
 import org.edu.service.SubjectService;
@@ -15,7 +16,7 @@ public class SubjectController {
         private final SubjectService subjectService;
 
         @PostMapping
-        public SubjectDTO createSubjects(@RequestBody SubjectDTO dto) {
+        public SubjectDTO createSubjects(@Valid @RequestBody SubjectDTO dto) {
             return subjectService.createSubjects(dto);
         }
 

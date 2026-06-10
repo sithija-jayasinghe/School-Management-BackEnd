@@ -54,7 +54,7 @@ public class AcademicReportController {
     public AcademicReportDTO updateReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId,
-            @RequestBody AcademicReportUpdateRequest request
+            @Valid @RequestBody AcademicReportUpdateRequest request
     ) {
         return academicReportService.updateReport(principal.getUser().getId(), reportId, request);
     }

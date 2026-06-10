@@ -1,10 +1,12 @@
 package org.edu.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ParentStudentRequest {
 
     @NotBlank(message = "Relationship type is required")
+    @Size(max = 50, message = "Relationship type must not exceed 50 characters")
     private String relationshipType;
 
     private boolean isPrimaryContact;

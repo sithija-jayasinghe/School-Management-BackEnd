@@ -3,6 +3,7 @@ package org.edu.dto.teacherportal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -17,8 +18,10 @@ import org.edu.dto.request.BulkAttendanceStudentRequest;
 @AllArgsConstructor
 public class TeacherPortalBulkAttendanceRequest {
 
+    @Positive(message = "Subject ID must be positive")
     private Long subjectId;
 
+    @Positive(message = "Timetable ID must be positive")
     private Long timetableId;
 
     @NotNull(message = "Attendance date is required")

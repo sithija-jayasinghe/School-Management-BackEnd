@@ -63,7 +63,9 @@ class PortalAuthorizationIntegrationTest {
     void shouldRejectUnauthenticatedPortalAccess() throws Exception {
         mockMvc.perform(get("/api/parent-portal/profile"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message", is("Unauthorized access")));
+                .andExpect(jsonPath("$.code", is("UNAUTHORIZED")))
+                .andExpect(jsonPath("$.message", is("Unauthorized access")))
+                .andExpect(jsonPath("$.path", is("/api/parent-portal/profile")));
     }
 
     @Test
@@ -71,6 +73,7 @@ class PortalAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/parent-portal/profile")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer invalid.jwt.token"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is("UNAUTHORIZED")))
                 .andExpect(jsonPath("$.message", is("Unauthorized access")));
     }
 
@@ -84,11 +87,13 @@ class PortalAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/teacher-portal/profile")
                         .header(HttpHeaders.AUTHORIZATION, bearer(parentUser)))
                 .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("ACCESS_DENIED")))
                 .andExpect(jsonPath("$.message", is("Access denied")));
 
         mockMvc.perform(get("/api/parent-portal/profile")
                         .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
                 .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("ACCESS_DENIED")))
                 .andExpect(jsonPath("$.message", is("Access denied")));
     }
 
@@ -119,6 +124,7 @@ class PortalAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/parent-portal/students/{studentId}", otherStudent.getId())
                         .header(HttpHeaders.AUTHORIZATION, bearer(parentUser)))
                 .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", is("RESOURCE_NOT_FOUND")))
                 .andExpect(jsonPath("$.message", is("Student not found in current parent portal")));
     }
 
