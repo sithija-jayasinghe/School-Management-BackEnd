@@ -2,9 +2,12 @@ package org.edu.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
+import org.edu.dto.parentportal.ParentPortalDocumentDTO;
 import org.edu.dto.parentportal.ParentPortalLeaveRequestCreateDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.dto.parentportal.ParentPortalProfileDTO;
@@ -35,6 +38,20 @@ public interface ParentPortalService {
     List<ParentPortalNoticeDTO> getNotices(Long authenticatedUserId);
 
     List<ParentPortalResultDTO> getStudentResults(Long authenticatedUserId, Long studentId);
+
+    Page<ParentPortalDocumentDTO> getStudentDocuments(Long authenticatedUserId, Long studentId, Pageable pageable);
+
+    DocumentFileResponse downloadStudentDocument(Long authenticatedUserId, Long studentId, Long documentId);
+
+    Page<AcademicReportDTO> getStudentAcademicReports(
+            Long authenticatedUserId,
+            Long studentId,
+            Pageable pageable
+    );
+
+    AcademicReportDTO getStudentAcademicReport(Long authenticatedUserId, Long studentId, Long reportId);
+
+    DocumentFileResponse downloadStudentReportCard(Long authenticatedUserId, Long studentId, Long reportId);
 
     LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto);
 

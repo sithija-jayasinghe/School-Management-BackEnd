@@ -36,6 +36,11 @@ Parent users can access their own portal data through `/api/parent-portal`. Thes
 - `GET /api/parent-portal/students/{studentId}/timetable` - linked student's class timetable
 - `GET /api/parent-portal/students/{studentId}/attendance?from=2026-01-01&to=2026-01-31` - linked student's attendance history
 - `GET /api/parent-portal/students/{studentId}/results` - linked student's exam results
+- `GET /api/parent-portal/students/{studentId}/documents` - parent-visible documents for a linked student
+- `GET /api/parent-portal/students/{studentId}/documents/{documentId}/download` - download a parent-visible document for a linked student
+- `GET /api/parent-portal/students/{studentId}/academic-reports` - published report cards for a linked student
+- `GET /api/parent-portal/students/{studentId}/academic-reports/{reportId}` - one published report card for a linked student
+- `GET /api/parent-portal/students/{studentId}/academic-reports/{reportId}/pdf` - download a published report card PDF
 - `POST /api/parent-portal/leave-requests` - submit a leave request for a linked student
 - `GET /api/parent-portal/leave-requests` - list the authenticated parent's leave requests
 - `POST /api/parent-portal/leave-requests/{leaveRequestId}/cancel?remarks=...` - cancel the authenticated parent's pending leave request
@@ -151,6 +156,16 @@ Core endpoints:
 - `POST /api/teacher-portal/classes/{classId}/attendance` - bulk mark attendance using the authenticated teacher context
 - `GET /api/teacher-portal/students/{studentId}/attendance` - attendance history for a student in a teacher-accessible class
 - `GET /api/teacher-portal/students/{studentId}/attendance/summary?from=2026-01-01&to=2026-01-31` - attendance summary for a student in a teacher-accessible class
+- `GET /api/teacher-portal/students/{studentId}/documents` - documents for a student in a teacher-accessible class
+- `POST /api/teacher-portal/students/{studentId}/documents` - upload a document for a student in a teacher-accessible class
+- `GET /api/teacher-portal/students/{studentId}/documents/{documentId}/download` - download a document for a student in a teacher-accessible class
+- `POST /api/teacher-portal/students/{studentId}/academic-reports` - generate a draft term report for an accessible student
+- `GET /api/teacher-portal/students/{studentId}/academic-reports` - report-card history for an accessible student
+- `GET /api/teacher-portal/classes/{classId}/academic-reports?academicTermId=1` - class report-card register for a term
+- `POST /api/teacher-portal/academic-reports/{reportId}/regenerate` - refresh a draft from current marks and attendance
+- `PATCH /api/teacher-portal/academic-reports/{reportId}` - update draft teacher or principal remarks
+- `POST /api/teacher-portal/academic-reports/{reportId}/publish` - publish as the assigned class teacher
+- `GET /api/teacher-portal/academic-reports/{reportId}/pdf` - download an accessible report card PDF
 - `GET /api/teacher-portal/leave-requests?status=PENDING` - leave requests for teacher-accessible classes
 - `POST /api/teacher-portal/leave-requests/{leaveRequestId}/approve` - approve a leave request as the authenticated teacher
 - `POST /api/teacher-portal/leave-requests/{leaveRequestId}/reject` - reject a leave request as the authenticated teacher
@@ -179,6 +194,67 @@ Core endpoints:
 - `GET /api/leave-requests/status/{status}` - list leave requests by status
 - `GET /api/leave-requests/students/{studentId}` - list leave requests by student
 - `GET /api/leave-requests/parents/{parentId}` - list leave requests by parent
+
+## Document Module
+
+Documents are managed through `/api/documents` for `ADMIN` and `TEACHER` users. Files are stored on the server filesystem with metadata linked to a student record. Teacher access is limited to students in classes they teach or own.
+
+Document types:
+
+- `REPORT_CARD`
+- `MEDICAL_RECORD`
+- `LEAVE_LETTER`
+- `CERTIFICATE`
+- `TRANSFER_LETTER`
+- `STUDENT_RECORD`
+- `OTHER`
+
+Core endpoints:
+
+- `POST /api/documents` - upload a student document with metadata and file content
+- `PATCH /api/documents/{documentId}` - update document metadata
+- `DELETE /api/documents/{documentId}` - deactivate a document and remove the stored file
+- `GET /api/documents/{documentId}` - get one accessible document
+- `GET /api/documents/students/{studentId}` - list active documents for a student
+- `GET /api/documents/{documentId}/download` - download the stored document file
+
+## Academic Report and Report Card Module
+
+Academic reports are term-based snapshots built from student marks and attendance. A student can have only one report per academic term. Reports remain editable while in `DRAFT` status and become immutable after publication.
+
+The generated snapshot includes:
+
+- subject-level totals, percentages, grades, and pass/fail status
+- overall weighted percentage and grade
+- passed and failed subject counts
+- term attendance totals and percentage
+- class teacher and principal remarks
+- generated-by and published-by audit information
+- downloadable PDF report card
+
+Lifecycle:
+
+- `DRAFT` - can be regenerated, edited, deleted, and previewed
+- `PUBLISHED` - visible in the Parent Portal and cannot be modified
+
+Core endpoints for `ADMIN` and `TEACHER` users:
+
+- `POST /api/academic-reports` - generate a draft report
+- `POST /api/academic-reports/{reportId}/regenerate` - refresh a draft snapshot
+- `PATCH /api/academic-reports/{reportId}` - update draft remarks
+- `POST /api/academic-reports/{reportId}/publish` - publish a report
+- `DELETE /api/academic-reports/{reportId}` - delete a draft report
+- `GET /api/academic-reports/{reportId}` - get one accessible report
+- `GET /api/academic-reports/students/{studentId}` - list a student's reports
+- `GET /api/academic-reports/classes/{classId}?academicTermId=1` - class report register for a term
+- `GET /api/academic-reports/{reportId}/pdf` - download the report card PDF
+
+Access rules:
+
+- admins can manage all reports
+- teachers can access reports only for classes they own or teach
+- only the assigned class teacher or an admin can publish a report
+- parents can view only published reports for their linked children
 
 ## Run
 

@@ -27,6 +27,21 @@ public interface StudentMarkRepository extends JpaRepository<StudentMark, Long> 
             select sm
             from StudentMark sm
             join fetch sm.exam exam
+            join fetch exam.subject subject
+            where sm.student.id = :studentId
+              and exam.academicTerm.id = :academicTermId
+              and exam.active = true
+            order by subject.name asc, exam.examDate asc
+            """)
+    List<StudentMark> findReportMarksByStudentIdAndAcademicTermId(
+            @Param("studentId") Long studentId,
+            @Param("academicTermId") Long academicTermId
+    );
+
+    @Query("""
+            select sm
+            from StudentMark sm
+            join fetch sm.exam exam
             join fetch exam.academicTerm academicTerm
             join fetch exam.subject subject
             where sm.student.id = :studentId
