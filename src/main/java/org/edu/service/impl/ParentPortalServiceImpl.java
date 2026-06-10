@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.DocumentDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
@@ -27,6 +28,7 @@ import org.edu.exception.ResourceNotFoundException;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
 import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
@@ -46,6 +48,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final TimetableRepository timetableRepository;
+    private final AcademicReportService academicReportService;
     private final AttendanceService attendanceService;
     private final DocumentService documentService;
     private final NoticeService noticeService;
@@ -180,6 +183,36 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     }
 
     @Override
+    public Page<AcademicReportDTO> getStudentAcademicReports(
+            Long authenticatedUserId,
+            Long studentId,
+            Pageable pageable
+    ) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), studentId);
+        return academicReportService.getPublishedStudentReports(studentId, pageable);
+    }
+
+    @Override
+    public AcademicReportDTO getStudentAcademicReport(Long authenticatedUserId, Long studentId, Long reportId) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        getAuthorizedStudentLink(parent.getId(), studentId);
+        AcademicReportDTO report = academicReportService.getPublishedReport(reportId);
+        validateReportStudent(report, studentId);
+        return report;
+    }
+
+    @Override
+    public DocumentFileResponse downloadStudentReportCard(
+            Long authenticatedUserId,
+            Long studentId,
+            Long reportId
+    ) {
+        getStudentAcademicReport(authenticatedUserId, studentId, reportId);
+        return academicReportService.downloadPublishedReportCard(reportId);
+    }
+
+    @Override
     public LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto) {
         Parent parent = getActiveParentByUserId(authenticatedUserId);
         getAuthorizedStudentLink(parent.getId(), dto.getStudentId());
@@ -286,6 +319,12 @@ public class ParentPortalServiceImpl implements ParentPortalService {
                 document.getCreatedAt(),
                 document.getUpdatedAt()
         );
+    }
+
+    private void validateReportStudent(AcademicReportDTO report, Long studentId) {
+        if (!studentId.equals(report.getStudentId())) {
+            throw new ResourceNotFoundException("Academic report not found in current parent portal");
+        }
     }
 
     private Long getClassId(Student student) {

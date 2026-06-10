@@ -2,6 +2,8 @@ package org.edu.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.parentportal.ParentPortalDashboardDTO;
@@ -16,7 +18,6 @@ import org.edu.dto.parentportal.ParentPortalSubjectDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.edu.dto.DocumentFileResponse;
 
 public interface ParentPortalService {
 
@@ -41,6 +42,16 @@ public interface ParentPortalService {
     Page<ParentPortalDocumentDTO> getStudentDocuments(Long authenticatedUserId, Long studentId, Pageable pageable);
 
     DocumentFileResponse downloadStudentDocument(Long authenticatedUserId, Long studentId, Long documentId);
+
+    Page<AcademicReportDTO> getStudentAcademicReports(
+            Long authenticatedUserId,
+            Long studentId,
+            Pageable pageable
+    );
+
+    AcademicReportDTO getStudentAcademicReport(Long authenticatedUserId, Long studentId, Long reportId);
+
+    DocumentFileResponse downloadStudentReportCard(Long authenticatedUserId, Long studentId, Long reportId);
 
     LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto);
 

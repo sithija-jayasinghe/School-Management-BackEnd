@@ -11,6 +11,7 @@ import java.time.LocalTime;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.DocumentDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
@@ -32,6 +33,7 @@ import org.edu.exception.ResourceNotFoundException;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
 import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
@@ -59,6 +61,9 @@ class ParentPortalServiceImplTest {
 
     @Mock
     private TimetableRepository timetableRepository;
+
+    @Mock
+    private AcademicReportService academicReportService;
 
     @Mock
     private AttendanceService attendanceService;
@@ -282,6 +287,46 @@ class ParentPortalServiceImplTest {
 
         assertEquals("report.pdf", result.getFileName());
         verify(documentService).downloadVisibleDocument(20L, 1L);
+    }
+
+    @Test
+    void shouldReturnPublishedAcademicReportsForLinkedStudent() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        AcademicReportDTO report = new AcademicReportDTO();
+        report.setId(1L);
+        report.setStudentId(20L);
+        report.setAcademicTermName("Term 1");
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(academicReportService.getPublishedStudentReports(20L, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(report)));
+
+        var page = parentPortalService.getStudentAcademicReports(100L, 20L, Pageable.unpaged());
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals("Term 1", page.getContent().get(0).getAcademicTermName());
+    }
+
+    @Test
+    void shouldRejectAcademicReportBelongingToAnotherStudent() {
+        Parent parent = parentWithUser(10L, 100L);
+        Student student = studentWithClass(20L, 30L);
+        ParentStudent link = parentStudentLink(parent, student);
+        AcademicReportDTO report = new AcademicReportDTO();
+        report.setId(1L);
+        report.setStudentId(999L);
+
+        when(parentRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(parent));
+        when(parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(10L, 20L))
+                .thenReturn(Optional.of(link));
+        when(academicReportService.getPublishedReport(1L)).thenReturn(report);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> parentPortalService.getStudentAcademicReport(100L, 20L, 1L));
     }
 
     @Test

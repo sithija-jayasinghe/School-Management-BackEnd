@@ -13,12 +13,14 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.BulkAttendanceStudentRequest;
+import org.edu.dto.teacherportal.TeacherPortalAcademicReportGenerateRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDocumentCreateRequest;
@@ -43,6 +45,7 @@ import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
 import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
@@ -77,6 +80,9 @@ class TeacherPortalServiceImplTest {
 
     @Mock
     private ExamRepository examRepository;
+
+    @Mock
+    private AcademicReportService academicReportService;
 
     @Mock
     private AttendanceService attendanceService;
@@ -414,6 +420,56 @@ class TeacherPortalServiceImplTest {
 
         assertEquals("report.pdf", result.getFileName());
         verify(documentService).downloadDocument(100L, 1L);
+    }
+
+    @Test
+    void shouldGenerateAcademicReportForAccessibleStudent() {
+        Staff staff = teacherWithUser(10L, 100L);
+        Student student = student(20L, "Amal", 30L, "Grade 10A");
+        TeacherPortalAcademicReportGenerateRequest request = new TeacherPortalAcademicReportGenerateRequest(
+                40L,
+                "Good progress",
+                null
+        );
+        AcademicReportDTO report = new AcademicReportDTO();
+        report.setId(1L);
+        report.setStudentId(20L);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
+        when(academicReportService.generateReport(
+                org.mockito.ArgumentMatchers.eq(100L),
+                any()
+        )).thenReturn(report);
+
+        AcademicReportDTO result = teacherPortalService.generateStudentAcademicReport(100L, 20L, request);
+
+        assertEquals(1L, result.getId());
+        verify(academicReportService).generateReport(
+                org.mockito.ArgumentMatchers.eq(100L),
+                argThat(generateRequest ->
+                        generateRequest.getStudentId().equals(20L)
+                                && generateRequest.getAcademicTermId().equals(40L)
+                                && generateRequest.getClassTeacherRemarks().equals("Good progress")
+                )
+        );
+    }
+
+    @Test
+    void shouldPublishAcademicReportUsingAuthenticatedTeacher() {
+        Staff staff = teacherWithUser(10L, 100L);
+        AcademicReportDTO report = new AcademicReportDTO();
+        report.setId(1L);
+        report.setStatus(org.edu.util.AcademicReportStatus.PUBLISHED);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(academicReportService.publishReport(100L, 1L)).thenReturn(report);
+
+        AcademicReportDTO result = teacherPortalService.publishAcademicReport(100L, 1L);
+
+        assertEquals(org.edu.util.AcademicReportStatus.PUBLISHED, result.getStatus());
+        verify(academicReportService).publishReport(100L, 1L);
     }
 
     @Test

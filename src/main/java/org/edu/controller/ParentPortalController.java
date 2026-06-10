@@ -3,6 +3,7 @@ package org.edu.controller;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.DocumentFileResponse;
 import lombok.RequiredArgsConstructor;
@@ -128,6 +129,42 @@ public class ParentPortalController {
         );
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(fileResponse.getContentType()))
+                .contentLength(fileResponse.getFileSize())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResponse.getFileName() + "\"")
+                .body(fileResponse.getResource());
+    }
+
+    @GetMapping("/students/{studentId}/academic-reports")
+    public Page<AcademicReportDTO> getStudentAcademicReports(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            Pageable pageable
+    ) {
+        return parentPortalService.getStudentAcademicReports(principal.getUser().getId(), studentId, pageable);
+    }
+
+    @GetMapping("/students/{studentId}/academic-reports/{reportId}")
+    public AcademicReportDTO getStudentAcademicReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @PathVariable Long reportId
+    ) {
+        return parentPortalService.getStudentAcademicReport(principal.getUser().getId(), studentId, reportId);
+    }
+
+    @GetMapping("/students/{studentId}/academic-reports/{reportId}/pdf")
+    public ResponseEntity<Resource> downloadStudentReportCard(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @PathVariable Long reportId
+    ) {
+        DocumentFileResponse fileResponse = parentPortalService.downloadStudentReportCard(
+                principal.getUser().getId(),
+                studentId,
+                reportId
+        );
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
                 .contentLength(fileResponse.getFileSize())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResponse.getFileName() + "\"")
                 .body(fileResponse.getResource());

@@ -5,12 +5,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.BulkAttendanceRequest;
+import org.edu.dto.request.AcademicReportGenerateRequest;
+import org.edu.dto.request.AcademicReportUpdateRequest;
+import org.edu.dto.teacherportal.TeacherPortalAcademicReportGenerateRequest;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
@@ -34,6 +38,7 @@ import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
 import org.edu.service.DocumentService;
 import org.edu.service.LeaveRequestService;
@@ -55,6 +60,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     private final TimetableRepository timetableRepository;
     private final StudentRepository studentRepository;
     private final ExamRepository examRepository;
+    private final AcademicReportService academicReportService;
     private final AttendanceService attendanceService;
     private final DocumentService documentService;
     private final LeaveRequestService leaveRequestService;
@@ -199,6 +205,80 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
             throw new ResourceNotFoundException("Document not found in current teacher portal");
         }
         return documentService.downloadDocument(authenticatedUserId, documentId);
+    }
+
+    @Override
+    @Transactional
+    public AcademicReportDTO generateStudentAcademicReport(
+            Long authenticatedUserId,
+            Long studentId,
+            TeacherPortalAcademicReportGenerateRequest request
+    ) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        getAccessibleStudent(staff.getId(), studentId);
+        return academicReportService.generateReport(
+                authenticatedUserId,
+                new AcademicReportGenerateRequest(
+                        studentId,
+                        request.getAcademicTermId(),
+                        request.getClassTeacherRemarks(),
+                        request.getPrincipalRemarks()
+                )
+        );
+    }
+
+    @Override
+    @Transactional
+    public AcademicReportDTO regenerateAcademicReport(Long authenticatedUserId, Long reportId) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return academicReportService.regenerateReport(authenticatedUserId, reportId);
+    }
+
+    @Override
+    @Transactional
+    public AcademicReportDTO updateAcademicReport(
+            Long authenticatedUserId,
+            Long reportId,
+            AcademicReportUpdateRequest request
+    ) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return academicReportService.updateReport(authenticatedUserId, reportId, request);
+    }
+
+    @Override
+    @Transactional
+    public AcademicReportDTO publishAcademicReport(Long authenticatedUserId, Long reportId) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return academicReportService.publishReport(authenticatedUserId, reportId);
+    }
+
+    @Override
+    public Page<AcademicReportDTO> getStudentAcademicReports(
+            Long authenticatedUserId,
+            Long studentId,
+            Pageable pageable
+    ) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        getAccessibleStudent(staff.getId(), studentId);
+        return academicReportService.getStudentReports(authenticatedUserId, studentId, pageable);
+    }
+
+    @Override
+    public Page<AcademicReportDTO> getClassAcademicReports(
+            Long authenticatedUserId,
+            Long classId,
+            Long academicTermId,
+            Pageable pageable
+    ) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        validateTeacherClassAccess(staff.getId(), classId);
+        return academicReportService.getClassReports(authenticatedUserId, classId, academicTermId, pageable);
+    }
+
+    @Override
+    public DocumentFileResponse downloadAcademicReportCard(Long authenticatedUserId, Long reportId) {
+        getActiveTeacherByUserId(authenticatedUserId);
+        return academicReportService.downloadReportCard(authenticatedUserId, reportId);
     }
 
     @Override

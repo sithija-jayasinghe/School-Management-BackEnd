@@ -4,11 +4,13 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.teacherportal.TeacherPortalClassSummaryDTO;
+import org.edu.dto.teacherportal.TeacherPortalAcademicReportGenerateRequest;
 import org.edu.dto.teacherportal.TeacherPortalBulkAttendanceRequest;
 import org.edu.dto.teacherportal.TeacherPortalDashboardDTO;
 import org.edu.dto.teacherportal.TeacherPortalDocumentCreateRequest;
@@ -22,6 +24,7 @@ import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
 import org.edu.service.TeacherPortalService;
 import org.edu.util.LeaveRequestStatus;
+import org.edu.dto.request.AcademicReportUpdateRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +35,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -160,6 +164,84 @@ public class TeacherPortalController {
                 .contentLength(fileResponse.getFileSize())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResponse.getFileName() + "\"")
                 .body(fileResponse.getResource());
+    }
+
+    @PostMapping("/students/{studentId}/academic-reports")
+    public AcademicReportDTO generateStudentAcademicReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @Valid @RequestBody TeacherPortalAcademicReportGenerateRequest request
+    ) {
+        return teacherPortalService.generateStudentAcademicReport(
+                principal.getUser().getId(),
+                studentId,
+                request
+        );
+    }
+
+    @GetMapping("/students/{studentId}/academic-reports")
+    public Page<AcademicReportDTO> getStudentAcademicReports(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            Pageable pageable
+    ) {
+        return teacherPortalService.getStudentAcademicReports(principal.getUser().getId(), studentId, pageable);
+    }
+
+    @GetMapping("/classes/{classId}/academic-reports")
+    public Page<AcademicReportDTO> getClassAcademicReports(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long classId,
+            @RequestParam Long academicTermId,
+            Pageable pageable
+    ) {
+        return teacherPortalService.getClassAcademicReports(
+                principal.getUser().getId(),
+                classId,
+                academicTermId,
+                pageable
+        );
+    }
+
+    @PostMapping("/academic-reports/{reportId}/regenerate")
+    public AcademicReportDTO regenerateAcademicReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long reportId
+    ) {
+        return teacherPortalService.regenerateAcademicReport(principal.getUser().getId(), reportId);
+    }
+
+    @PatchMapping("/academic-reports/{reportId}")
+    public AcademicReportDTO updateAcademicReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long reportId,
+            @RequestBody AcademicReportUpdateRequest request
+    ) {
+        return teacherPortalService.updateAcademicReport(principal.getUser().getId(), reportId, request);
+    }
+
+    @PostMapping("/academic-reports/{reportId}/publish")
+    public AcademicReportDTO publishAcademicReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long reportId
+    ) {
+        return teacherPortalService.publishAcademicReport(principal.getUser().getId(), reportId);
+    }
+
+    @GetMapping("/academic-reports/{reportId}/pdf")
+    public ResponseEntity<Resource> downloadAcademicReportCard(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long reportId
+    ) {
+        DocumentFileResponse file = teacherPortalService.downloadAcademicReportCard(
+                principal.getUser().getId(),
+                reportId
+        );
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(file.getFileSize())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFileName() + "\"")
+                .body(file.getResource());
     }
 
     @GetMapping("/leave-requests")
