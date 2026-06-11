@@ -13,6 +13,8 @@
         <maven.compiler.source>22</maven.compiler.source>
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Spring Boot 3.3 manages an older release that cannot instrument classes on JDK 25. -->
+        <byte-buddy.version>1.17.8</byte-buddy.version>
     </properties>
 
     <parent>

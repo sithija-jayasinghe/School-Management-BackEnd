@@ -65,6 +65,51 @@ class AuthIntegrationTest {
     }
 
     @Test
+    void shouldReturnStructuredFieldErrorsForInvalidRegistration() throws Exception {
+        registrationRequest.setName("");
+        registrationRequest.setEmail("not-an-email");
+        registrationRequest.setPassword("short");
+
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(registrationRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status", is(400)))
+            .andExpect(jsonPath("$.error", is("Bad Request")))
+            .andExpect(jsonPath("$.code", is("VALIDATION_FAILED")))
+            .andExpect(jsonPath("$.message", is("Request validation failed")))
+            .andExpect(jsonPath("$.path", is("/api/users")))
+            .andExpect(jsonPath("$.fieldErrors.name", is("Name is required")))
+            .andExpect(jsonPath("$.fieldErrors.email", is("Email must be valid")))
+            .andExpect(jsonPath("$.fieldErrors.password", is("Password must be between 8 and 100 characters")));
+    }
+
+    @Test
+    void shouldReturnStructuredErrorForMalformedJson() throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Alice\""))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code", is("MALFORMED_REQUEST")))
+            .andExpect(jsonPath("$.message", is("Request body is malformed")))
+            .andExpect(jsonPath("$.path", is("/api/users")));
+    }
+
+    @Test
+    void shouldEnforceEightCharacterLoginPasswordValidation() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("alice@example.com");
+        loginRequest.setPassword("1234567");
+
+        mockMvc.perform(post("/api/auth/tokens")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code", is("VALIDATION_FAILED")))
+            .andExpect(jsonPath("$.fieldErrors.password", is("Password must be between 8 and 100 characters")));
+    }
+
+    @Test
     void shouldLoginAndFetchCurrentUser() throws Exception {
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -117,6 +162,8 @@ class AuthIntegrationTest {
         mockMvc.perform(get("/api/users/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
             .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.message", is("Unauthorized access")));
+            .andExpect(jsonPath("$.code", is("UNAUTHORIZED")))
+            .andExpect(jsonPath("$.message", is("Unauthorized access")))
+            .andExpect(jsonPath("$.path", is("/api/users/me")));
     }
 }
