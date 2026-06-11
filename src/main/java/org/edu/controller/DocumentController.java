@@ -1,5 +1,8 @@
 package org.edu.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.DocumentDTO;
@@ -31,11 +34,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+@Tag(name = "Documents", description = "Upload, manage, and download student documents")
+@SecurityRequirement(name = "bearerAuth")
 public class DocumentController {
 
     private final DocumentService documentService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload a document for a student")
     public DocumentDTO uploadDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestPart("metadata") DocumentCreateRequest request,
@@ -45,6 +51,7 @@ public class DocumentController {
     }
 
     @PatchMapping("/{documentId}")
+    @Operation(summary = "Update document metadata")
     public DocumentDTO updateDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId,
@@ -54,6 +61,7 @@ public class DocumentController {
     }
 
     @DeleteMapping("/{documentId}")
+    @Operation(summary = "Delete a document")
     public void deleteDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId
@@ -62,6 +70,7 @@ public class DocumentController {
     }
 
     @GetMapping("/{documentId}")
+    @Operation(summary = "Get document metadata by id")
     public DocumentDTO getDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId
@@ -70,6 +79,7 @@ public class DocumentController {
     }
 
     @GetMapping("/students/{studentId}")
+    @Operation(summary = "List documents for a student")
     public Page<DocumentDTO> getDocumentsByStudent(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -79,6 +89,7 @@ public class DocumentController {
     }
 
     @GetMapping("/{documentId}/download")
+    @Operation(summary = "Download a document file")
     public ResponseEntity<Resource> downloadDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId

@@ -1,5 +1,8 @@
 package org.edu.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -49,36 +52,44 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/teacher-portal")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('TEACHER')")
+@Tag(name = "Teacher Portal", description = "Teacher-facing portal APIs for classes, attendance, leave, documents, and reports")
+@SecurityRequirement(name = "bearerAuth")
 public class TeacherPortalController {
 
     private final TeacherPortalService teacherPortalService;
 
     @GetMapping("/profile")
+    @Operation(summary = "Get the authenticated teacher profile")
     public TeacherPortalProfileDTO getProfile(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getProfile(principal.getUser().getId());
     }
 
     @GetMapping("/dashboard")
+    @Operation(summary = "Get the teacher portal dashboard")
     public TeacherPortalDashboardDTO getDashboard(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getDashboard(principal.getUser().getId());
     }
 
     @GetMapping("/classes")
+    @Operation(summary = "List classes assigned to the teacher")
     public List<TeacherPortalClassSummaryDTO> getAssignedClasses(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getAssignedClasses(principal.getUser().getId());
     }
 
     @GetMapping("/schedule")
+    @Operation(summary = "Get the teacher timetable")
     public List<TeacherPortalTimetableEntryDTO> getSchedule(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getSchedule(principal.getUser().getId());
     }
 
     @GetMapping("/subjects")
+    @Operation(summary = "List subjects handled by the teacher")
     public List<TeacherPortalSubjectDTO> getSubjects(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getSubjects(principal.getUser().getId());
     }
 
     @GetMapping("/classes/{classId}/students")
+    @Operation(summary = "List students in an assigned class")
     public List<TeacherPortalStudentDTO> getClassStudents(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long classId
@@ -87,11 +98,13 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/exams")
+    @Operation(summary = "List exams relevant to the teacher")
     public List<TeacherPortalExamDTO> getExams(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getExams(principal.getUser().getId());
     }
 
     @GetMapping("/classes/{classId}/attendance")
+    @Operation(summary = "Get attendance for an assigned class on a given date")
     public Page<AttendanceDTO> getClassAttendanceByDate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long classId,
@@ -102,6 +115,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/classes/{classId}/attendance")
+    @Operation(summary = "Mark attendance for an assigned class")
     public List<AttendanceDTO> markClassAttendance(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long classId,
@@ -111,6 +125,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/students/{studentId}/attendance")
+    @Operation(summary = "List attendance records for a student in the teacher's scope")
     public Page<AttendanceDTO> getStudentAttendance(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -120,6 +135,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/students/{studentId}/attendance/summary")
+    @Operation(summary = "Get attendance summary for a student in the teacher's scope")
     public AttendanceSummaryDTO getStudentAttendanceSummary(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -130,6 +146,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/students/{studentId}/documents")
+    @Operation(summary = "List documents for a student in the teacher's scope")
     public Page<TeacherPortalDocumentDTO> getStudentDocuments(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -139,6 +156,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping(value = "/students/{studentId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload a document for a student in the teacher's scope")
     public TeacherPortalDocumentDTO uploadStudentDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -149,6 +167,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/students/{studentId}/documents/{documentId}/download")
+    @Operation(summary = "Download a document for a student in the teacher's scope")
     public ResponseEntity<Resource> downloadStudentDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -167,6 +186,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/students/{studentId}/academic-reports")
+    @Operation(summary = "Generate an academic report for a student in the teacher's scope")
     public AcademicReportDTO generateStudentAcademicReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -180,6 +200,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/students/{studentId}/academic-reports")
+    @Operation(summary = "List academic reports for a student in the teacher's scope")
     public Page<AcademicReportDTO> getStudentAcademicReports(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -189,6 +210,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/classes/{classId}/academic-reports")
+    @Operation(summary = "List class academic reports for a teacher-managed class")
     public Page<AcademicReportDTO> getClassAcademicReports(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long classId,
@@ -204,6 +226,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/academic-reports/{reportId}/regenerate")
+    @Operation(summary = "Regenerate an academic report from the teacher portal")
     public AcademicReportDTO regenerateAcademicReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -212,6 +235,7 @@ public class TeacherPortalController {
     }
 
     @PatchMapping("/academic-reports/{reportId}")
+    @Operation(summary = "Update academic report remarks from the teacher portal")
     public AcademicReportDTO updateAcademicReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId,
@@ -221,6 +245,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/academic-reports/{reportId}/publish")
+    @Operation(summary = "Publish an academic report from the teacher portal")
     public AcademicReportDTO publishAcademicReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -229,6 +254,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/academic-reports/{reportId}/pdf")
+    @Operation(summary = "Download an academic report card PDF from the teacher portal")
     public ResponseEntity<Resource> downloadAcademicReportCard(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -245,6 +271,7 @@ public class TeacherPortalController {
     }
 
     @GetMapping("/leave-requests")
+    @Operation(summary = "List leave requests relevant to the teacher")
     public Page<LeaveRequestDTO> getLeaveRequests(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) LeaveRequestStatus status,
@@ -254,6 +281,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/leave-requests/{leaveRequestId}/approve")
+    @Operation(summary = "Approve a leave request from the teacher portal")
     public LeaveRequestDTO approveLeaveRequest(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long leaveRequestId,
@@ -263,6 +291,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/leave-requests/{leaveRequestId}/reject")
+    @Operation(summary = "Reject a leave request from the teacher portal")
     public LeaveRequestDTO rejectLeaveRequest(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long leaveRequestId,
@@ -272,6 +301,7 @@ public class TeacherPortalController {
     }
 
     @PostMapping("/leave-requests/{leaveRequestId}/apply-attendance")
+    @Operation(summary = "Apply an approved leave request to attendance records")
     public LeaveRequestDTO applyLeaveToAttendance(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long leaveRequestId

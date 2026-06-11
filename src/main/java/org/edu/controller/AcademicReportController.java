@@ -1,5 +1,8 @@
 package org.edu.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
@@ -30,11 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/academic-reports")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+@Tag(name = "Academic Reports", description = "Generate, publish, view, and download academic reports and report cards")
+@SecurityRequirement(name = "bearerAuth")
 public class AcademicReportController {
 
     private final AcademicReportService academicReportService;
 
     @PostMapping
+    @Operation(summary = "Generate an academic report")
     public AcademicReportDTO generateReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody AcademicReportGenerateRequest request
@@ -43,6 +49,7 @@ public class AcademicReportController {
     }
 
     @PostMapping("/{reportId}/regenerate")
+    @Operation(summary = "Regenerate an academic report")
     public AcademicReportDTO regenerateReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -51,6 +58,7 @@ public class AcademicReportController {
     }
 
     @PatchMapping("/{reportId}")
+    @Operation(summary = "Update academic report remarks")
     public AcademicReportDTO updateReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId,
@@ -60,6 +68,7 @@ public class AcademicReportController {
     }
 
     @PostMapping("/{reportId}/publish")
+    @Operation(summary = "Publish an academic report")
     public AcademicReportDTO publishReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -68,6 +77,7 @@ public class AcademicReportController {
     }
 
     @DeleteMapping("/{reportId}")
+    @Operation(summary = "Delete a draft academic report")
     public void deleteDraftReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -76,6 +86,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/{reportId}")
+    @Operation(summary = "Get an academic report by id")
     public AcademicReportDTO getReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId
@@ -84,6 +95,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/students/{studentId}")
+    @Operation(summary = "List academic reports for a student")
     public Page<AcademicReportDTO> getStudentReports(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long studentId,
@@ -93,6 +105,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/classes/{classId}")
+    @Operation(summary = "List academic reports for a class and academic term")
     public Page<AcademicReportDTO> getClassReports(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long classId,
@@ -108,6 +121,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/{reportId}/pdf")
+    @Operation(summary = "Download an academic report card as PDF")
     public ResponseEntity<Resource> downloadReportCard(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long reportId

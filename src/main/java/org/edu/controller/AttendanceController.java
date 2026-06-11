@@ -1,5 +1,8 @@
 package org.edu.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,46 +29,56 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/attendance")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+@Tag(name = "Attendance", description = "Manage daily attendance, bulk marking, and attendance summaries")
+@SecurityRequirement(name = "bearerAuth")
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
 
     @PostMapping
+    @Operation(summary = "Create a single attendance record")
     public AttendanceDTO createAttendance(@Valid @RequestBody AttendanceDTO dto) {
         return attendanceService.createAttendance(dto);
     }
 
     @PostMapping("/bulk")
+    @Operation(summary = "Mark attendance for a whole class")
     public List<AttendanceDTO> markClassAttendance(@Valid @RequestBody BulkAttendanceRequest request) {
         return attendanceService.markClassAttendance(request);
     }
 
     @GetMapping
+    @Operation(summary = "List attendance records")
     public Page<AttendanceDTO> getAllAttendance(Pageable pageable) {
         return attendanceService.getAllAttendance(pageable);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get an attendance record by id")
     public AttendanceDTO getAttendanceById(@PathVariable Long id) {
         return attendanceService.getAttendanceById(id);
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "Update an attendance record")
     public AttendanceDTO updateAttendance(@PathVariable Long id, @Valid @RequestBody AttendanceDTO dto) {
         return attendanceService.updateAttendance(id, dto);
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an attendance record")
     public void deleteAttendance(@PathVariable Long id) {
         attendanceService.deleteAttendance(id);
     }
 
     @GetMapping("/students/{studentId}")
+    @Operation(summary = "List attendance records for a student")
     public Page<AttendanceDTO> getStudentAttendance(@PathVariable Long studentId, Pageable pageable) {
         return attendanceService.getStudentAttendance(studentId, pageable);
     }
 
     @GetMapping("/classes/{classId}")
+    @Operation(summary = "List class attendance for a specific date")
     public Page<AttendanceDTO> getClassAttendanceByDate(
             @PathVariable Long classId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -75,6 +88,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/students/{studentId}/summary")
+    @Operation(summary = "Get an attendance summary for a student within a date range")
     public AttendanceSummaryDTO getStudentAttendanceSummary(
             @PathVariable Long studentId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
