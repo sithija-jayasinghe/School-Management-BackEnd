@@ -8,5 +8,6 @@ public enum AuditEntityType {
     ATTENDANCE,
     NOTICE,
     EXAM,
-    DOCUMENT
+    DOCUMENT,
+    SYSTEM_SETTINGS
 }
