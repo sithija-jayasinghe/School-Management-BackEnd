@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.request.UserRegistrationRequest;
 import org.edu.dto.request.UserUpdateRequest;
 import org.edu.dto.response.UserResponse;
+import org.edu.service.AuditLogService;
 import org.edu.service.UserService;
+import org.edu.util.AuditAction;
+import org.edu.util.AuditEntityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -32,12 +35,21 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final AuditLogService auditLogService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Register a new system user")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegistrationRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.register(request));
+        UserResponse response = userService.register(request);
+        auditLogService.log(
+            AuditAction.CREATE,
+            AuditEntityType.USER,
+            response.getId(),
+            response.getName(),
+            "Created " + response.getRole() + " user account"
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -79,7 +91,15 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a user profile", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId, @Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(userService.updateUser(userId, request));
+        UserResponse response = userService.updateUser(userId, request);
+        auditLogService.log(
+            AuditAction.UPDATE,
+            AuditEntityType.USER,
+            response.getId(),
+            response.getName(),
+            "Updated user profile and role assignment"
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{userId}/activate")
@@ -87,6 +107,13 @@ public class UserController {
     @Operation(summary = "Activate a user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> activateUser(@PathVariable Long userId) {
         userService.activateUser(userId);
+        auditLogService.log(
+            AuditAction.ACTIVATE,
+            AuditEntityType.USER,
+            userId,
+            "User #" + userId,
+            "Activated user account"
+        );
         return ResponseEntity.ok().build();
     }
 
@@ -95,6 +122,13 @@ public class UserController {
     @Operation(summary = "Deactivate a user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> deactivateUser(@PathVariable Long userId) {
         userService.deactivateUser(userId);
+        auditLogService.log(
+            AuditAction.DEACTIVATE,
+            AuditEntityType.USER,
+            userId,
+            "User #" + userId,
+            "Deactivated user account"
+        );
         return ResponseEntity.ok().build();
     }
 

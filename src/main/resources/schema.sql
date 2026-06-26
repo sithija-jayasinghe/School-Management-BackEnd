@@ -15,3 +15,17 @@ CREATE TABLE IF NOT EXISTS blacklisted_tokens (
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    actor_user_id BIGINT NULL,
+    actor_name VARCHAR(100) NULL,
+    actor_email VARCHAR(150) NULL,
+    action VARCHAR(30) NOT NULL,
+    entity_type VARCHAR(40) NOT NULL,
+    entity_id BIGINT NULL,
+    entity_name VARCHAR(180) NULL,
+    description VARCHAR(1000) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_logs_actor_user FOREIGN KEY (actor_user_id) REFERENCES users(id)
+);

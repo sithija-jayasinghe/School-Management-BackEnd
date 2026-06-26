@@ -7,7 +7,10 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamDTO;
+import org.edu.service.AuditLogService;
 import org.edu.service.ExamService;
+import org.edu.util.AuditAction;
+import org.edu.util.AuditEntityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,29 +33,36 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExamController {
 
     private final ExamService examService;
+    private final AuditLogService auditLogService;
 
     @PostMapping
     @Operation(summary = "Create an exam")
     public ExamDTO createExam(@Valid @RequestBody ExamDTO dto) {
-        return examService.createExam(dto);
+        ExamDTO response = examService.createExam(dto);
+        auditLogService.log(AuditAction.CREATE, AuditEntityType.EXAM, response.getId(), response.getName(), "Created exam");
+        return response;
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update an exam")
     public ExamDTO updateExam(@PathVariable Long id, @RequestBody ExamDTO dto) {
-        return examService.updateExam(id, dto);
+        ExamDTO response = examService.updateExam(id, dto);
+        auditLogService.log(AuditAction.UPDATE, AuditEntityType.EXAM, response.getId(), response.getName(), "Updated exam");
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Deactivate an exam")
     public void deactivateExam(@PathVariable Long id) {
         examService.deactivateExam(id);
+        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.EXAM, id, "Exam #" + id, "Deactivated exam");
     }
 
     @PostMapping("/{id}/activate")
     @Operation(summary = "Activate an exam")
     public void activateExam(@PathVariable Long id) {
         examService.activateExam(id);
+        auditLogService.log(AuditAction.ACTIVATE, AuditEntityType.EXAM, id, "Exam #" + id, "Activated exam");
     }
 
     @GetMapping

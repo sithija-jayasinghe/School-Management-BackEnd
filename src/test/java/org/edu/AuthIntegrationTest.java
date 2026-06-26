@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.edu.dto.request.LoginRequest;
 import org.edu.dto.request.UserRegistrationRequest;
 import org.edu.entity.User;
+import org.edu.repository.AuditLogRepository;
 import org.edu.util.Role;
 import org.edu.repository.BlacklistedTokenRepository;
 import org.edu.repository.UserRepository;
@@ -44,6 +45,9 @@ class AuthIntegrationTest {
     private BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Autowired
+    private AuditLogRepository auditLogRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private UserRegistrationRequest registrationRequest;
@@ -51,6 +55,7 @@ class AuthIntegrationTest {
     @BeforeEach
     void setUp() {
         blacklistedTokenRepository.deleteAll();
+        auditLogRepository.deleteAll();
         userRepository.deleteAll();
         registrationRequest = new UserRegistrationRequest();
         registrationRequest.setName("Alice Admin");
