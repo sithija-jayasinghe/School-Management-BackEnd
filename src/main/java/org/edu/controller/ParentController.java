@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.ParentDTO;
 import org.edu.dto.ParentStudentDTO;
 import org.edu.dto.request.ParentStudentRequest;
+import org.edu.service.AuditLogService;
 import org.edu.service.ParentService;
+import org.edu.util.AuditAction;
+import org.edu.util.AuditEntityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
@@ -23,11 +26,14 @@ import java.util.List;
 public class ParentController {
 
     private final ParentService parentService;
+    private final AuditLogService auditLogService;
 
     @PostMapping
     @Operation(summary = "Create a parent")
     public ParentDTO createParent(@Valid @RequestBody ParentDTO parentDTO) {
-        return parentService.createParent(parentDTO);
+        ParentDTO response = parentService.createParent(parentDTO);
+        auditLogService.log(AuditAction.CREATE, AuditEntityType.PARENT, response.getId(), response.getName(), "Created parent record");
+        return response;
     }
 
     @GetMapping
@@ -46,13 +52,16 @@ public class ParentController {
     @Operation(summary = "Update a parent")
     public ParentDTO updateParent(@PathVariable Long parentId,
                                   @RequestBody ParentDTO parentDTO) {
-        return parentService.updateParent(parentId, parentDTO);
+        ParentDTO response = parentService.updateParent(parentId, parentDTO);
+        auditLogService.log(AuditAction.UPDATE, AuditEntityType.PARENT, response.getId(), response.getName(), "Updated parent record");
+        return response;
     }
 
     @DeleteMapping("/{parentId}")
     @Operation(summary = "Deactivate a parent")
     public void deleteParent(@PathVariable Long parentId) {
         parentService.deleteParent(parentId);
+        auditLogService.log(AuditAction.DELETE, AuditEntityType.PARENT, parentId, "Parent #" + parentId, "Deleted parent record");
     }
 
     @GetMapping("/search")
@@ -84,12 +93,14 @@ public class ParentController {
     @Operation(summary = "Activate a parent")
     public void activateParent(@PathVariable Long parentId) {
         parentService.activateParent(parentId);
+        auditLogService.log(AuditAction.ACTIVATE, AuditEntityType.PARENT, parentId, "Parent #" + parentId, "Activated parent record");
     }
 
     @PostMapping("/{parentId}/deactivate")
     @Operation(summary = "Deactivate a parent")
     public void deactivateParent(@PathVariable Long parentId) {
         parentService.deactivateParent(parentId);
+        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.PARENT, parentId, "Parent #" + parentId, "Deactivated parent record");
     }
 
     // Parent-Student Relationship APIs
@@ -100,7 +111,15 @@ public class ParentController {
             @PathVariable Long parentId,
             @PathVariable Long studentId,
             @Valid @RequestBody ParentStudentRequest request) {
-        return parentService.linkParentToStudent(parentId, studentId, request);
+        ParentStudentDTO response = parentService.linkParentToStudent(parentId, studentId, request);
+        auditLogService.log(
+            AuditAction.LINK,
+            AuditEntityType.PARENT_STUDENT_LINK,
+            response.getId(),
+            "Parent " + parentId + " -> Student " + studentId,
+            "Linked parent to student as " + response.getRelationshipType()
+        );
+        return response;
     }
 
     @DeleteMapping("/{parentId}/students/{studentId}")
@@ -109,6 +128,13 @@ public class ParentController {
             @PathVariable Long parentId,
             @PathVariable Long studentId) {
         parentService.unlinkParentFromStudent(parentId, studentId);
+        auditLogService.log(
+            AuditAction.UNLINK,
+            AuditEntityType.PARENT_STUDENT_LINK,
+            null,
+            "Parent " + parentId + " -> Student " + studentId,
+            "Removed parent-student relationship"
+        );
     }
 
     @GetMapping("/{parentId}/students")
@@ -131,7 +157,15 @@ public class ParentController {
             @PathVariable Long parentId,
             @PathVariable Long studentId,
             @Valid @RequestBody ParentStudentRequest request) {
-        return parentService.updateRelationship(parentId, studentId, request);
+        ParentStudentDTO response = parentService.updateRelationship(parentId, studentId, request);
+        auditLogService.log(
+            AuditAction.UPDATE,
+            AuditEntityType.PARENT_STUDENT_LINK,
+            response.getId(),
+            "Parent " + parentId + " -> Student " + studentId,
+            "Updated parent-student relationship to " + response.getRelationshipType()
+        );
+        return response;
     }
 
     @PostMapping("/{parentId}/students/{studentId}/set-primary-contact")

@@ -10,7 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.request.BulkAttendanceRequest;
+import org.edu.service.AuditLogService;
 import org.edu.service.AttendanceService;
+import org.edu.util.AuditAction;
+import org.edu.util.AuditEntityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -34,17 +37,34 @@ import org.springframework.web.bind.annotation.RestController;
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
+    private final AuditLogService auditLogService;
 
     @PostMapping
     @Operation(summary = "Create a single attendance record")
     public AttendanceDTO createAttendance(@Valid @RequestBody AttendanceDTO dto) {
-        return attendanceService.createAttendance(dto);
+        AttendanceDTO response = attendanceService.createAttendance(dto);
+        auditLogService.log(
+            AuditAction.CREATE,
+            AuditEntityType.ATTENDANCE,
+            response.getId(),
+            response.getStudentName(),
+            "Created attendance record for " + response.getAttendanceDate()
+        );
+        return response;
     }
 
     @PostMapping("/bulk")
     @Operation(summary = "Mark attendance for a whole class")
     public List<AttendanceDTO> markClassAttendance(@Valid @RequestBody BulkAttendanceRequest request) {
-        return attendanceService.markClassAttendance(request);
+        List<AttendanceDTO> responses = attendanceService.markClassAttendance(request);
+        auditLogService.log(
+            AuditAction.BULK_MARK,
+            AuditEntityType.ATTENDANCE,
+            request.getClassId(),
+            "Class #" + request.getClassId(),
+            "Marked attendance for " + responses.size() + " students on " + request.getAttendanceDate()
+        );
+        return responses;
     }
 
     @GetMapping
@@ -62,13 +82,22 @@ public class AttendanceController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update an attendance record")
     public AttendanceDTO updateAttendance(@PathVariable Long id, @Valid @RequestBody AttendanceDTO dto) {
-        return attendanceService.updateAttendance(id, dto);
+        AttendanceDTO response = attendanceService.updateAttendance(id, dto);
+        auditLogService.log(
+            AuditAction.UPDATE,
+            AuditEntityType.ATTENDANCE,
+            response.getId(),
+            response.getStudentName(),
+            "Updated attendance record for " + response.getAttendanceDate()
+        );
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete an attendance record")
     public void deleteAttendance(@PathVariable Long id) {
         attendanceService.deleteAttendance(id);
+        auditLogService.log(AuditAction.DELETE, AuditEntityType.ATTENDANCE, id, "Attendance #" + id, "Deleted attendance record");
     }
 
     @GetMapping("/students/{studentId}")

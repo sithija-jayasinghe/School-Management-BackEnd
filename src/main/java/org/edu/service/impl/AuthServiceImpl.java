@@ -43,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 
-        if (!passwordMatches) {
+        if (!passwordMatches || !user.isActive()) {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 

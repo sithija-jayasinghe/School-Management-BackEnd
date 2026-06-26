@@ -3,11 +3,15 @@ package org.edu.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.List;
+import org.edu.dto.request.UserUpdateRequest;
 import org.edu.dto.request.UserRegistrationRequest;
 import org.edu.dto.response.UserResponse;
 import org.edu.util.Role;
@@ -22,6 +26,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -61,6 +67,7 @@ class UserServiceImplTest {
         savedUser.setName("John Doe");
         savedUser.setEmail("john@example.com");
         savedUser.setRole(Role.TEACHER);
+        savedUser.setActive(true);
         savedUser.setCreatedAt(Instant.now());
         savedUser.setUpdatedAt(Instant.now());
 
@@ -96,6 +103,7 @@ class UserServiceImplTest {
         user.setName("Jane Doe");
         user.setEmail("jane@example.com");
         user.setRole(Role.ADMIN);
+        user.setActive(true);
         user.setCreatedAt(Instant.now());
         user.setUpdatedAt(Instant.now());
 
@@ -108,5 +116,61 @@ class UserServiceImplTest {
 
         assertEquals("jane@example.com", response.getEmail());
         assertEquals(Role.ADMIN, response.getRole());
+    }
+
+    @Test
+    void shouldListUsers() {
+        User activeUser = new User();
+        activeUser.setId(1L);
+        activeUser.setName("Kasun Senanayake");
+        activeUser.setEmail("kasun@sms.lk");
+        activeUser.setRole(Role.ADMIN);
+        activeUser.setActive(true);
+
+        when(userRepository.findAll(PageRequest.of(0, 10)))
+            .thenReturn(new PageImpl<>(List.of(activeUser), PageRequest.of(0, 10), 1));
+
+        var response = userService.getAllUsers(PageRequest.of(0, 10));
+
+        assertEquals(1, response.getTotalElements());
+        assertTrue(response.getContent().getFirst().isActive());
+    }
+
+    @Test
+    void shouldUpdateUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setName("Old Name");
+        user.setEmail("old@example.com");
+        user.setRole(Role.TEACHER);
+        user.setActive(true);
+
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setName("New Name");
+        request.setEmail("new@example.com");
+        request.setRole(Role.ADMIN);
+
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(user));
+        when(userRepository.existsByEmailAndIdNot("new@example.com", 1L)).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserResponse response = userService.updateUser(1L, request);
+
+        assertEquals("New Name", response.getName());
+        assertEquals("new@example.com", response.getEmail());
+        assertEquals(Role.ADMIN, response.getRole());
+    }
+
+    @Test
+    void shouldDeactivateUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setActive(true);
+
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(user));
+
+        userService.deactivateUser(1L);
+
+        assertFalse(user.isActive());
     }
 }

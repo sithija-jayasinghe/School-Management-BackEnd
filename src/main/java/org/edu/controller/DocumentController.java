@@ -10,7 +10,10 @@ import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.request.DocumentCreateRequest;
 import org.edu.dto.request.DocumentUpdateRequest;
 import org.edu.security.UserPrincipal;
+import org.edu.service.AuditLogService;
 import org.edu.service.DocumentService;
+import org.edu.util.AuditAction;
+import org.edu.util.AuditEntityType;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final AuditLogService auditLogService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a document for a student")
@@ -47,7 +51,9 @@ public class DocumentController {
             @Valid @RequestPart("metadata") DocumentCreateRequest request,
             @RequestPart("file") MultipartFile file
     ) {
-        return documentService.uploadDocument(principal.getUser().getId(), request, file);
+        DocumentDTO response = documentService.uploadDocument(principal.getUser().getId(), request, file);
+        auditLogService.log(AuditAction.CREATE, AuditEntityType.DOCUMENT, response.getId(), response.getTitle(), "Uploaded student document");
+        return response;
     }
 
     @PatchMapping("/{documentId}")
@@ -57,7 +63,9 @@ public class DocumentController {
             @PathVariable Long documentId,
             @Valid @RequestBody DocumentUpdateRequest request
     ) {
-        return documentService.updateDocument(principal.getUser().getId(), documentId, request);
+        DocumentDTO response = documentService.updateDocument(principal.getUser().getId(), documentId, request);
+        auditLogService.log(AuditAction.UPDATE, AuditEntityType.DOCUMENT, response.getId(), response.getTitle(), "Updated document metadata");
+        return response;
     }
 
     @DeleteMapping("/{documentId}")
@@ -67,6 +75,7 @@ public class DocumentController {
             @PathVariable Long documentId
     ) {
         documentService.deleteDocument(principal.getUser().getId(), documentId);
+        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.DOCUMENT, documentId, "Document #" + documentId, "Deleted document");
     }
 
     @GetMapping("/{documentId}")

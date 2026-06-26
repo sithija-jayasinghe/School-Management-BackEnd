@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.edu.dto.request.LoginRequest;
 import org.edu.dto.request.UserRegistrationRequest;
+import org.edu.entity.User;
+import org.edu.repository.AuditLogRepository;
 import org.edu.util.Role;
 import org.edu.repository.BlacklistedTokenRepository;
 import org.edu.repository.UserRepository;
@@ -20,6 +22,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -41,11 +44,18 @@ class AuthIntegrationTest {
     @Autowired
     private BlacklistedTokenRepository blacklistedTokenRepository;
 
+    @Autowired
+    private AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private UserRegistrationRequest registrationRequest;
 
     @BeforeEach
     void setUp() {
         blacklistedTokenRepository.deleteAll();
+        auditLogRepository.deleteAll();
         userRepository.deleteAll();
         registrationRequest = new UserRegistrationRequest();
         registrationRequest.setName("Alice Admin");
@@ -56,21 +66,27 @@ class AuthIntegrationTest {
 
     @Test
     void shouldRegisterUser() throws Exception {
+        String adminToken = issueAdminToken();
+
         mockMvc.perform(post("/api/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registrationRequest)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.email", is("alice@example.com")))
-            .andExpect(jsonPath("$.role", is("ADMIN")));
+            .andExpect(jsonPath("$.role", is("ADMIN")))
+            .andExpect(jsonPath("$.active", is(true)));
     }
 
     @Test
     void shouldReturnStructuredFieldErrorsForInvalidRegistration() throws Exception {
+        String adminToken = issueAdminToken();
         registrationRequest.setName("");
         registrationRequest.setEmail("not-an-email");
         registrationRequest.setPassword("short");
 
         mockMvc.perform(post("/api/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registrationRequest)))
             .andExpect(status().isBadRequest())
@@ -86,7 +102,10 @@ class AuthIntegrationTest {
 
     @Test
     void shouldReturnStructuredErrorForMalformedJson() throws Exception {
+        String adminToken = issueAdminToken();
+
         mockMvc.perform(post("/api/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Alice\""))
             .andExpect(status().isBadRequest())
@@ -111,10 +130,7 @@ class AuthIntegrationTest {
 
     @Test
     void shouldLoginAndFetchCurrentUser() throws Exception {
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registrationRequest)))
-            .andExpect(status().isCreated());
+        seedAdminUser(registrationRequest.getName(), registrationRequest.getEmail(), registrationRequest.getPassword(), registrationRequest.getRole());
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("alice@example.com");
@@ -137,10 +153,7 @@ class AuthIntegrationTest {
 
     @Test
     void shouldLogoutAndInvalidateToken() throws Exception {
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registrationRequest)))
-            .andExpect(status().isCreated());
+        seedAdminUser(registrationRequest.getName(), registrationRequest.getEmail(), registrationRequest.getPassword(), registrationRequest.getRole());
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("alice@example.com");
@@ -165,5 +178,31 @@ class AuthIntegrationTest {
             .andExpect(jsonPath("$.code", is("UNAUTHORIZED")))
             .andExpect(jsonPath("$.message", is("Unauthorized access")))
             .andExpect(jsonPath("$.path", is("/api/users/me")));
+    }
+
+    private String issueAdminToken() throws Exception {
+        seedAdminUser("System Admin", "system.admin@example.com", "Password123", Role.ADMIN);
+
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("system.admin@example.com");
+        loginRequest.setPassword("Password123");
+
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/tokens")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        return objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+    }
+
+    private void seedAdminUser(String name, String email, String password, Role role) {
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        user.setActive(true);
+        userRepository.save(user);
     }
 }

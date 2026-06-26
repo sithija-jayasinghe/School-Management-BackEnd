@@ -7,7 +7,10 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.NoticeDTO;
+import org.edu.service.AuditLogService;
 import org.edu.service.NoticeService;
+import org.edu.util.AuditAction;
+import org.edu.util.AuditEntityType;
 import org.edu.util.NoticeAudience;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,35 +34,45 @@ import org.springframework.web.bind.annotation.RestController;
 public class NoticeController {
 
     private final NoticeService noticeService;
+    private final AuditLogService auditLogService;
 
     @PostMapping
     @Operation(summary = "Create a notice")
     public NoticeDTO createNotice(@Valid @RequestBody NoticeDTO dto) {
-        return noticeService.createNotice(dto);
+        NoticeDTO response = noticeService.createNotice(dto);
+        auditLogService.log(AuditAction.CREATE, AuditEntityType.NOTICE, response.getId(), response.getTitle(), "Created notice");
+        return response;
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update a notice")
     public NoticeDTO updateNotice(@PathVariable Long id, @RequestBody NoticeDTO dto) {
-        return noticeService.updateNotice(id, dto);
+        NoticeDTO response = noticeService.updateNotice(id, dto);
+        auditLogService.log(AuditAction.UPDATE, AuditEntityType.NOTICE, response.getId(), response.getTitle(), "Updated notice");
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Deactivate a notice")
     public void deleteNotice(@PathVariable Long id) {
         noticeService.deleteNotice(id);
+        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.NOTICE, id, "Notice #" + id, "Deactivated notice");
     }
 
     @PostMapping("/{id}/publish")
     @Operation(summary = "Publish a notice")
     public NoticeDTO publishNotice(@PathVariable Long id) {
-        return noticeService.publishNotice(id);
+        NoticeDTO response = noticeService.publishNotice(id);
+        auditLogService.log(AuditAction.PUBLISH, AuditEntityType.NOTICE, response.getId(), response.getTitle(), "Published notice");
+        return response;
     }
 
     @PostMapping("/{id}/unpublish")
     @Operation(summary = "Unpublish a notice")
     public NoticeDTO unpublishNotice(@PathVariable Long id) {
-        return noticeService.unpublishNotice(id);
+        NoticeDTO response = noticeService.unpublishNotice(id);
+        auditLogService.log(AuditAction.UNPUBLISH, AuditEntityType.NOTICE, response.getId(), response.getTitle(), "Unpublished notice");
+        return response;
     }
 
     @GetMapping

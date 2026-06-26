@@ -57,10 +57,12 @@ class AuthServiceImplTest {
         user.setEmail("john@example.com");
         user.setPassword("hashed-password");
         user.setRole(Role.STUDENT);
+        user.setActive(true);
 
         UserResponse userResponse = new UserResponse();
         userResponse.setEmail("john@example.com");
         userResponse.setRole(Role.STUDENT);
+        userResponse.setActive(true);
 
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("Password123", "hashed-password")).thenReturn(true);
@@ -85,9 +87,27 @@ class AuthServiceImplTest {
         User user = new User();
         user.setEmail("john@example.com");
         user.setPassword("hashed-password");
+        user.setActive(true);
 
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong-password", "hashed-password")).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.login(request));
+    }
+
+    @Test
+    void shouldRejectInactiveUserLogin() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("john@example.com");
+        request.setPassword("Password123");
+
+        User user = new User();
+        user.setEmail("john@example.com");
+        user.setPassword("hashed-password");
+        user.setActive(false);
+
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("Password123", "hashed-password")).thenReturn(true);
 
         assertThrows(InvalidCredentialsException.class, () -> authService.login(request));
     }
