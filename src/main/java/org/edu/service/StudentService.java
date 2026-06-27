@@ -18,4 +18,8 @@ public interface StudentService {
     List<StudentDTO> getAllActiveStudents();
     List<StudentDTO> getStudentsByClassId(Long classId);
     List<StudentEnrollmentDTO> getStudentEnrollments(Long studentId);
+    StudentDTO transferStudent(Long studentId, Long classId);
+    StudentDTO promoteStudent(Long studentId, Long classId);
+    StudentDTO withdrawStudent(Long studentId);
+    StudentDTO completeStudent(Long studentId);
 }

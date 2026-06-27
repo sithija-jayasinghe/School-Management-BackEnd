@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
+import org.edu.dto.StudentEnrollmentActionRequest;
 import org.edu.dto.StudentEnrollmentDTO;
 import org.edu.dto.ParentStudentDTO;
 import org.edu.service.StudentService;
@@ -82,5 +83,31 @@ public class StudentController {
     @Operation(summary = "List enrollment history for a student")
     public List<StudentEnrollmentDTO> getStudentEnrollments(@PathVariable Long id) {
         return studentService.getStudentEnrollments(id);
+    }
+
+    @PostMapping("/{id}/enrollments/transfer")
+    @Operation(summary = "Transfer student to another class in the current academic year")
+    public StudentDTO transferStudent(@PathVariable Long id,
+                                      @Valid @RequestBody StudentEnrollmentActionRequest request) {
+        return studentService.transferStudent(id, request.getClassId());
+    }
+
+    @PostMapping("/{id}/enrollments/promote")
+    @Operation(summary = "Promote student to a new class in the current academic year")
+    public StudentDTO promoteStudent(@PathVariable Long id,
+                                     @Valid @RequestBody StudentEnrollmentActionRequest request) {
+        return studentService.promoteStudent(id, request.getClassId());
+    }
+
+    @PostMapping("/{id}/enrollments/withdraw")
+    @Operation(summary = "Withdraw student from the current academic year enrollment")
+    public StudentDTO withdrawStudent(@PathVariable Long id) {
+        return studentService.withdrawStudent(id);
+    }
+
+    @PostMapping("/{id}/enrollments/complete")
+    @Operation(summary = "Complete student enrollment")
+    public StudentDTO completeStudent(@PathVariable Long id) {
+        return studentService.completeStudent(id);
     }
 }
