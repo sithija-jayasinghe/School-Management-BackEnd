@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,8 +12,11 @@ import java.time.LocalTime;
 import java.util.Optional;
 import org.edu.dto.SystemSettingsDTO;
 import org.edu.dto.request.SystemSettingsUpdateRequest;
+import org.edu.entity.AcademicYear;
 import org.edu.entity.SystemSettings;
+import org.edu.repository.AcademicYearRepository;
 import org.edu.repository.SystemSettingsRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,8 +29,16 @@ class SystemSettingsServiceImplTest {
     @Mock
     private SystemSettingsRepository systemSettingsRepository;
 
+    @Mock
+    private AcademicYearRepository academicYearRepository;
+
     @InjectMocks
     private SystemSettingsServiceImpl systemSettingsService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.empty());
+    }
 
     @Test
     void shouldCreateDefaultSettingsWhenMissing() {
@@ -70,6 +82,28 @@ class SystemSettingsServiceImplTest {
         assertEquals("WPMS-001", response.getSchoolCode());
         assertEquals("admin@sms.lk", response.getEmail());
         assertEquals(LocalTime.of(8, 0), response.getAttendanceCutoffTime());
+    }
+
+    @Test
+    void shouldDeriveCurrentAcademicYearLabelFromAcademicCalendar() {
+        SystemSettings settings = new SystemSettings();
+        settings.setId(1L);
+        settings.setCurrentAcademicYearLabel("Legacy 2025");
+        settings.setDefaultLanguage("en");
+        settings.setTimeZone("Asia/Colombo");
+
+        AcademicYear currentAcademicYear = new AcademicYear();
+        currentAcademicYear.setId(2L);
+        currentAcademicYear.setName("2026");
+        currentAcademicYear.setCurrent(true);
+        currentAcademicYear.setActive(true);
+
+        when(systemSettingsRepository.findTopByOrderByIdAsc()).thenReturn(Optional.of(settings));
+        when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(currentAcademicYear));
+
+        SystemSettingsDTO response = systemSettingsService.getSystemSettings();
+
+        assertEquals("2026", response.getCurrentAcademicYearLabel());
     }
 
     @Test

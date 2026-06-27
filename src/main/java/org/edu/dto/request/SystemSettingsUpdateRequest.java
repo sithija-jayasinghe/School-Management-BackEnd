@@ -55,7 +55,4 @@ public class SystemSettingsUpdateRequest {
     @Size(max = 50, message = "Time zone must not exceed 50 characters")
     private String timeZone;
 
-    @Pattern(regexp = "^$|.*\\S.*", message = "Academic year label must not be blank")
-    @Size(max = 60, message = "Academic year label must not exceed 60 characters")
-    private String currentAcademicYearLabel;
 }
