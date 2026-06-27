@@ -1,6 +1,7 @@
 package org.edu.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -21,7 +22,6 @@ public class StudentDTO {
 
     private Long id;
 
-    @NotNull(message = "User ID is required")
     private Long userId;
 
     @NotBlank(message = "Name is required")
@@ -45,6 +45,9 @@ public class StudentDTO {
     private String currentClassName;
 
     private List<Long> parentIds;
+
+    @Valid
+    private List<StudentParentInlineRequest> newParents;
 
     private LocalDateTime createdAt;
 

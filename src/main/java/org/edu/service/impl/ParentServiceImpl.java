@@ -90,7 +90,7 @@ public class ParentServiceImpl implements ParentService {
 
     @Override
     public Page<ParentDTO> searchParents(String keyword, Pageable pageable) {
-        return parentRepository.findByNameContainingIgnoreCaseAndActiveTrue(keyword, pageable)
+        return parentRepository.searchActiveParents(keyword.trim(), pageable)
                 .map(parentMapper::toDTO);
     }
 

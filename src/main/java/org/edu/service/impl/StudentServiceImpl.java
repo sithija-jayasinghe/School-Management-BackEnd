@@ -2,6 +2,7 @@ package org.edu.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
+import org.edu.dto.StudentParentInlineRequest;
 import org.edu.entity.Student;
 import org.edu.entity.User;
 import org.edu.entity.Class;
@@ -16,11 +17,16 @@ import org.edu.service.StudentService;
 import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.entity.Parent;
@@ -37,20 +43,14 @@ public class StudentServiceImpl implements StudentService {
     private final ClassRepository classRepository;
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public StudentDTO createStudent(StudentDTO studentDTO) {
 
-        User user = userRepository.findById(studentDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (studentRepository.existsByUser(user)) {
-            throw new InvalidStudentDataException("User already assigned to a student");
-        }
-
-        if (user.getRole() != Role.STUDENT) {
-            throw new InvalidStudentDataException("User must have STUDENT role");
-        }
+        User user = studentDTO.getUserId() == null
+                ? createStudentUser(studentDTO)
+                : resolveExistingStudentUser(studentDTO.getUserId());
 
         if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
             throw new InvalidAgeException("Invalid student age: Must be at least 3 years old");
@@ -68,20 +68,10 @@ public class StudentServiceImpl implements StudentService {
 
         Student savedStudent = studentRepository.save(student);
 
-        if (studentDTO.getParentIds() != null && !studentDTO.getParentIds().isEmpty()) {
-            for (Long parentId : studentDTO.getParentIds()) {
-                Parent parent = parentRepository.findById(parentId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Parent not found with id: " + parentId));
-                ParentStudent ps = new ParentStudent();
-                ps.setParent(parent);
-                ps.setStudent(savedStudent);
-                ps.setRelationshipType("Parent"); // Default
-                ps.setPrimaryContact(true); // Default
-                parentStudentRepository.save(ps);
-            }
-        }
+        syncParentLinks(savedStudent, studentDTO.getParentIds());
+        createAndLinkNewParents(savedStudent, studentDTO.getNewParents());
 
-        return studentMapper.toDTO(savedStudent);
+        return toDTOWithParentIds(savedStudent);
     }
 
     @Override
@@ -102,9 +92,17 @@ public class StudentServiceImpl implements StudentService {
             Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
                     .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
             student.setCurrentClass(clazz);
+        } else {
+            student.setCurrentClass(null);
         }
 
-        return studentMapper.toDTO(student);
+        if (studentDTO.getParentIds() != null) {
+            syncParentLinks(student, studentDTO.getParentIds());
+        }
+
+        createAndLinkNewParents(student, studentDTO.getNewParents());
+
+        return toDTOWithParentIds(student);
     }
 
     @Override
@@ -123,7 +121,7 @@ public class StudentServiceImpl implements StudentService {
     public Page<StudentDTO> getAllStudents(Pageable pageable) {
 
         return studentRepository.findByActiveTrue(pageable)
-                .map(studentMapper::toDTO);
+                .map(this::toDTOWithParentIds);
     }
 
     @Override
@@ -132,7 +130,7 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
 
-        return studentMapper.toDTO(student);
+        return toDTOWithParentIds(student);
     }
 
     @Override
@@ -140,7 +138,7 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository
                 .findByNameContainingIgnoreCaseAndActiveTrue(name, pageable)
-                .map(studentMapper::toDTO);
+                .map(this::toDTOWithParentIds);
     }
 
     @Override
@@ -148,7 +146,7 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository.findByActiveTrue()
                 .stream()
-                .map(studentMapper::toDTO)
+                .map(this::toDTOWithParentIds)
                 .toList();
     }
 
@@ -159,7 +157,119 @@ public class StudentServiceImpl implements StudentService {
 
         return clazz.getStudents().stream()
                 .filter(Student::isActive)
-                .map(studentMapper::toDTO)
+                .map(this::toDTOWithParentIds)
                 .toList();
+    }
+
+    private User resolveExistingStudentUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (studentRepository.existsByUser(user)) {
+            throw new InvalidStudentDataException("User already assigned to a student");
+        }
+
+        if (user.getRole() != Role.STUDENT) {
+            throw new InvalidStudentDataException("User must have STUDENT role");
+        }
+
+        return user;
+    }
+
+    private User createStudentUser(StudentDTO studentDTO) {
+        User user = new User();
+        user.setName(studentDTO.getName().trim());
+        user.setEmail(generateLocalEmail(studentDTO.getName(), "student"));
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setRole(Role.STUDENT);
+        user.setActive(true);
+        return userRepository.save(user);
+    }
+
+    private User createParentUser(StudentParentInlineRequest parentRequest) {
+        User user = new User();
+        user.setName(parentRequest.getName().trim());
+        user.setEmail(generateLocalEmail(parentRequest.getName(), "parent"));
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setRole(Role.PARENT);
+        user.setActive(true);
+        return userRepository.save(user);
+    }
+
+    private String generateLocalEmail(String name, String accountType) {
+        String slug = name == null ? accountType : name.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", ".")
+                .replaceAll("^\\.|\\.$", "");
+
+        if (slug.isBlank()) {
+            slug = accountType;
+        }
+
+        String email;
+        do {
+            email = slug + "." + UUID.randomUUID().toString().substring(0, 8) + "@" + accountType + ".school.local";
+        } while (userRepository.existsByEmail(email));
+
+        return email;
+    }
+
+    private void syncParentLinks(Student student, List<Long> parentIds) {
+        Set<Long> requestedParentIds = new LinkedHashSet<>(parentIds == null ? List.of() : parentIds);
+        List<ParentStudent> existingLinks = parentStudentRepository.findByStudentId(student.getId());
+
+        existingLinks.stream()
+                .filter(link -> !requestedParentIds.contains(link.getParent().getId()))
+                .forEach(parentStudentRepository::delete);
+
+        Set<Long> existingParentIds = existingLinks.stream()
+                .map(link -> link.getParent().getId())
+                .collect(java.util.stream.Collectors.toSet());
+
+        requestedParentIds.stream()
+                .filter(parentId -> !existingParentIds.contains(parentId))
+                .forEach(parentId -> {
+                    Parent parent = parentRepository.findByIdAndActiveTrue(parentId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Active parent not found with id: " + parentId));
+                    ParentStudent parentStudent = new ParentStudent();
+                    parentStudent.setParent(parent);
+                    parentStudent.setStudent(student);
+                    parentStudent.setRelationshipType("Parent");
+                    parentStudent.setPrimaryContact(true);
+                    parentStudent.setEmergencyContact(false);
+                    parentStudentRepository.save(parentStudent);
+                });
+    }
+
+    private void createAndLinkNewParents(Student student, List<StudentParentInlineRequest> newParents) {
+        if (newParents == null || newParents.isEmpty()) {
+            return;
+        }
+
+        for (StudentParentInlineRequest parentRequest : newParents) {
+            Parent parent = new Parent();
+            parent.setUser(createParentUser(parentRequest));
+            parent.setName(parentRequest.getName().trim());
+            parent.setPhoneNumber(parentRequest.getPhoneNumber().trim());
+            parent.setAddress(parentRequest.getAddress().trim());
+            parent.setOccupation(parentRequest.getOccupation().trim());
+            parent.setActive(true);
+            Parent savedParent = parentRepository.save(parent);
+
+            ParentStudent parentStudent = new ParentStudent();
+            parentStudent.setParent(savedParent);
+            parentStudent.setStudent(student);
+            parentStudent.setRelationshipType("Parent");
+            parentStudent.setPrimaryContact(true);
+            parentStudent.setEmergencyContact(false);
+            parentStudentRepository.save(parentStudent);
+        }
+    }
+
+    private StudentDTO toDTOWithParentIds(Student student) {
+        StudentDTO dto = studentMapper.toDTO(student);
+        dto.setParentIds(parentStudentRepository.findByStudentId(student.getId()).stream()
+                .map(link -> link.getParent().getId())
+                .toList());
+        return dto;
     }
 }
