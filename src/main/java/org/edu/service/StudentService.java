@@ -1,6 +1,7 @@
 package org.edu.service;
 
 import org.edu.dto.StudentDTO;
+import org.edu.dto.StudentEnrollmentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,4 +17,5 @@ public interface StudentService {
     Page<StudentDTO> searchStudents(String name, Pageable pageable);
     List<StudentDTO> getAllActiveStudents();
     List<StudentDTO> getStudentsByClassId(Long classId);
+    List<StudentEnrollmentDTO> getStudentEnrollments(Long studentId);
 }

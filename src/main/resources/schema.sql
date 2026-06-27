@@ -29,3 +29,46 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_audit_logs_actor_user FOREIGN KEY (actor_user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    school_name VARCHAR(180) NULL,
+    school_code VARCHAR(50) NULL,
+    address VARCHAR(500) NULL,
+    phone_number VARCHAR(20) NULL,
+    email VARCHAR(150) NULL,
+    principal_name VARCHAR(120) NULL,
+    principal_title VARCHAR(120) NULL,
+    school_start_time TIME NULL,
+    school_end_time TIME NULL,
+    attendance_cutoff_time TIME NULL,
+    default_language VARCHAR(10) NOT NULL,
+    time_zone VARCHAR(50) NOT NULL,
+    current_academic_year_label VARCHAR(60) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS grades (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(80) NOT NULL UNIQUE,
+    level INT NOT NULL UNIQUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS student_enrollments (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    student_id BIGINT NOT NULL,
+    academic_year_id BIGINT NOT NULL,
+    class_id BIGINT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_student_enrollments_student FOREIGN KEY (student_id) REFERENCES students(id),
+    CONSTRAINT fk_student_enrollments_academic_year FOREIGN KEY (academic_year_id) REFERENCES academic_years(id),
+    CONSTRAINT fk_student_enrollments_class FOREIGN KEY (class_id) REFERENCES classes(id)
+);

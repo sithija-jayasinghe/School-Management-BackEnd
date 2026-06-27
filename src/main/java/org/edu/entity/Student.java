@@ -21,7 +21,7 @@ public class Student {
         private Long id;
 
         @OneToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "user_id", nullable = false, unique = true)
+        @JoinColumn(name = "user_id", unique = true)
         private User user;
 
         @Column(nullable = false, length = 150)

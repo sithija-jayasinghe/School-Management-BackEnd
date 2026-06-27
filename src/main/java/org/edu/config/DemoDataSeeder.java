@@ -26,6 +26,7 @@ import org.edu.entity.Attendance;
 import org.edu.entity.Class;
 import org.edu.entity.Document;
 import org.edu.entity.Exam;
+import org.edu.entity.Grade;
 import org.edu.entity.LeaveRequest;
 import org.edu.entity.Notice;
 import org.edu.entity.Parent;
@@ -42,6 +43,7 @@ import org.edu.repository.AttendanceRepository;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.DocumentRepository;
 import org.edu.repository.ExamRepository;
+import org.edu.repository.GradeRepository;
 import org.edu.repository.LeaveRequestRepository;
 import org.edu.repository.NoticeRepository;
 import org.edu.repository.ParentRepository;
@@ -83,6 +85,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final StudentRepository studentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final ClassRepository classRepository;
+    private final GradeRepository gradeRepository;
     private final SubjectRepository subjectRepository;
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermRepository academicTermRepository;
@@ -155,8 +158,10 @@ public class DemoDataSeeder implements CommandLineRunner {
         AcademicYear academicYear = createAcademicYear("2026 Academic Year", LocalDate.of(2026, 1, 6), LocalDate.of(2026, 12, 18));
         AcademicTerm termOne = createAcademicTerm(academicYear, "Term 1", LocalDate.of(2026, 1, 6), LocalDate.of(2026, 4, 10));
 
-        Class grade10A = createClass("Grade 10 Demo A", nimal, List.of(mathematics, science, english, ict, sinhala));
-        Class grade11A = createClass("Grade 11 Demo A", saman, List.of(mathematics, science, english, ict, sinhala));
+        Grade grade10 = createGrade("Grade 10", 10);
+        Grade grade11 = createGrade("Grade 11", 11);
+        Class grade10A = createClass(grade10, "Demo A", nimal, List.of(mathematics, science, english, ict, sinhala));
+        Class grade11A = createClass(grade11, "Demo A", saman, List.of(mathematics, science, english, ict, sinhala));
 
         Map<String, Timetable> timetableMap = new LinkedHashMap<>();
         createTimetableEntries(grade10A, nimal, saman, dinithi, ravindu, chathuri, timetableMap);
@@ -310,9 +315,21 @@ public class DemoDataSeeder implements CommandLineRunner {
         return academicTermRepository.save(term);
     }
 
-    private Class createClass(String name, Staff classTeacher, List<Subject> subjects) {
+    private Grade createGrade(String name, int level) {
+        return gradeRepository.findByLevel(level).orElseGet(() -> {
+            Grade grade = new Grade();
+            grade.setName(name);
+            grade.setLevel(level);
+            grade.setActive(true);
+            return gradeRepository.save(grade);
+        });
+    }
+
+    private Class createClass(Grade grade, String section, Staff classTeacher, List<Subject> subjects) {
         Class studentClass = new Class();
-        studentClass.setName(name);
+        studentClass.setGrade(grade);
+        studentClass.setSection(section);
+        studentClass.setName(grade.getName() + " " + section);
         studentClass.setClassTeacher(classTeacher);
         studentClass.setSubjects(new ArrayList<>(subjects));
         studentClass.setActive(true);

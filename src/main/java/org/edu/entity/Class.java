@@ -25,6 +25,13 @@ public class Class {
     @Column(nullable = false, length = 150)
     private String name;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "grade_id")
+    private Grade grade;
+
+    @Column(length = 20)
+    private String section;
+
     @Column(nullable = false)
     private boolean active = true;
 

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
+import org.edu.dto.StudentEnrollmentDTO;
 import org.edu.dto.ParentStudentDTO;
 import org.edu.service.StudentService;
 import org.edu.service.ParentService;
@@ -73,5 +74,11 @@ public class StudentController {
     @Operation(summary = "List parents linked to a student")
     public List<ParentStudentDTO> getParentsByStudent(@PathVariable Long id) {
         return parentService.getParentsByStudent(id);
+    }
+
+    @GetMapping("/{id}/enrollments")
+    @Operation(summary = "List enrollment history for a student")
+    public List<StudentEnrollmentDTO> getStudentEnrollments(@PathVariable Long id) {
+        return studentService.getStudentEnrollments(id);
     }
 }
