@@ -23,5 +23,7 @@ public class SubjectDTO {
     @NotBlank(message = "Description is required")
     private String description;
 
+    private List<Long> gradeIds;
+
     private List<Long> classIds;
 }

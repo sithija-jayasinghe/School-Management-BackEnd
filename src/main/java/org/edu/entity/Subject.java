@@ -28,6 +28,14 @@ public class Subject {
     @Column (nullable = false)
     private String description;
 
+    @ManyToMany
+    @JoinTable(
+            name = "grade_subjects",
+            joinColumns = @JoinColumn(name = "subject_id"),
+            inverseJoinColumns = @JoinColumn(name = "grade_id")
+    )
+    private List<Grade> grades;
+
     @ManyToMany(mappedBy = "subjects")
     private List<Class> classes;
 }

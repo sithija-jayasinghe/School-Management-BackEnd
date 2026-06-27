@@ -9,6 +9,7 @@ import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.ClassMapper;
 import org.edu.mapper.SubjectMapper;
 import org.edu.repository.ClassRepository;
+import org.edu.repository.GradeRepository;
 import org.edu.repository.SubjectRepository;
 import org.edu.service.SubjectService;
 import org.springframework.data.domain.Page;
@@ -16,7 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -25,6 +29,7 @@ public class SubjectServiceImpl implements SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final ClassRepository classRepository;
+    private final GradeRepository gradeRepository;
     private final SubjectMapper subjectMapper;
     private final ClassMapper classMapper;
 
@@ -32,16 +37,9 @@ public class SubjectServiceImpl implements SubjectService {
     public SubjectDTO createSubjects(SubjectDTO dto) {
         Subject subject = subjectMapper.toEntity(dto);
         Subject savedSubject = subjectRepository.save(subject);
-        
-        if (dto.getClassIds() != null && !dto.getClassIds().isEmpty()) {
-            List<Class> classes = classRepository.findAllById(dto.getClassIds());
-            if (classes.size() != dto.getClassIds().size()) {
-                throw new ResourceNotFoundException("One or more classes not found");
-            }
-            savedSubject.setClasses(classes);
-            savedSubject = subjectRepository.save(savedSubject);
-        }
-        
+
+        applySubjectLinks(savedSubject, dto);
+
         return subjectMapper.toDTO(savedSubject);
     }
 
@@ -64,22 +62,104 @@ public class SubjectServiceImpl implements SubjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         subjectMapper.updateEntityFromDTO(dto, subject);
+        Subject updated = subjectRepository.save(subject);
+
+        applySubjectLinks(updated, dto);
+
+        return subjectMapper.toDTO(updated);
+    }
+
+    private void applySubjectLinks(Subject subject, SubjectDTO dto) {
+        if (dto.getGradeIds() != null) {
+            List<Grade> grades = resolveGrades(dto.getGradeIds());
+            subject.setGrades(grades);
+            subjectRepository.save(subject);
+
+            List<Class> classes = grades.isEmpty()
+                    ? List.of()
+                    : classRepository.findByGradeIdInAndActiveTrue(grades.stream().map(Grade::getId).toList());
+            syncClassLinks(subject, classes);
+            return;
+        }
 
         if (dto.getClassIds() != null) {
-            if (dto.getClassIds().isEmpty()) {
-                subject.setClasses(new java.util.ArrayList<>());
-            } else {
-                List<Class> classes = classRepository.findAllById(dto.getClassIds());
-                if (classes.size() != dto.getClassIds().size()) {
-                    throw new ResourceNotFoundException("One or more classes not found");
-                }
-                subject.setClasses(classes);
+            syncClassLinks(subject, resolveClasses(dto.getClassIds()));
+        }
+    }
+
+    private List<Grade> resolveGrades(List<Long> gradeIds) {
+        List<Long> uniqueIds = distinctIds(gradeIds);
+        if (uniqueIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Grade> grades = gradeRepository.findAllById(uniqueIds).stream()
+                .filter(Grade::isActive)
+                .toList();
+        if (grades.size() != uniqueIds.size()) {
+            throw new ResourceNotFoundException("One or more grades not found");
+        }
+
+        return grades;
+    }
+
+    private List<Class> resolveClasses(List<Long> classIds) {
+        List<Long> uniqueIds = distinctIds(classIds);
+        if (uniqueIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Class> classes = classRepository.findAllById(uniqueIds);
+        if (classes.size() != uniqueIds.size()) {
+            throw new ResourceNotFoundException("One or more classes not found");
+        }
+
+        return classes;
+    }
+
+    private List<Long> distinctIds(List<Long> ids) {
+        return ids == null
+                ? List.of()
+                : ids.stream().distinct().toList();
+    }
+
+    private void syncClassLinks(Subject subject, List<Class> targetClasses) {
+        List<Class> existingClasses = subject.getId() == null
+                ? List.of()
+                : classRepository.findClassesLinkedToSubject(subject.getId());
+        Set<Long> targetIds = targetClasses.stream().map(Class::getId).collect(java.util.stream.Collectors.toSet());
+        List<Class> changedClasses = new ArrayList<>();
+
+        for (Class existingClass : existingClasses) {
+            if (!targetIds.contains(existingClass.getId()) && ensureSubjects(existingClass).removeIf(existingSubject -> existingSubject.getId().equals(subject.getId()))) {
+                changedClasses.add(existingClass);
             }
         }
 
-        Subject updated = subjectRepository.save(subject);
+        Set<Long> existingIds = new HashSet<>(existingClasses.stream().map(Class::getId).toList());
+        for (Class targetClass : targetClasses) {
+            List<Subject> subjects = ensureSubjects(targetClass);
+            boolean alreadyLinked = existingIds.contains(targetClass.getId())
+                    || subjects.stream().anyMatch(existingSubject -> existingSubject.getId().equals(subject.getId()));
+            if (!alreadyLinked) {
+                subjects.add(subject);
+                changedClasses.add(targetClass);
+            }
+        }
 
-        return subjectMapper.toDTO(updated);
+        if (!changedClasses.isEmpty()) {
+            classRepository.saveAll(changedClasses);
+        }
+
+        subject.setClasses(targetClasses);
+    }
+
+    private List<Subject> ensureSubjects(Class clazz) {
+        if (clazz.getSubjects() == null) {
+            clazz.setSubjects(new ArrayList<>());
+        }
+
+        return clazz.getSubjects();
     }
 
     @Override
@@ -109,7 +189,10 @@ public class SubjectServiceImpl implements SubjectService {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
 
-        clazz.getSubjects().add(subject);
+        List<Subject> subjects = ensureSubjects(clazz);
+        if (subjects.stream().noneMatch(existingSubject -> existingSubject.getId().equals(subjectId))) {
+            subjects.add(subject);
+        }
         classRepository.save(clazz);
     }
 
@@ -130,7 +213,7 @@ public class SubjectServiceImpl implements SubjectService {
         Class clazz = classRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
-        return clazz.getSubjects()
+        return ensureSubjects(clazz)
                 .stream()
                 .map(subjectMapper::toDTO)
                 .toList();
@@ -142,7 +225,11 @@ public class SubjectServiceImpl implements SubjectService {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
 
-        return subject.getClasses()
+        List<Class> classes = subject.getClasses() == null
+                ? classRepository.findClassesLinkedToSubject(subjectId)
+                : subject.getClasses();
+
+        return classes
                 .stream()
                 .map(classMapper::toDTO)
                 .toList();

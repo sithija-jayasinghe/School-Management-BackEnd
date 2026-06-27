@@ -31,6 +31,16 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
             """)
     Page<Class> searchActiveClasses(@Param("keyword") String keyword, Pageable pageable);
 
+    List<Class> findByGradeIdInAndActiveTrue(List<Long> gradeIds);
+
+    @Query("""
+            select distinct clazz
+            from Class clazz
+            join clazz.subjects subject
+            where subject.id = :subjectId
+            """)
+    List<Class> findClassesLinkedToSubject(@Param("subjectId") Long subjectId);
+
     List<Class> findByClassTeacherIdAndActiveTrueOrderByNameAsc(Long classTeacherId);
 
     boolean existsByIdAndClassTeacherIdAndActiveTrue(Long id, Long classTeacherId);
