@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.request.AcademicReportGenerateRequest;
 import org.edu.dto.request.AcademicReportUpdateRequest;
@@ -38,6 +39,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class AcademicReportController {
 
     private final AcademicReportService academicReportService;
+
+    @GetMapping("/readiness")
+    @Operation(summary = "Check if report prerequisites are ready")
+    public AcademicReportReadinessDTO checkReportReadiness(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam Long studentId,
+            @RequestParam Long academicTermId
+    ) {
+        return academicReportService.checkReportReadiness(
+                principal.getUser().getId(),
+                studentId,
+                academicTermId
+        );
+    }
 
     @PostMapping
     @Operation(summary = "Generate an academic report")

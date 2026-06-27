@@ -1,6 +1,7 @@
 package org.edu.service;
 
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.DocumentFileResponse;
 import org.edu.dto.request.AcademicReportGenerateRequest;
 import org.edu.dto.request.AcademicReportUpdateRequest;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 public interface AcademicReportService {
 
     AcademicReportDTO generateReport(Long authenticatedUserId, AcademicReportGenerateRequest request);
+
+    AcademicReportReadinessDTO checkReportReadiness(Long authenticatedUserId, Long studentId, Long academicTermId);
 
     AcademicReportDTO regenerateReport(Long authenticatedUserId, Long reportId);
 

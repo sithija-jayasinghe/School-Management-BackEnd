@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
+import org.edu.dto.AcademicReportReadinessDTO.AcademicReportReadinessItemDTO;
 import org.edu.dto.AcademicReportSubjectDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentFileResponse;
@@ -27,6 +29,7 @@ import org.edu.repository.AcademicReportRepository;
 import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.StaffRepository;
+import org.edu.repository.StudentEnrollmentRepository;
 import org.edu.repository.StudentMarkRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
@@ -35,6 +38,7 @@ import org.edu.service.AcademicReportPdfService;
 import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
 import org.edu.util.AcademicReportStatus;
+import org.edu.util.EnrollmentStatus;
 import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +54,7 @@ public class AcademicReportServiceImpl implements AcademicReportService {
 
     private final AcademicReportRepository academicReportRepository;
     private final AcademicTermRepository academicTermRepository;
+    private final StudentEnrollmentRepository studentEnrollmentRepository;
     private final StudentRepository studentRepository;
     private final StudentMarkRepository studentMarkRepository;
     private final UserRepository userRepository;
@@ -65,6 +70,7 @@ public class AcademicReportServiceImpl implements AcademicReportService {
         Student student = getActiveStudent(request.getStudentId());
         AcademicTerm term = getActiveTerm(request.getAcademicTermId());
         validateStudentClass(student);
+        validateStudentEnrollment(student, term);
         validateReportAccess(user, student.getCurrentClass().getId());
 
         if (academicReportRepository.existsByStudentIdAndAcademicTermId(student.getId(), term.getId())) {
@@ -85,10 +91,27 @@ public class AcademicReportServiceImpl implements AcademicReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public AcademicReportReadinessDTO checkReportReadiness(
+            Long authenticatedUserId,
+            Long studentId,
+            Long academicTermId
+    ) {
+        User user = getUser(authenticatedUserId);
+        Student student = getActiveStudent(studentId);
+        AcademicTerm term = getActiveTerm(academicTermId);
+        if (student.getCurrentClass() != null) {
+            validateReportAccess(user, student.getCurrentClass().getId());
+        }
+        return buildReadiness(student, term);
+    }
+
+    @Override
     public AcademicReportDTO regenerateReport(Long authenticatedUserId, Long reportId) {
         User user = getUser(authenticatedUserId);
         AcademicReport report = getReportEntity(reportId);
         validateReportAccess(user, report.getStudentClass().getId());
+        validateStudentEnrollment(report.getStudent(), report.getAcademicTerm());
         validateDraft(report);
         populateSnapshot(report);
         return toDTO(academicReportRepository.save(report));
@@ -255,6 +278,9 @@ public class AcademicReportServiceImpl implements AcademicReportService {
                 report.getAcademicTerm().getStartDate(),
                 report.getAcademicTerm().getEndDate()
         );
+        if (attendance.getTotalRecords() == 0) {
+            throw new IllegalStateException("Attendance records are required for this student and academic term");
+        }
         report.setTotalAttendanceRecords(attendance.getTotalRecords());
         report.setPresentCount(attendance.getPresentCount());
         report.setAbsentCount(attendance.getAbsentCount());
@@ -341,6 +367,115 @@ public class AcademicReportServiceImpl implements AcademicReportService {
         if (student.getCurrentClass() == null) {
             throw new IllegalStateException("Student must be assigned to a class before generating a report");
         }
+    }
+
+    private void validateStudentEnrollment(Student student, AcademicTerm term) {
+        boolean enrolled = studentEnrollmentRepository
+                .findByStudentIdAndAcademicYearIdAndStatus(
+                        student.getId(),
+                        term.getAcademicYear().getId(),
+                        EnrollmentStatus.ACTIVE
+                )
+                .isPresent();
+        if (!enrolled) {
+            throw new IllegalStateException("Student must have an active enrollment for the report academic year");
+        }
+    }
+
+    private AcademicReportReadinessDTO buildReadiness(Student student, AcademicTerm term) {
+        List<StudentMark> marks = studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(
+                student.getId(),
+                term.getId()
+        );
+        AttendanceSummaryDTO attendance = attendanceService.getStudentAttendanceSummary(
+                student.getId(),
+                term.getStartDate(),
+                term.getEndDate()
+        );
+
+        boolean hasClass = student.getCurrentClass() != null;
+        boolean hasEnrollment = studentEnrollmentRepository
+                .findByStudentIdAndAcademicYearIdAndStatus(
+                        student.getId(),
+                        term.getAcademicYear().getId(),
+                        EnrollmentStatus.ACTIVE
+                )
+                .isPresent();
+        boolean hasMarks = !marks.isEmpty();
+        boolean hasAttendance = attendance.getTotalRecords() > 0;
+        boolean reportDoesNotExist = !academicReportRepository.existsByStudentIdAndAcademicTermId(
+                student.getId(),
+                term.getId()
+        );
+
+        long subjectCount = marks.stream()
+                .map(mark -> mark.getExam().getSubject().getId())
+                .distinct()
+                .count();
+        List<AcademicReportReadinessItemDTO> items = List.of(
+                readinessItem(
+                        "student-class",
+                        "Student class",
+                        hasClass,
+                        "Student is assigned to " + (hasClass ? student.getCurrentClass().getName() : "an active class"),
+                        "Student must be assigned to an active class before a report can be generated."
+                ),
+                readinessItem(
+                        "student-enrollment",
+                        "Academic year enrollment",
+                        hasEnrollment,
+                        "Student has an active enrollment for " + term.getAcademicYear().getName() + ".",
+                        "Student must be enrolled in the selected academic year."
+                ),
+                readinessItem(
+                        "term-marks",
+                        "Term marks",
+                        hasMarks,
+                        marks.size() + " mark record(s) across " + subjectCount + " subject(s) are ready.",
+                        "At least one mark record is required for this student and term."
+                ),
+                readinessItem(
+                        "term-attendance",
+                        "Term attendance",
+                        hasAttendance,
+                        attendance.getTotalRecords() + " attendance record(s) are ready.",
+                        "Attendance must be recorded inside the selected term."
+                ),
+                readinessItem(
+                        "existing-report",
+                        "Duplicate report",
+                        reportDoesNotExist,
+                        "No report exists yet for this student and term.",
+                        "A report already exists for this student and term. Open the existing draft or published report instead."
+                )
+        );
+
+        boolean canGenerate = items.stream().allMatch(AcademicReportReadinessItemDTO::isReady);
+        return new AcademicReportReadinessDTO(
+                student.getId(),
+                term.getId(),
+                canGenerate,
+                subjectCount,
+                marks.size(),
+                attendance.getTotalRecords(),
+                items
+        );
+    }
+
+    private AcademicReportReadinessItemDTO readinessItem(
+            String key,
+            String label,
+            boolean ready,
+            String readyMessage,
+            String missingMessage
+    ) {
+        return new AcademicReportReadinessItemDTO(
+                key,
+                label,
+                ready ? "READY" : "ERROR",
+                ready,
+                ready ? readyMessage : missingMessage
+        );
     }
 
     private void validateDraft(AcademicReport report) {
