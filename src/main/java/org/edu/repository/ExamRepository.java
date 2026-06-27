@@ -36,6 +36,22 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
             """)
     List<Exam> findTeacherPortalExamsByStaffId(@Param("staffId") Long staffId);
 
+    @Query("""
+            select distinct e
+            from Exam e
+            where e.active = true
+              and exists (
+                  select 1
+                  from TeachingAssignment assignment
+                  where assignment.active = true
+                    and assignment.staff.id = :staffId
+                    and assignment.studentClass.id = e.studentClass.id
+                    and assignment.subject.id = e.subject.id
+              )
+            order by e.examDate asc, e.name asc
+            """)
+    List<Exam> findTeacherPortalExamsByTeachingAssignment(@Param("staffId") Long staffId);
+
     boolean existsByAcademicTermIdAndStudentClassIdAndSubjectIdAndNameIgnoreCase(
             Long academicTermId,
             Long classId,

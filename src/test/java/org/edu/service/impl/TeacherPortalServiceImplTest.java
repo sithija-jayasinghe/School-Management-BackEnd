@@ -44,6 +44,7 @@ import org.edu.repository.ClassRepository;
 import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
@@ -80,6 +81,9 @@ class TeacherPortalServiceImplTest {
 
     @Mock
     private ExamRepository examRepository;
+
+    @Mock
+    private TeachingAssignmentRepository teachingAssignmentRepository;
 
     @Mock
     private AcademicReportService academicReportService;
