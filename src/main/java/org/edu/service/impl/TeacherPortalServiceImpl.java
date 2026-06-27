@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentDTO;
@@ -249,6 +250,18 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
                         request.getPrincipalRemarks()
                 )
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AcademicReportReadinessDTO checkStudentAcademicReportReadiness(
+            Long authenticatedUserId,
+            Long studentId,
+            Long academicTermId
+    ) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        getAccessibleStudent(staff.getId(), studentId);
+        return academicReportService.checkReportReadiness(authenticatedUserId, studentId, academicTermId);
     }
 
     @Override

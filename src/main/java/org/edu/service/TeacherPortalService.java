@@ -3,6 +3,7 @@ package org.edu.service;
 import java.time.LocalDate;
 import java.util.List;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentFileResponse;
@@ -61,6 +62,12 @@ public interface TeacherPortalService {
             Long authenticatedUserId,
             Long studentId,
             TeacherPortalAcademicReportGenerateRequest request
+    );
+
+    AcademicReportReadinessDTO checkStudentAcademicReportReadiness(
+            Long authenticatedUserId,
+            Long studentId,
+            Long academicTermId
     );
 
     AcademicReportDTO regenerateAcademicReport(Long authenticatedUserId, Long reportId);

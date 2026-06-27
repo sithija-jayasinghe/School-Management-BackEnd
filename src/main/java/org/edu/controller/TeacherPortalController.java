@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentFileResponse;
@@ -196,6 +197,20 @@ public class TeacherPortalController {
                 principal.getUser().getId(),
                 studentId,
                 request
+        );
+    }
+
+    @GetMapping("/students/{studentId}/academic-reports/readiness")
+    @Operation(summary = "Check report readiness for a student in the teacher's scope")
+    public AcademicReportReadinessDTO checkStudentAcademicReportReadiness(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long studentId,
+            @RequestParam Long academicTermId
+    ) {
+        return teacherPortalService.checkStudentAcademicReportReadiness(
+                principal.getUser().getId(),
+                studentId,
+                academicTermId
         );
     }
 
