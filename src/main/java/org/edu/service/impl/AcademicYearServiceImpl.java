@@ -2,9 +2,11 @@ package org.edu.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicYearDTO;
+import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AcademicYearMapper;
+import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.AcademicYearRepository;
 import org.edu.service.AcademicYearService;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ import java.util.List;
 public class AcademicYearServiceImpl implements AcademicYearService {
 
     private final AcademicYearRepository academicYearRepository;
+    private final AcademicTermRepository academicTermRepository;
     private final AcademicYearMapper academicYearMapper;
 
     @Override
@@ -76,6 +79,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
             throw new IllegalStateException("Current academic year cannot be deactivated");
         }
 
+        clearTermsForAcademicYear(academicYear.getId());
         academicYear.setActive(false);
     }
 
@@ -93,6 +97,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
                 .orElseThrow(() -> new ResourceNotFoundException("Academic year not found with id: " + id));
 
         academicYear.setCurrent(false);
+        clearTermsForAcademicYear(academicYear.getId());
         academicYear.setActive(false);
     }
 
@@ -145,6 +150,10 @@ public class AcademicYearServiceImpl implements AcademicYearService {
         academicYearRepository.findByCurrentTrueAndActiveTrue()
                 .ifPresent(currentAcademicYear -> currentAcademicYear.setCurrent(false));
 
+        academicTermRepository.findByCurrentTrueAndActiveTrue()
+                .filter(currentTerm -> !selectedAcademicYear.getId().equals(currentTerm.getAcademicYear().getId()))
+                .ifPresent(currentTerm -> currentTerm.setCurrent(false));
+
         selectedAcademicYear.setCurrent(true);
         return academicYearMapper.toDTO(selectedAcademicYear);
     }
@@ -170,5 +179,15 @@ public class AcademicYearServiceImpl implements AcademicYearService {
         if (academicYearRepository.existsByNameIgnoreCase(name)) {
             throw new IllegalArgumentException("Academic year already exists with name: " + name);
         }
+    }
+
+    private void clearTermsForAcademicYear(Long academicYearId) {
+        academicTermRepository.findByAcademicYearIdAndActiveTrue(academicYearId)
+                .forEach(this::clearTerm);
+    }
+
+    private void clearTerm(AcademicTerm academicTerm) {
+        academicTerm.setCurrent(false);
+        academicTerm.setActive(false);
     }
 }
