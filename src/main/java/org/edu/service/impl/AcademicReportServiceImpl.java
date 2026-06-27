@@ -371,11 +371,13 @@ public class AcademicReportServiceImpl implements AcademicReportService {
 
     private void validateStudentEnrollment(Student student, AcademicTerm term) {
         boolean enrolled = studentEnrollmentRepository
-                .findByStudentIdAndAcademicYearIdAndStatus(
+                .findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
                         student.getId(),
                         term.getAcademicYear().getId(),
                         EnrollmentStatus.ACTIVE
                 )
+                .stream()
+                .findAny()
                 .isPresent();
         if (!enrolled) {
             throw new IllegalStateException("Student must have an active enrollment for the report academic year");
@@ -395,11 +397,13 @@ public class AcademicReportServiceImpl implements AcademicReportService {
 
         boolean hasClass = student.getCurrentClass() != null;
         boolean hasEnrollment = studentEnrollmentRepository
-                .findByStudentIdAndAcademicYearIdAndStatus(
+                .findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
                         student.getId(),
                         term.getAcademicYear().getId(),
                         EnrollmentStatus.ACTIVE
                 )
+                .stream()
+                .findAny()
                 .isPresent();
         boolean hasMarks = !marks.isEmpty();
         boolean hasAttendance = attendance.getTotalRecords() > 0;

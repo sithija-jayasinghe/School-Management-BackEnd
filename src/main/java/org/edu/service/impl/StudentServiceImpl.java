@@ -295,25 +295,19 @@ public class StudentServiceImpl implements StudentService {
             return;
         }
 
-        AcademicYear academicYear = academicYearRepository.findByCurrentTrueAndActiveTrue()
-                .orElseThrow(() -> new ResourceNotFoundException("Current academic year not found"));
-
-        StudentEnrollment enrollment = studentEnrollmentRepository
-                .findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        academicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                )
-                .map(activeEnrollment -> {
-                    if (activeEnrollment.getStudentClass().getId().equals(student.getCurrentClass().getId())) {
-                        return activeEnrollment;
-                    }
-
-                    activeEnrollment.setStatus(EnrollmentStatus.TRANSFERRED);
-                    activeEnrollment.setEndDate(LocalDate.now());
+        AcademicYear academicYear = getCurrentAcademicYear();
+        List<StudentEnrollment> activeEnrollments = findActiveEnrollments(student, academicYear);
+        StudentEnrollment enrollment = activeEnrollments.stream()
+                .filter(activeEnrollment -> activeEnrollment.getStudentClass().getId().equals(student.getCurrentClass().getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    activeEnrollments.forEach(activeEnrollment -> closeEnrollment(activeEnrollment, EnrollmentStatus.TRANSFERRED));
                     return createEnrollment(student, academicYear);
-                })
-                .orElseGet(() -> createEnrollment(student, academicYear));
+                });
+
+        activeEnrollments.stream()
+                .filter(activeEnrollment -> !activeEnrollment.getId().equals(enrollment.getId()))
+                .forEach(activeEnrollment -> closeEnrollment(activeEnrollment, EnrollmentStatus.TRANSFERRED));
 
         enrollment.setStatus(EnrollmentStatus.ACTIVE);
         enrollment.setEndDate(null);
@@ -325,18 +319,13 @@ public class StudentServiceImpl implements StudentService {
         Class clazz = classRepository.findByIdAndActiveTrue(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + classId));
         AcademicYear academicYear = getCurrentAcademicYear();
+        List<StudentEnrollment> activeEnrollments = findActiveEnrollments(student, academicYear);
 
-        studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        academicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                )
-                .ifPresent(activeEnrollment -> {
-                    if (activeEnrollment.getStudentClass().getId().equals(clazz.getId())) {
-                        throw new IllegalStateException("Student is already enrolled in this class for the current academic year");
-                    }
-                    closeEnrollment(activeEnrollment, closedStatus);
-                });
+        if (activeEnrollments.stream().anyMatch(activeEnrollment -> activeEnrollment.getStudentClass().getId().equals(clazz.getId()))) {
+            throw new IllegalStateException("Student is already enrolled in this class for the current academic year");
+        }
+
+        activeEnrollments.forEach(activeEnrollment -> closeEnrollment(activeEnrollment, closedStatus));
 
         student.setCurrentClass(clazz);
         StudentEnrollment enrollment = createEnrollment(student, academicYear);
@@ -350,15 +339,13 @@ public class StudentServiceImpl implements StudentService {
     private StudentDTO closeStudentEnrollment(Long studentId, EnrollmentStatus status) {
         Student student = getActiveStudent(studentId);
         AcademicYear academicYear = getCurrentAcademicYear();
-        StudentEnrollment enrollment = studentEnrollmentRepository
-                .findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        academicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                )
-                .orElseThrow(() -> new ResourceNotFoundException("Active enrollment not found for current academic year"));
+        List<StudentEnrollment> activeEnrollments = findActiveEnrollments(student, academicYear);
 
-        closeEnrollment(enrollment, status);
+        if (activeEnrollments.isEmpty()) {
+            throw new ResourceNotFoundException("Active enrollment not found for current academic year");
+        }
+
+        activeEnrollments.forEach(enrollment -> closeEnrollment(enrollment, status));
         student.setCurrentClass(null);
         studentRepository.save(student);
 
@@ -377,12 +364,16 @@ public class StudentServiceImpl implements StudentService {
 
     private void closeCurrentEnrollment(Student student) {
         academicYearRepository.findByCurrentTrueAndActiveTrue()
-                .flatMap(academicYear -> studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        academicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                ))
-                .ifPresent(enrollment -> closeEnrollment(enrollment, EnrollmentStatus.TRANSFERRED));
+                .ifPresent(academicYear -> findActiveEnrollments(student, academicYear)
+                        .forEach(enrollment -> closeEnrollment(enrollment, EnrollmentStatus.TRANSFERRED)));
+    }
+
+    private List<StudentEnrollment> findActiveEnrollments(Student student, AcademicYear academicYear) {
+        return studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
+                student.getId(),
+                academicYear.getId(),
+                EnrollmentStatus.ACTIVE
+        );
     }
 
     private void closeEnrollment(StudentEnrollment enrollment, EnrollmentStatus status) {

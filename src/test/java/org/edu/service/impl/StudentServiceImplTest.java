@@ -133,11 +133,11 @@ class StudentServiceImplTest {
         when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(student));
         when(classRepository.findByIdAndActiveTrue(11L)).thenReturn(Optional.of(newClass));
         when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(academicYear));
-        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatus(
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
                 1L,
                 100L,
                 EnrollmentStatus.ACTIVE
-        )).thenReturn(Optional.of(activeEnrollment));
+        )).thenReturn(List.of(activeEnrollment));
         when(studentMapper.toDTO(student)).thenReturn(new StudentDTO());
         when(parentStudentRepository.findByStudentId(1L)).thenReturn(List.of());
         when(studentEnrollmentRepository.findByStudentIdAndStatusOrderByAcademicYearStartDateDesc(
@@ -163,11 +163,11 @@ class StudentServiceImplTest {
         when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(student));
         when(classRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(currentClass));
         when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(academicYear));
-        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatus(
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
                 1L,
                 100L,
                 EnrollmentStatus.ACTIVE
-        )).thenReturn(Optional.of(activeEnrollment));
+        )).thenReturn(List.of(activeEnrollment));
 
         assertThrows(IllegalStateException.class, () -> studentService.transferStudent(1L, 10L));
         verify(studentEnrollmentRepository, never()).save(org.mockito.ArgumentMatchers.any(StudentEnrollment.class));
@@ -183,11 +183,11 @@ class StudentServiceImplTest {
 
         when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(student));
         when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(academicYear));
-        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatus(
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
                 1L,
                 100L,
                 EnrollmentStatus.ACTIVE
-        )).thenReturn(Optional.of(activeEnrollment));
+        )).thenReturn(List.of(activeEnrollment));
         when(studentMapper.toDTO(student)).thenReturn(new StudentDTO());
         when(parentStudentRepository.findByStudentId(1L)).thenReturn(List.of());
         when(studentEnrollmentRepository.findByStudentIdAndStatusOrderByAcademicYearStartDateDesc(
@@ -200,6 +200,40 @@ class StudentServiceImplTest {
         assertEquals(EnrollmentStatus.WITHDRAWN, activeEnrollment.getStatus());
         assertNull(student.getCurrentClass());
         verify(studentRepository).save(student);
+    }
+
+    @Test
+    void shouldCloseDuplicateActiveEnrollmentsWhenPromotingStudent() {
+        Student student = activeStudent(1L);
+        org.edu.entity.Class firstClass = activeClass(10L, "Grade 5A");
+        org.edu.entity.Class secondClass = activeClass(11L, "Grade 5B");
+        org.edu.entity.Class promotedClass = activeClass(12L, "Grade 6A");
+        AcademicYear academicYear = currentAcademicYear();
+        StudentEnrollment firstActiveEnrollment = activeEnrollment(student, firstClass, academicYear);
+        StudentEnrollment secondActiveEnrollment = activeEnrollment(student, secondClass, academicYear);
+        secondActiveEnrollment.setId(201L);
+
+        when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(student));
+        when(classRepository.findByIdAndActiveTrue(12L)).thenReturn(Optional.of(promotedClass));
+        when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(academicYear));
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
+                1L,
+                100L,
+                EnrollmentStatus.ACTIVE
+        )).thenReturn(List.of(firstActiveEnrollment, secondActiveEnrollment));
+        when(studentMapper.toDTO(student)).thenReturn(new StudentDTO());
+        when(parentStudentRepository.findByStudentId(1L)).thenReturn(List.of());
+        when(studentEnrollmentRepository.findByStudentIdAndStatusOrderByAcademicYearStartDateDesc(
+                1L,
+                EnrollmentStatus.ACTIVE
+        )).thenReturn(List.of(activeEnrollment(student, promotedClass, academicYear)));
+
+        studentService.promoteStudent(1L, 12L);
+
+        assertEquals(EnrollmentStatus.PROMOTED, firstActiveEnrollment.getStatus());
+        assertEquals(EnrollmentStatus.PROMOTED, secondActiveEnrollment.getStatus());
+        assertEquals(promotedClass, student.getCurrentClass());
+        verify(studentEnrollmentRepository).save(org.mockito.ArgumentMatchers.any(StudentEnrollment.class));
     }
 
     private Student activeStudent(Long id) {

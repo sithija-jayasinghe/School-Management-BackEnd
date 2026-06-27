@@ -16,6 +16,12 @@ public interface StudentEnrollmentRepository extends JpaRepository<StudentEnroll
             EnrollmentStatus status
     );
 
+    List<StudentEnrollment> findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
+            Long studentId,
+            Long academicYearId,
+            EnrollmentStatus status
+    );
+
     List<StudentEnrollment> findByStudentIdOrderByAcademicYearStartDateDesc(Long studentId);
 
     List<StudentEnrollment> findByStudentIdAndStatusOrderByAcademicYearStartDateDesc(
