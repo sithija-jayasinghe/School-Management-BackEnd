@@ -13,6 +13,7 @@ public interface StudentService {
     StudentDTO updateStudent(Long id,StudentDTO studentDTO);
     void deleteStudent(Long id); //For Dev : Soft delete (sets active = false)
     Page<StudentDTO> getAllStudents(Pageable pageable);
+    Page<StudentDTO> filterStudents(String keyword, Long classId, Boolean active, Pageable pageable);
     StudentDTO getStudentById(Long id);
     Page<StudentDTO> searchStudents(String name, Pageable pageable);
     List<StudentDTO> getAllActiveStudents();

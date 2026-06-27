@@ -33,6 +33,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 class StudentServiceImplTest {
@@ -120,6 +122,30 @@ class StudentServiceImplTest {
         studentService.deleteStudent(1L);
 
         assertFalse(student.isActive());
+    }
+
+    @Test
+    void shouldFilterStudentsWithKeywordClassAndStatus() {
+        Student student = activeStudent(1L);
+        org.edu.entity.Class studentClass = activeClass(10L, "Grade 5A");
+        student.setCurrentClass(studentClass);
+        StudentDTO mapped = new StudentDTO();
+        mapped.setId(1L);
+
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(studentRepository.filterStudents("kamal", 10L, true, pageable))
+                .thenReturn(new PageImpl<>(List.of(student), pageable, 1));
+        when(studentMapper.toDTO(student)).thenReturn(mapped);
+        when(parentStudentRepository.findByStudentId(1L)).thenReturn(List.of());
+        when(studentEnrollmentRepository.findByStudentIdAndStatusOrderByAcademicYearStartDateDesc(
+                1L,
+                EnrollmentStatus.ACTIVE
+        )).thenReturn(List.of());
+
+        var page = studentService.filterStudents(" kamal ", 10L, true, pageable);
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals(1L, page.getContent().get(0).getId());
     }
 
     @Test

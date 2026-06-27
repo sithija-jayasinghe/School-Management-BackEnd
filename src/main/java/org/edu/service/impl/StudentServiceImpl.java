@@ -120,6 +120,14 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<StudentDTO> filterStudents(String keyword, Long classId, Boolean active, Pageable pageable) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        return studentRepository.filterStudents(normalizedKeyword, classId, active, pageable)
+                .map(this::toDTOWithParentIds);
+    }
+
+    @Override
     public StudentDTO getStudentById(Long id) {
 
         Student student = studentRepository.findByIdAndActiveTrue(id)
