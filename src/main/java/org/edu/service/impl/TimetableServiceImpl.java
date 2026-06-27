@@ -9,6 +9,7 @@ import org.edu.mapper.TimetableMapper;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.SubjectRepository;
+import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.TimetableService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,8 @@ public class TimetableServiceImpl implements TimetableService {
     private SubjectRepository subjectRepository;
     @Autowired
     private StaffRepository staffRepository;
+    @Autowired
+    private TeachingAssignmentRepository teachingAssignmentRepository;
     @Autowired
     private TimetableMapper timetableMapper;
 
@@ -105,12 +108,13 @@ public class TimetableServiceImpl implements TimetableService {
     }
 
     private Timetable mapRelations(TimetableDTO dto, Timetable timetable) {
-        Class aClass = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class not found"));
+        Class aClass = classRepository.findByIdAndActiveTrue(dto.getClassId())
+                .orElseThrow(() -> new RuntimeException("Active class not found"));
         Subject subject = subjectRepository.findById(dto.getSubjectId())
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
-        Staff staff = staffRepository.findById(dto.getStaffId())
-                .orElseThrow(() -> new RuntimeException("Staff not found"));
+        Staff staff = staffRepository.findByIdAndActiveTrue(dto.getStaffId())
+                .orElseThrow(() -> new RuntimeException("Active staff not found"));
+        validateTeacherAssignment(staff, aClass, subject);
 
         timetable.setStudentClass(aClass);
         timetable.setSubject(subject);
@@ -122,6 +126,15 @@ public class TimetableServiceImpl implements TimetableService {
 
         return timetable;
     }
+
+    private void validateTeacherAssignment(Staff staff, Class studentClass, Subject subject) {
+        boolean assigned = teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndSubjectIdAndActiveTrue(
+                staff.getId(),
+                studentClass.getId(),
+                subject.getId()
+        );
+        if (!assigned) {
+            throw new RuntimeException("Staff member is not assigned to teach this class subject.");
+        }
+    }
 }
-
-

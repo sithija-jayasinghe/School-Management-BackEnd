@@ -18,6 +18,7 @@ import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentMarkRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.service.StudentMarkService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ public class StudentMarkServiceImpl implements StudentMarkService {
     private final ExamRepository examRepository;
     private final StudentRepository studentRepository;
     private final StaffRepository staffRepository;
+    private final TeachingAssignmentRepository teachingAssignmentRepository;
     private final StudentMarkMapper studentMarkMapper;
 
     @Override
@@ -174,7 +176,21 @@ public class StudentMarkServiceImpl implements StudentMarkService {
         if (dto.getEnteredByStaffId() != null) {
             Staff enteredBy = staffRepository.findByIdAndActiveTrue(dto.getEnteredByStaffId())
                     .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + dto.getEnteredByStaffId()));
+            validateTeacherAssignedToExam(enteredBy, exam);
             studentMark.setEnteredBy(enteredBy);
+        } else {
+            studentMark.setEnteredBy(null);
+        }
+    }
+
+    private void validateTeacherAssignedToExam(Staff staff, Exam exam) {
+        boolean assigned = teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndSubjectIdAndActiveTrue(
+                staff.getId(),
+                exam.getStudentClass().getId(),
+                exam.getSubject().getId()
+        );
+        if (!assigned) {
+            throw new IllegalArgumentException("Selected staff member is not assigned to this exam class and subject");
         }
     }
 
