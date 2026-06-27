@@ -57,3 +57,18 @@ CREATE TABLE IF NOT EXISTS grades (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS student_enrollments (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    student_id BIGINT NOT NULL,
+    academic_year_id BIGINT NOT NULL,
+    class_id BIGINT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_student_enrollments_student FOREIGN KEY (student_id) REFERENCES students(id),
+    CONSTRAINT fk_student_enrollments_academic_year FOREIGN KEY (academic_year_id) REFERENCES academic_years(id),
+    CONSTRAINT fk_student_enrollments_class FOREIGN KEY (class_id) REFERENCES classes(id)
+);
