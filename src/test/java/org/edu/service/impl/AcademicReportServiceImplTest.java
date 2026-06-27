@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.request.AcademicReportGenerateRequest;
 import org.edu.dto.request.AcademicReportUpdateRequest;
@@ -20,6 +21,7 @@ import org.edu.entity.AcademicYear;
 import org.edu.entity.Exam;
 import org.edu.entity.Staff;
 import org.edu.entity.Student;
+import org.edu.entity.StudentEnrollment;
 import org.edu.entity.StudentMark;
 import org.edu.entity.Subject;
 import org.edu.entity.User;
@@ -27,6 +29,7 @@ import org.edu.repository.AcademicReportRepository;
 import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.StaffRepository;
+import org.edu.repository.StudentEnrollmentRepository;
 import org.edu.repository.StudentMarkRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
@@ -34,6 +37,7 @@ import org.edu.repository.UserRepository;
 import org.edu.service.AcademicReportPdfService;
 import org.edu.service.AttendanceService;
 import org.edu.util.AcademicReportStatus;
+import org.edu.util.EnrollmentStatus;
 import org.edu.util.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +52,8 @@ class AcademicReportServiceImplTest {
     private AcademicReportRepository academicReportRepository;
     @Mock
     private AcademicTermRepository academicTermRepository;
+    @Mock
+    private StudentEnrollmentRepository studentEnrollmentRepository;
     @Mock
     private StudentRepository studentRepository;
     @Mock
@@ -72,6 +78,7 @@ class AcademicReportServiceImplTest {
         academicReportService = new AcademicReportServiceImpl(
                 academicReportRepository,
                 academicTermRepository,
+                studentEnrollmentRepository,
                 studentRepository,
                 studentMarkRepository,
                 userRepository,
@@ -99,6 +106,8 @@ class AcademicReportServiceImplTest {
         when(userRepository.findById(100L)).thenReturn(Optional.of(admin));
         when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
         when(academicTermRepository.findByIdAndActiveTrue(40L)).thenReturn(Optional.of(term));
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(20L, 5L, EnrollmentStatus.ACTIVE))
+                .thenReturn(List.of(enrollment(student, term)));
         when(academicReportRepository.existsByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(false);
         when(studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(marks);
         when(attendanceService.getStudentAttendanceSummary(20L, term.getStartDate(), term.getEndDate()))
@@ -142,12 +151,69 @@ class AcademicReportServiceImplTest {
         when(userRepository.findById(100L)).thenReturn(Optional.of(admin));
         when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
         when(academicTermRepository.findByIdAndActiveTrue(40L)).thenReturn(Optional.of(term));
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(20L, 5L, EnrollmentStatus.ACTIVE))
+                .thenReturn(List.of(enrollment(student, term)));
         when(academicReportRepository.existsByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> academicReportService.generateReport(
                 100L,
                 new AcademicReportGenerateRequest(20L, 40L, null, null)
         ));
+    }
+
+    @Test
+    void shouldReturnReadinessChecklistForReportGeneration() {
+        User admin = user(100L, Role.ADMIN);
+        Student student = student(20L, 30L);
+        AcademicTerm term = term(40L);
+        Subject math = subject(50L, "MATH", "Mathematics");
+        List<StudentMark> marks = List.of(
+                mark(student, exam(60L, term, student.getCurrentClass(), math, "100"), "80", true)
+        );
+
+        when(userRepository.findById(100L)).thenReturn(Optional.of(admin));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(academicTermRepository.findByIdAndActiveTrue(40L)).thenReturn(Optional.of(term));
+        when(studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(marks);
+        when(attendanceService.getStudentAttendanceSummary(20L, term.getStartDate(), term.getEndDate()))
+                .thenReturn(new AttendanceSummaryDTO(20L, "Student User", term.getStartDate(), term.getEndDate(), 12, 10, 1, 1, 0, 91.67));
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(20L, 5L, EnrollmentStatus.ACTIVE))
+                .thenReturn(List.of(enrollment(student, term)));
+        when(academicReportRepository.existsByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(false);
+
+        AcademicReportReadinessDTO readiness = academicReportService.checkReportReadiness(100L, 20L, 40L);
+
+        assertTrue(readiness.isCanGenerate());
+        assertEquals(1, readiness.getSubjectCount());
+        assertEquals(1, readiness.getMarkCount());
+        assertEquals(12, readiness.getAttendanceRecordCount());
+        assertTrue(readiness.getItems().stream().allMatch(AcademicReportReadinessDTO.AcademicReportReadinessItemDTO::isReady));
+    }
+
+    @Test
+    void shouldBlockReadinessWhenAttendanceIsMissing() {
+        User admin = user(100L, Role.ADMIN);
+        Student student = student(20L, 30L);
+        AcademicTerm term = term(40L);
+        Subject math = subject(50L, "MATH", "Mathematics");
+        List<StudentMark> marks = List.of(
+                mark(student, exam(60L, term, student.getCurrentClass(), math, "100"), "80", true)
+        );
+
+        when(userRepository.findById(100L)).thenReturn(Optional.of(admin));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(academicTermRepository.findByIdAndActiveTrue(40L)).thenReturn(Optional.of(term));
+        when(studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(marks);
+        when(attendanceService.getStudentAttendanceSummary(20L, term.getStartDate(), term.getEndDate()))
+                .thenReturn(new AttendanceSummaryDTO(20L, "Student User", term.getStartDate(), term.getEndDate(), 0, 0, 0, 0, 0, 0.0));
+        when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(20L, 5L, EnrollmentStatus.ACTIVE))
+                .thenReturn(List.of(enrollment(student, term)));
+        when(academicReportRepository.existsByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(false);
+
+        AcademicReportReadinessDTO readiness = academicReportService.checkReportReadiness(100L, 20L, 40L);
+
+        assertEquals(false, readiness.isCanGenerate());
+        assertEquals(0, readiness.getAttendanceRecordCount());
     }
 
     @Test
@@ -230,6 +296,15 @@ class AcademicReportServiceImplTest {
         student.setCurrentClass(studentClass);
         student.setActive(true);
         return student;
+    }
+
+    private StudentEnrollment enrollment(Student student, AcademicTerm term) {
+        StudentEnrollment enrollment = new StudentEnrollment();
+        enrollment.setStudent(student);
+        enrollment.setAcademicYear(term.getAcademicYear());
+        enrollment.setStudentClass(student.getCurrentClass());
+        enrollment.setStatus(EnrollmentStatus.ACTIVE);
+        return enrollment;
     }
 
     private AcademicTerm term(Long id) {

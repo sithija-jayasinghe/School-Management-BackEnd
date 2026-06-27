@@ -91,16 +91,6 @@ public class StudentServiceImpl implements StudentService {
 
         studentMapper.updateEntityFromDTO(studentDTO, student);
 
-        if (studentDTO.getCurrentClassId() != null) {
-            Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
-            student.setCurrentClass(clazz);
-            syncCurrentEnrollment(student);
-        } else {
-            student.setCurrentClass(null);
-            closeCurrentEnrollment(student);
-        }
-
         if (studentDTO.getParentIds() != null) {
             syncParentLinks(student, studentDTO.getParentIds());
         }
@@ -126,6 +116,14 @@ public class StudentServiceImpl implements StudentService {
     public Page<StudentDTO> getAllStudents(Pageable pageable) {
 
         return studentRepository.findByActiveTrue(pageable)
+                .map(this::toDTOWithParentIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<StudentDTO> filterStudents(String keyword, Long classId, Boolean active, Pageable pageable) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        return studentRepository.filterStudents(normalizedKeyword, classId, active, pageable)
                 .map(this::toDTOWithParentIds);
     }
 
@@ -177,6 +175,26 @@ public class StudentServiceImpl implements StudentService {
                 .stream()
                 .map(this::toEnrollmentDTO)
                 .toList();
+    }
+
+    @Override
+    public StudentDTO transferStudent(Long studentId, Long classId) {
+        return changeStudentEnrollment(studentId, classId, EnrollmentStatus.TRANSFERRED);
+    }
+
+    @Override
+    public StudentDTO promoteStudent(Long studentId, Long classId) {
+        return changeStudentEnrollment(studentId, classId, EnrollmentStatus.PROMOTED);
+    }
+
+    @Override
+    public StudentDTO withdrawStudent(Long studentId) {
+        return closeStudentEnrollment(studentId, EnrollmentStatus.WITHDRAWN);
+    }
+
+    @Override
+    public StudentDTO completeStudent(Long studentId) {
+        return closeStudentEnrollment(studentId, EnrollmentStatus.COMPLETED);
     }
 
     private User resolveExistingStudentUser(Long userId) {
@@ -285,42 +303,90 @@ public class StudentServiceImpl implements StudentService {
             return;
         }
 
-        AcademicYear academicYear = academicYearRepository.findByCurrentTrueAndActiveTrue()
-                .orElseThrow(() -> new ResourceNotFoundException("Current academic year not found"));
-
-        StudentEnrollment enrollment = studentEnrollmentRepository
-                .findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        academicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                )
-                .map(activeEnrollment -> {
-                    if (activeEnrollment.getStudentClass().getId().equals(student.getCurrentClass().getId())) {
-                        return activeEnrollment;
-                    }
-
-                    activeEnrollment.setStatus(EnrollmentStatus.TRANSFERRED);
-                    activeEnrollment.setEndDate(LocalDate.now());
+        AcademicYear academicYear = getCurrentAcademicYear();
+        List<StudentEnrollment> activeEnrollments = findActiveEnrollments(student, academicYear);
+        StudentEnrollment enrollment = activeEnrollments.stream()
+                .filter(activeEnrollment -> activeEnrollment.getStudentClass().getId().equals(student.getCurrentClass().getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    activeEnrollments.forEach(activeEnrollment -> closeEnrollment(activeEnrollment, EnrollmentStatus.TRANSFERRED));
                     return createEnrollment(student, academicYear);
-                })
-                .orElseGet(() -> createEnrollment(student, academicYear));
+                });
+
+        activeEnrollments.stream()
+                .filter(activeEnrollment -> !activeEnrollment.getId().equals(enrollment.getId()))
+                .forEach(activeEnrollment -> closeEnrollment(activeEnrollment, EnrollmentStatus.TRANSFERRED));
 
         enrollment.setStatus(EnrollmentStatus.ACTIVE);
         enrollment.setEndDate(null);
         studentEnrollmentRepository.save(enrollment);
     }
 
+    private StudentDTO changeStudentEnrollment(Long studentId, Long classId, EnrollmentStatus closedStatus) {
+        Student student = getActiveStudent(studentId);
+        Class clazz = classRepository.findByIdAndActiveTrue(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + classId));
+        AcademicYear academicYear = getCurrentAcademicYear();
+        List<StudentEnrollment> activeEnrollments = findActiveEnrollments(student, academicYear);
+
+        if (activeEnrollments.stream().anyMatch(activeEnrollment -> activeEnrollment.getStudentClass().getId().equals(clazz.getId()))) {
+            throw new IllegalStateException("Student is already enrolled in this class for the current academic year");
+        }
+
+        activeEnrollments.forEach(activeEnrollment -> closeEnrollment(activeEnrollment, closedStatus));
+
+        student.setCurrentClass(clazz);
+        StudentEnrollment enrollment = createEnrollment(student, academicYear);
+        enrollment.setStatus(EnrollmentStatus.ACTIVE);
+        studentEnrollmentRepository.save(enrollment);
+        studentRepository.save(student);
+
+        return toDTOWithParentIds(student);
+    }
+
+    private StudentDTO closeStudentEnrollment(Long studentId, EnrollmentStatus status) {
+        Student student = getActiveStudent(studentId);
+        AcademicYear academicYear = getCurrentAcademicYear();
+        List<StudentEnrollment> activeEnrollments = findActiveEnrollments(student, academicYear);
+
+        if (activeEnrollments.isEmpty()) {
+            throw new ResourceNotFoundException("Active enrollment not found for current academic year");
+        }
+
+        activeEnrollments.forEach(enrollment -> closeEnrollment(enrollment, status));
+        student.setCurrentClass(null);
+        studentRepository.save(student);
+
+        return toDTOWithParentIds(student);
+    }
+
+    private Student getActiveStudent(Long studentId) {
+        return studentRepository.findByIdAndActiveTrue(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+    }
+
+    private AcademicYear getCurrentAcademicYear() {
+        return academicYearRepository.findByCurrentTrueAndActiveTrue()
+                .orElseThrow(() -> new ResourceNotFoundException("Current academic year not found"));
+    }
+
     private void closeCurrentEnrollment(Student student) {
         academicYearRepository.findByCurrentTrueAndActiveTrue()
-                .flatMap(academicYear -> studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        academicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                ))
-                .ifPresent(enrollment -> {
-                    enrollment.setStatus(EnrollmentStatus.TRANSFERRED);
-                    enrollment.setEndDate(LocalDate.now());
-                });
+                .ifPresent(academicYear -> findActiveEnrollments(student, academicYear)
+                        .forEach(enrollment -> closeEnrollment(enrollment, EnrollmentStatus.TRANSFERRED)));
+    }
+
+    private List<StudentEnrollment> findActiveEnrollments(Student student, AcademicYear academicYear) {
+        return studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
+                student.getId(),
+                academicYear.getId(),
+                EnrollmentStatus.ACTIVE
+        );
+    }
+
+    private void closeEnrollment(StudentEnrollment enrollment, EnrollmentStatus status) {
+        enrollment.setStatus(status);
+        enrollment.setEndDate(LocalDate.now());
     }
 
     private StudentEnrollment createEnrollment(Student student, AcademicYear academicYear) {

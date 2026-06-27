@@ -12,4 +12,12 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
     Optional<Grade> findByLevel(Integer level);
 
     List<Grade> findByActiveTrueOrderByLevelAsc();
+
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByLevel(Integer level);
+
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+    boolean existsByLevelAndIdNot(Integer level, Long id);
 }

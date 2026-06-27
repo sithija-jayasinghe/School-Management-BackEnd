@@ -18,6 +18,7 @@ import org.edu.dto.StudentMarkDTO;
 import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
 import org.edu.entity.Exam;
+import org.edu.entity.Staff;
 import org.edu.entity.Student;
 import org.edu.entity.StudentMark;
 import org.edu.entity.Subject;
@@ -26,6 +27,7 @@ import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentMarkRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.util.ExamType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,9 @@ class StudentMarkServiceImplTest {
     @Mock
     private StaffRepository staffRepository;
 
+    @Mock
+    private TeachingAssignmentRepository teachingAssignmentRepository;
+
     private StudentMarkServiceImpl studentMarkService;
 
     @BeforeEach
@@ -59,6 +64,7 @@ class StudentMarkServiceImplTest {
                 examRepository,
                 studentRepository,
                 staffRepository,
+                teachingAssignmentRepository,
                 studentMarkMapper
         );
     }
@@ -124,6 +130,25 @@ class StudentMarkServiceImplTest {
         when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
 
         assertThrows(IllegalArgumentException.class, () -> studentMarkService.createStudentMark(dto));
+    }
+
+    @Test
+    void shouldRejectEnteredByStaffWithoutTeachingAssignment() {
+        StudentMarkDTO dto = markRequest(BigDecimal.valueOf(70));
+        dto.setEnteredByStaffId(50L);
+        Exam exam = exam();
+        Student student = student(20L, 30L);
+        Staff staff = staff(50L);
+
+        when(examRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(exam));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(studentMarkRepository.existsByExamIdAndStudentId(10L, 20L)).thenReturn(false);
+        when(staffRepository.findByIdAndActiveTrue(50L)).thenReturn(Optional.of(staff));
+        when(teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndSubjectIdAndActiveTrue(50L, 30L, 40L))
+                .thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> studentMarkService.createStudentMark(dto));
+        verify(studentMarkRepository, never()).save(org.mockito.Mockito.any(StudentMark.class));
     }
 
     @Test
@@ -267,6 +292,14 @@ class StudentMarkServiceImplTest {
         subject.setCode("MATH");
         subject.setName("Mathematics");
         return subject;
+    }
+
+    private Staff staff(Long id) {
+        Staff staff = new Staff();
+        staff.setId(id);
+        staff.setName("Teacher User");
+        staff.setActive(true);
+        return staff;
     }
 
     private AcademicTerm academicTerm() {

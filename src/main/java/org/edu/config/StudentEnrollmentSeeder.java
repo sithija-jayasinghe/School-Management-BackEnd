@@ -36,22 +36,22 @@ public class StudentEnrollmentSeeder implements CommandLineRunner {
     }
 
     private void ensureEnrollment(Student student, AcademicYear currentAcademicYear) {
-        studentEnrollmentRepository
-                .findByStudentIdAndAcademicYearIdAndStatus(
-                        student.getId(),
-                        currentAcademicYear.getId(),
-                        EnrollmentStatus.ACTIVE
-                )
-                .orElseGet(() -> {
-                    StudentEnrollment enrollment = new StudentEnrollment();
-                    enrollment.setStudent(student);
-                    enrollment.setAcademicYear(currentAcademicYear);
-                    enrollment.setStudentClass(student.getCurrentClass());
-                    enrollment.setStartDate(currentAcademicYear.getStartDate() != null
-                            ? currentAcademicYear.getStartDate()
-                            : LocalDate.now());
-                    enrollment.setStatus(EnrollmentStatus.ACTIVE);
-                    return studentEnrollmentRepository.save(enrollment);
-                });
+        if (!studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(
+                student.getId(),
+                currentAcademicYear.getId(),
+                EnrollmentStatus.ACTIVE
+        ).isEmpty()) {
+            return;
+        }
+
+        StudentEnrollment enrollment = new StudentEnrollment();
+        enrollment.setStudent(student);
+        enrollment.setAcademicYear(currentAcademicYear);
+        enrollment.setStudentClass(student.getCurrentClass());
+        enrollment.setStartDate(currentAcademicYear.getStartDate() != null
+                ? currentAcademicYear.getStartDate()
+                : LocalDate.now());
+        enrollment.setStatus(EnrollmentStatus.ACTIVE);
+        studentEnrollmentRepository.save(enrollment);
     }
 }

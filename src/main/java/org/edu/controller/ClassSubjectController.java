@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.ClassDTO;
 import org.edu.dto.SubjectDTO;
 import org.edu.service.SubjectService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Class Subjects", description = "Manage class and subject assignment relationships")
 @SecurityRequirement(name = "bearerAuth")
 public class ClassSubjectController {

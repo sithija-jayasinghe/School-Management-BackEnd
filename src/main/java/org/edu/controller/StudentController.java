@@ -6,12 +6,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.StudentDTO;
+import org.edu.dto.StudentEnrollmentActionRequest;
 import org.edu.dto.StudentEnrollmentDTO;
 import org.edu.dto.ParentStudentDTO;
 import org.edu.service.StudentService;
 import org.edu.service.ParentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/students")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Students", description = "Manage student records and parent relationships")
 @SecurityRequirement(name = "bearerAuth")
 public class StudentController {
@@ -47,8 +50,11 @@ public class StudentController {
 
     @GetMapping
     @Operation(summary = "List students")
-    public Page<StudentDTO> getAllStudents(Pageable pageable) {
-        return studentService.getAllStudents(pageable);
+    public Page<StudentDTO> getAllStudents(@RequestParam(required = false) String keyword,
+                                           @RequestParam(required = false) Long classId,
+                                           @RequestParam(required = false) Boolean active,
+                                           Pageable pageable) {
+        return studentService.filterStudents(keyword, classId, active, pageable);
     }
 
     @GetMapping("/{id}")
@@ -80,5 +86,31 @@ public class StudentController {
     @Operation(summary = "List enrollment history for a student")
     public List<StudentEnrollmentDTO> getStudentEnrollments(@PathVariable Long id) {
         return studentService.getStudentEnrollments(id);
+    }
+
+    @PostMapping("/{id}/enrollments/transfer")
+    @Operation(summary = "Transfer student to another class in the current academic year")
+    public StudentDTO transferStudent(@PathVariable Long id,
+                                      @Valid @RequestBody StudentEnrollmentActionRequest request) {
+        return studentService.transferStudent(id, request.getClassId());
+    }
+
+    @PostMapping("/{id}/enrollments/promote")
+    @Operation(summary = "Promote student to a new class in the current academic year")
+    public StudentDTO promoteStudent(@PathVariable Long id,
+                                     @Valid @RequestBody StudentEnrollmentActionRequest request) {
+        return studentService.promoteStudent(id, request.getClassId());
+    }
+
+    @PostMapping("/{id}/enrollments/withdraw")
+    @Operation(summary = "Withdraw student from the current academic year enrollment")
+    public StudentDTO withdrawStudent(@PathVariable Long id) {
+        return studentService.withdrawStudent(id);
+    }
+
+    @PostMapping("/{id}/enrollments/complete")
+    @Operation(summary = "Complete student enrollment")
+    public StudentDTO completeStudent(@PathVariable Long id) {
+        return studentService.completeStudent(id);
     }
 }

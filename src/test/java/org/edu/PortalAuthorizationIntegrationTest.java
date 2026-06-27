@@ -149,6 +149,26 @@ class PortalAuthorizationIntegrationTest {
                 .andExpect(jsonPath("$.message", is("Class not found in current teacher portal")));
     }
 
+    @Test
+    void shouldBlockTeacherFromAdminManagementApis() throws Exception {
+        User teacherUser = saveUser("teacher-admin-block@example.com", Role.TEACHER);
+        saveTeacher(teacherUser, "T-BLOCK");
+
+        mockMvc.perform(get("/api/students")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("ACCESS_DENIED")));
+
+        mockMvc.perform(get("/api/classes")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("ACCESS_DENIED")));
+
+        mockMvc.perform(get("/api/teacher-portal/academic-terms")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
+                .andExpect(status().isOk());
+    }
+
     private User saveUser(String email, Role role) {
         User user = new User();
         user.setName(role.name() + " User");

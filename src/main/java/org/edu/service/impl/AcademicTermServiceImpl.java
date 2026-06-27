@@ -186,6 +186,10 @@ public class AcademicTermServiceImpl implements AcademicTermService {
         AcademicTerm selectedAcademicTerm = academicTermRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Academic term not found with id: " + id));
 
+        if (!selectedAcademicTerm.getAcademicYear().isCurrent()) {
+            throw new IllegalStateException("Current academic term must belong to the current academic year");
+        }
+
         academicTermRepository.findByCurrentTrueAndActiveTrue()
                 .ifPresent(currentAcademicTerm -> currentAcademicTerm.setCurrent(false));
 

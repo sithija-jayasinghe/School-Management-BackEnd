@@ -2,10 +2,12 @@ package org.edu.service.impl;
 
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentDTO;
@@ -30,6 +32,7 @@ import org.edu.entity.Exam;
 import org.edu.entity.Staff;
 import org.edu.entity.Student;
 import org.edu.entity.Subject;
+import org.edu.entity.TeachingAssignment;
 import org.edu.entity.Timetable;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.repository.AttendanceRepository;
@@ -37,6 +40,7 @@ import org.edu.repository.ClassRepository;
 import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
@@ -60,6 +64,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     private final TimetableRepository timetableRepository;
     private final StudentRepository studentRepository;
     private final ExamRepository examRepository;
+    private final TeachingAssignmentRepository teachingAssignmentRepository;
     private final AcademicReportService academicReportService;
     private final AttendanceService attendanceService;
     private final DocumentService documentService;
@@ -101,6 +106,20 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     @Override
     public List<TeacherPortalSubjectDTO> getSubjects(Long authenticatedUserId) {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        List<TeachingAssignment> assignments = teachingAssignmentRepository.findByStaffIdAndActiveTrue(staff.getId());
+        if (!assignments.isEmpty()) {
+            Map<Long, List<TeachingAssignment>> assignmentsBySubject = assignments.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            assignment -> assignment.getSubject().getId()
+                    ));
+
+            return assignmentsBySubject.values()
+                    .stream()
+                    .map(this::toSubjectSummaryFromAssignments)
+                    .sorted(Comparator.comparing(TeacherPortalSubjectDTO::getSubjectName))
+                    .toList();
+        }
+
         List<Timetable> schedule = timetableRepository.findTeacherPortalScheduleByStaffId(staff.getId());
 
         Map<Long, List<Timetable>> timetablesBySubject = schedule.stream()
@@ -129,7 +148,13 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     @Override
     public List<TeacherPortalExamDTO> getExams(Long authenticatedUserId) {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
-        return examRepository.findTeacherPortalExamsByStaffId(staff.getId())
+        List<Exam> assignmentExams = examRepository.findTeacherPortalExamsByTeachingAssignment(staff.getId());
+        List<Exam> timetableExams = examRepository.findTeacherPortalExamsByStaffId(staff.getId());
+        Map<Long, Exam> exams = new LinkedHashMap<>();
+        assignmentExams.forEach(exam -> exams.put(exam.getId(), exam));
+        timetableExams.forEach(exam -> exams.putIfAbsent(exam.getId(), exam));
+
+        return exams.values()
                 .stream()
                 .map(this::toExamSummary)
                 .toList();
@@ -225,6 +250,18 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
                         request.getPrincipalRemarks()
                 )
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AcademicReportReadinessDTO checkStudentAcademicReportReadiness(
+            Long authenticatedUserId,
+            Long studentId,
+            Long academicTermId
+    ) {
+        Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        getAccessibleStudent(staff.getId(), studentId);
+        return academicReportService.checkReportReadiness(authenticatedUserId, studentId, academicTermId);
     }
 
     @Override
@@ -348,13 +385,19 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     }
 
     private List<TeacherPortalClassSummaryDTO> getAssignedClassesByStaffId(Long staffId) {
-        return classRepository.findByClassTeacherIdAndActiveTrueOrderByNameAsc(staffId)
-                .stream()
+        Map<Long, org.edu.entity.Class> assignedClasses = new LinkedHashMap<>();
+        teachingAssignmentRepository.findByStaffIdAndActiveTrue(staffId)
+                .forEach(assignment -> assignedClasses.put(assignment.getStudentClass().getId(), assignment.getStudentClass()));
+        classRepository.findByClassTeacherIdAndActiveTrueOrderByNameAsc(staffId)
+                .forEach(studentClass -> assignedClasses.putIfAbsent(studentClass.getId(), studentClass));
+
+        return assignedClasses.values().stream()
+                .sorted(Comparator.comparing(org.edu.entity.Class::getName))
                 .map(studentClass -> new TeacherPortalClassSummaryDTO(
                         studentClass.getId(),
                         studentClass.getName(),
                         studentClass.getStudents() == null ? 0 : studentClass.getStudents().size(),
-                        studentClass.getSubjects() == null ? 0 : studentClass.getSubjects().size()
+                        getTeacherSubjectCountForClass(staffId, studentClass)
                 ))
                 .toList();
     }
@@ -397,6 +440,36 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
                 (int) classCount,
                 subjectTimetables.size()
         );
+    }
+
+    private TeacherPortalSubjectDTO toSubjectSummaryFromAssignments(List<TeachingAssignment> subjectAssignments) {
+        TeachingAssignment firstAssignment = subjectAssignments.get(0);
+        Subject subject = firstAssignment.getSubject();
+        long classCount = subjectAssignments.stream()
+                .map(assignment -> assignment.getStudentClass().getId())
+                .distinct()
+                .count();
+
+        return new TeacherPortalSubjectDTO(
+                subject.getId(),
+                subject.getCode(),
+                subject.getName(),
+                subject.getDescription(),
+                (int) classCount,
+                0
+        );
+    }
+
+    private int getTeacherSubjectCountForClass(Long staffId, org.edu.entity.Class studentClass) {
+        List<TeachingAssignment> assignments = teachingAssignmentRepository.findByStaffIdAndActiveTrue(staffId)
+                .stream()
+                .filter(assignment -> assignment.getStudentClass().getId().equals(studentClass.getId()))
+                .toList();
+        if (!assignments.isEmpty()) {
+            return (int) assignments.stream().map(assignment -> assignment.getSubject().getId()).distinct().count();
+        }
+
+        return studentClass.getSubjects() == null ? 0 : studentClass.getSubjects().size();
     }
 
     private TeacherPortalStudentDTO toStudentSummary(Student student) {
@@ -501,6 +574,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     }
 
     private boolean isTeachingAccess(Long staffId, Long classId) {
-        return timetableRepository.existsByStaffIdAndStudentClassId(staffId, classId);
+        return teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndActiveTrue(staffId, classId)
+                || timetableRepository.existsByStaffIdAndStudentClassId(staffId, classId);
     }
 }

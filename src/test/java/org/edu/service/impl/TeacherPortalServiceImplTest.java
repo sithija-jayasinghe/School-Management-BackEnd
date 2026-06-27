@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import org.edu.dto.AcademicReportDTO;
+import org.edu.dto.AcademicReportReadinessDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentDTO;
@@ -44,6 +45,7 @@ import org.edu.repository.ClassRepository;
 import org.edu.repository.ExamRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
@@ -80,6 +82,9 @@ class TeacherPortalServiceImplTest {
 
     @Mock
     private ExamRepository examRepository;
+
+    @Mock
+    private TeachingAssignmentRepository teachingAssignmentRepository;
 
     @Mock
     private AcademicReportService academicReportService;
@@ -454,6 +459,26 @@ class TeacherPortalServiceImplTest {
                                 && generateRequest.getClassTeacherRemarks().equals("Good progress")
                 )
         );
+    }
+
+    @Test
+    void shouldCheckAcademicReportReadinessForAccessibleStudent() {
+        Staff staff = teacherWithUser(10L, 100L);
+        Student student = student(20L, "Amal", 30L, "Grade 10A");
+        AcademicReportReadinessDTO readiness = new AcademicReportReadinessDTO();
+        readiness.setStudentId(20L);
+        readiness.setAcademicTermId(40L);
+        readiness.setCanGenerate(true);
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
+        when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
+        when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
+        when(academicReportService.checkReportReadiness(100L, 20L, 40L)).thenReturn(readiness);
+
+        AcademicReportReadinessDTO result = teacherPortalService.checkStudentAcademicReportReadiness(100L, 20L, 40L);
+
+        assertEquals(true, result.isCanGenerate());
+        verify(academicReportService).checkReportReadiness(100L, 20L, 40L);
     }
 
     @Test

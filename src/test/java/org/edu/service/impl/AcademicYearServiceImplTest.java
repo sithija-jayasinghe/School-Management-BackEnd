@@ -1,9 +1,11 @@
 package org.edu.service.impl;
 
 import org.edu.dto.AcademicYearDTO;
+import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AcademicYearMapper;
+import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.AcademicYearRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,6 +29,9 @@ class AcademicYearServiceImplTest {
 
     @Mock
     private AcademicYearRepository academicYearRepository;
+
+    @Mock
+    private AcademicTermRepository academicTermRepository;
 
     @Mock
     private AcademicYearMapper academicYearMapper;
@@ -84,13 +90,49 @@ class AcademicYearServiceImplTest {
         selectedYear.setCurrent(false);
         selectedYear.setActive(true);
 
+        AcademicTerm currentTerm = new AcademicTerm();
+        currentTerm.setId(10L);
+        currentTerm.setCurrent(true);
+        currentTerm.setActive(true);
+        currentTerm.setAcademicYear(currentYear);
+
         when(academicYearRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(selectedYear));
         when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(currentYear));
+        when(academicTermRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(currentTerm));
 
         academicYearService.setCurrentAcademicYear(2L);
 
         assertFalse(currentYear.isCurrent());
+        assertFalse(currentTerm.isCurrent());
         assertTrue(selectedYear.isCurrent());
+    }
+
+    @Test
+    void shouldCloseActiveTermsWhenClosingAcademicYear() {
+        AcademicYear academicYear = new AcademicYear();
+        academicYear.setId(1L);
+        academicYear.setActive(true);
+        academicYear.setCurrent(true);
+
+        AcademicTerm currentTerm = new AcademicTerm();
+        currentTerm.setId(10L);
+        currentTerm.setActive(true);
+        currentTerm.setCurrent(true);
+
+        AcademicTerm activeTerm = new AcademicTerm();
+        activeTerm.setId(11L);
+        activeTerm.setActive(true);
+
+        when(academicYearRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(academicYear));
+        when(academicTermRepository.findByAcademicYearIdAndActiveTrue(1L)).thenReturn(List.of(currentTerm, activeTerm));
+
+        academicYearService.closeAcademicYear(1L);
+
+        assertFalse(academicYear.isCurrent());
+        assertFalse(academicYear.isActive());
+        assertFalse(currentTerm.isCurrent());
+        assertFalse(currentTerm.isActive());
+        assertFalse(activeTerm.isActive());
     }
 
     @Test

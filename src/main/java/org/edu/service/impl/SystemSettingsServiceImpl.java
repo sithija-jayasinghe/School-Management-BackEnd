@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.SystemSettingsDTO;
 import org.edu.dto.request.SystemSettingsUpdateRequest;
 import org.edu.entity.SystemSettings;
+import org.edu.repository.AcademicYearRepository;
 import org.edu.repository.SystemSettingsRepository;
 import org.edu.service.SystemSettingsService;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
     private static final String DEFAULT_TIME_ZONE = "Asia/Colombo";
 
     private final SystemSettingsRepository systemSettingsRepository;
+    private final AcademicYearRepository academicYearRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -80,9 +82,6 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
         if (request.getTimeZone() != null) {
             settings.setTimeZone(normalizeRequiredSetting(request.getTimeZone(), "Time zone"));
         }
-        if (request.getCurrentAcademicYearLabel() != null) {
-            settings.setCurrentAcademicYearLabel(normalizeNullable(request.getCurrentAcademicYearLabel()));
-        }
     }
 
     private void validateTimes(SystemSettings settings) {
@@ -126,6 +125,10 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
     }
 
     private SystemSettingsDTO toDTO(SystemSettings settings) {
+        String currentAcademicYearLabel = academicYearRepository.findByCurrentTrueAndActiveTrue()
+                .map(academicYear -> academicYear.getName())
+                .orElse(null);
+
         return new SystemSettingsDTO(
                 settings.getId(),
                 settings.getSchoolName(),
@@ -140,7 +143,7 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
                 settings.getAttendanceCutoffTime(),
                 settings.getDefaultLanguage(),
                 settings.getTimeZone(),
-                settings.getCurrentAcademicYearLabel(),
+                currentAcademicYearLabel,
                 settings.getCreatedAt(),
                 settings.getUpdatedAt()
         );

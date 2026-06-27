@@ -87,6 +87,9 @@ class AcademicTermServiceImplTest {
 
     @Test
     void shouldUnsetPreviousCurrentTermWhenSettingNewCurrentTerm() {
+        AcademicYear currentYear = activeAcademicYear();
+        currentYear.setCurrent(true);
+
         AcademicTerm currentTerm = new AcademicTerm();
         currentTerm.setId(1L);
         currentTerm.setCurrent(true);
@@ -96,6 +99,7 @@ class AcademicTermServiceImplTest {
         selectedTerm.setId(2L);
         selectedTerm.setCurrent(false);
         selectedTerm.setActive(true);
+        selectedTerm.setAcademicYear(currentYear);
 
         when(academicTermRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(selectedTerm));
         when(academicTermRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.of(currentTerm));
@@ -104,6 +108,24 @@ class AcademicTermServiceImplTest {
 
         assertFalse(currentTerm.isCurrent());
         assertTrue(selectedTerm.isCurrent());
+    }
+
+    @Test
+    void shouldRejectCurrentTermWhenAcademicYearIsNotCurrent() {
+        AcademicYear nonCurrentYear = activeAcademicYear();
+        nonCurrentYear.setCurrent(false);
+
+        AcademicTerm selectedTerm = new AcademicTerm();
+        selectedTerm.setId(2L);
+        selectedTerm.setCurrent(false);
+        selectedTerm.setActive(true);
+        selectedTerm.setAcademicYear(nonCurrentYear);
+
+        when(academicTermRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(selectedTerm));
+
+        assertThrows(IllegalStateException.class, () -> academicTermService.setCurrentAcademicTerm(2L));
+        verify(academicTermRepository, never()).findByCurrentTrueAndActiveTrue();
+        assertFalse(selectedTerm.isCurrent());
     }
 
     @Test
