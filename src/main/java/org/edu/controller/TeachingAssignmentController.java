@@ -10,6 +10,7 @@ import org.edu.dto.TeachingAssignmentDTO;
 import org.edu.service.TeachingAssignmentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/teaching-assignments")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Teaching Assignments", description = "Manage teacher class-subject assignments")
 @SecurityRequirement(name = "bearerAuth")
 public class TeachingAssignmentController {

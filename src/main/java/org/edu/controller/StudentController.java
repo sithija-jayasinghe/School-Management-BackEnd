@@ -12,6 +12,7 @@ import org.edu.service.StudentService;
 import org.edu.service.ParentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/students")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Students", description = "Manage student records and parent relationships")
 @SecurityRequirement(name = "bearerAuth")
 public class StudentController {

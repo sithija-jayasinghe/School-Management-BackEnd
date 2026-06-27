@@ -9,6 +9,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicReportDTO;
 import org.edu.dto.AcademicReportReadinessDTO;
+import org.edu.dto.AcademicTermDTO;
 import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.DocumentFileResponse;
@@ -26,6 +27,7 @@ import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
 import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
 import org.edu.security.UserPrincipal;
+import org.edu.service.AcademicTermService;
 import org.edu.service.TeacherPortalService;
 import org.edu.util.LeaveRequestStatus;
 import org.edu.dto.request.AcademicReportUpdateRequest;
@@ -58,6 +60,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class TeacherPortalController {
 
     private final TeacherPortalService teacherPortalService;
+    private final AcademicTermService academicTermService;
 
     @GetMapping("/profile")
     @Operation(summary = "Get the authenticated teacher profile")
@@ -102,6 +105,12 @@ public class TeacherPortalController {
     @Operation(summary = "List exams relevant to the teacher")
     public List<TeacherPortalExamDTO> getExams(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getExams(principal.getUser().getId());
+    }
+
+    @GetMapping("/academic-terms")
+    @Operation(summary = "List active academic terms for teacher report generation")
+    public List<AcademicTermDTO> getActiveAcademicTerms() {
+        return academicTermService.getAllActiveAcademicTerms();
     }
 
     @GetMapping("/classes/{classId}/attendance")

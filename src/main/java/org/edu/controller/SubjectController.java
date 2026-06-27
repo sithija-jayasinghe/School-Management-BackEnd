@@ -9,11 +9,13 @@ import org.edu.dto.SubjectDTO;
 import org.edu.service.SubjectService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/subjects")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Subjects", description = "Manage subjects and subject lookup operations")
 @SecurityRequirement(name = "bearerAuth")
 public class SubjectController {

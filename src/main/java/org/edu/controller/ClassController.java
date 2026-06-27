@@ -9,6 +9,7 @@ import org.edu.dto.ClassDTO;
 import org.edu.service.ClassService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.edu.dto.StudentDTO;
 import org.edu.service.StudentService;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/classes")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Classes", description = "Manage class records, teachers, and student membership")
 @SecurityRequirement(name = "bearerAuth")
 public class ClassController {
