@@ -20,6 +20,14 @@ public class ClassDTO {
     @NotBlank(message = "Name is required")
     private String name;
 
+    private Long gradeId;
+
+    private String gradeName;
+
+    private Integer gradeLevel;
+
+    private String section;
+
     private Long classTeacherId;
 
     private String classTeacherName;
