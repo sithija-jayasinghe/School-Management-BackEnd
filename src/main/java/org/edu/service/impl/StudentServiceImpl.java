@@ -22,16 +22,13 @@ import org.edu.util.EnrollmentStatus;
 import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.UUID;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StudentEnrollmentRepository;
@@ -51,14 +48,11 @@ public class StudentServiceImpl implements StudentService {
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final StudentEnrollmentRepository studentEnrollmentRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     public StudentDTO createStudent(StudentDTO studentDTO) {
 
-        User user = studentDTO.getUserId() == null
-                ? createStudentUser(studentDTO)
-                : resolveExistingStudentUser(studentDTO.getUserId());
+        User user = studentDTO.getUserId() == null ? null : resolveExistingStudentUser(studentDTO.getUserId());
 
         if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
             throw new InvalidAgeException("Invalid student age: Must be at least 3 years old");
@@ -200,43 +194,6 @@ public class StudentServiceImpl implements StudentService {
         return user;
     }
 
-    private User createStudentUser(StudentDTO studentDTO) {
-        User user = new User();
-        user.setName(studentDTO.getName().trim());
-        user.setEmail(generateLocalEmail(studentDTO.getName(), "student"));
-        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-        return userRepository.save(user);
-    }
-
-    private User createParentUser(StudentParentInlineRequest parentRequest) {
-        User user = new User();
-        user.setName(parentRequest.getName().trim());
-        user.setEmail(generateLocalEmail(parentRequest.getName(), "parent"));
-        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.setRole(Role.PARENT);
-        user.setActive(true);
-        return userRepository.save(user);
-    }
-
-    private String generateLocalEmail(String name, String accountType) {
-        String slug = name == null ? accountType : name.trim().toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", ".")
-                .replaceAll("^\\.|\\.$", "");
-
-        if (slug.isBlank()) {
-            slug = accountType;
-        }
-
-        String email;
-        do {
-            email = slug + "." + UUID.randomUUID().toString().substring(0, 8) + "@" + accountType + ".school.local";
-        } while (userRepository.existsByEmail(email));
-
-        return email;
-    }
-
     private void syncParentLinks(Student student, List<Long> parentIds) {
         Set<Long> requestedParentIds = new LinkedHashSet<>(parentIds == null ? List.of() : parentIds);
         List<ParentStudent> existingLinks = parentStudentRepository.findByStudentId(student.getId());
@@ -271,7 +228,6 @@ public class StudentServiceImpl implements StudentService {
 
         for (StudentParentInlineRequest parentRequest : newParents) {
             Parent parent = new Parent();
-            parent.setUser(createParentUser(parentRequest));
             parent.setName(parentRequest.getName().trim());
             parent.setPhoneNumber(parentRequest.getPhoneNumber().trim());
             parent.setAddress(parentRequest.getAddress().trim());

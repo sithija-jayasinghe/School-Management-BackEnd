@@ -38,19 +38,10 @@ public class ParentServiceImpl implements ParentService {
 
     @Override
     public ParentDTO createParent(ParentDTO parentDTO) {
-        User user = userRepository.findById(parentDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (parentRepository.existsByUser(user)) {
-            throw new IllegalArgumentException("User already assigned to a parent");
-        }
-
-        if (user.getRole() != Role.PARENT) {
-            throw new IllegalArgumentException("User must have PARENT role");
-        }
-
         Parent parent = parentMapper.toEntity(parentDTO);
-        parent.setUser(user);
+        if (parentDTO.getUserId() != null) {
+            parent.setUser(resolveAvailableParentUser(parentDTO.getUserId()));
+        }
         parent.setActive(true);
 
         return parentMapper.toDTO(parentRepository.save(parent));
@@ -62,6 +53,9 @@ public class ParentServiceImpl implements ParentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Parent not found with id: " + id));
 
         parentMapper.updateEntityFromDTO(parentDTO, parent);
+        if (parentDTO.getUserId() != null && (parent.getUser() == null || !parent.getUser().getId().equals(parentDTO.getUserId()))) {
+            parent.setUser(resolveAvailableParentUser(parentDTO.getUserId()));
+        }
 
         return parentMapper.toDTO(parent);
     }
@@ -248,5 +242,20 @@ public class ParentServiceImpl implements ParentService {
 
         parentStudent.setEmergencyContact(false);
         parentStudentRepository.save(parentStudent);
+    }
+
+    private User resolveAvailableParentUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (parentRepository.existsByUser(user)) {
+            throw new IllegalArgumentException("User already assigned to a parent");
+        }
+
+        if (user.getRole() != Role.PARENT) {
+            throw new IllegalArgumentException("User must have PARENT role");
+        }
+
+        return user;
     }
 }
