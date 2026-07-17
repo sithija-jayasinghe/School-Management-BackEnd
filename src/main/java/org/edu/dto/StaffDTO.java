@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import org.edu.util.EmploymentType;
+import org.edu.util.StaffCategory;
 
 @Getter
 @Setter
@@ -18,7 +21,6 @@ public class StaffDTO {
 
     private Long id;
 
-    @NotNull(message = "User ID is required")
     private Long userId;
 
     @NotNull(message = "Staff ID is required")
@@ -38,6 +40,16 @@ public class StaffDTO {
 
     @NotBlank(message = "Designation is required")
     private String designation;
+
+    private StaffCategory staffCategory;
+
+    private EmploymentType employmentType;
+
+    private String department;
+
+    private LocalDate joiningDate;
+
+    private Boolean teachingCapable;
 
     private LocalDateTime createdAt;
 
