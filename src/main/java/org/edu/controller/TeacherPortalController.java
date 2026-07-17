@@ -26,9 +26,13 @@ import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
 import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
+import org.edu.dto.teacherleave.TeacherLeaveRequestDTO;
+import org.edu.dto.teacherleave.TeacherLeaveSaveRequest;
 import org.edu.security.UserPrincipal;
 import org.edu.service.AcademicTermService;
 import org.edu.service.TeacherPortalService;
+import org.edu.service.TeacherLeaveService;
+import org.edu.util.TeacherLeaveStatus;
 import org.edu.util.LeaveRequestStatus;
 import org.edu.dto.request.AcademicReportUpdateRequest;
 import org.springframework.core.io.Resource;
@@ -61,6 +65,7 @@ public class TeacherPortalController {
 
     private final TeacherPortalService teacherPortalService;
     private final AcademicTermService academicTermService;
+    private final TeacherLeaveService teacherLeaveService;
 
     @GetMapping("/profile")
     @Operation(summary = "Get the authenticated teacher profile")
@@ -331,5 +336,52 @@ public class TeacherPortalController {
             @PathVariable Long leaveRequestId
     ) {
         return teacherPortalService.applyLeaveToAttendance(principal.getUser().getId(), leaveRequestId);
+    }
+
+    @PostMapping("/my-leave-requests")
+    @Operation(summary = "Submit leave for the authenticated teacher")
+    public TeacherLeaveRequestDTO submitOwnLeave(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody TeacherLeaveSaveRequest request
+    ) {
+        return teacherLeaveService.submit(principal.getUser().getId(), request);
+    }
+
+    @GetMapping("/my-leave-requests")
+    @Operation(summary = "List leave submitted by the authenticated teacher")
+    public Page<TeacherLeaveRequestDTO> getOwnLeaveRequests(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) TeacherLeaveStatus status,
+            Pageable pageable
+    ) {
+        return teacherLeaveService.getOwnRequests(principal.getUser().getId(), status, pageable);
+    }
+
+    @GetMapping("/my-leave-requests/{requestId}")
+    @Operation(summary = "Get one leave request owned by the authenticated teacher")
+    public TeacherLeaveRequestDTO getOwnLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long requestId
+    ) {
+        return teacherLeaveService.getOwnRequest(principal.getUser().getId(), requestId);
+    }
+
+    @PatchMapping("/my-leave-requests/{requestId}")
+    @Operation(summary = "Update a pending leave request owned by the authenticated teacher")
+    public TeacherLeaveRequestDTO updateOwnLeave(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long requestId,
+            @Valid @RequestBody TeacherLeaveSaveRequest request
+    ) {
+        return teacherLeaveService.updateOwnRequest(principal.getUser().getId(), requestId, request);
+    }
+
+    @PostMapping("/my-leave-requests/{requestId}/cancel")
+    @Operation(summary = "Cancel a pending leave request owned by the authenticated teacher")
+    public TeacherLeaveRequestDTO cancelOwnLeave(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long requestId
+    ) {
+        return teacherLeaveService.cancelOwnRequest(principal.getUser().getId(), requestId);
     }
 }

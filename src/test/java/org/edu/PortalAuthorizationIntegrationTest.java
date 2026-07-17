@@ -3,6 +3,7 @@ package org.edu;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -167,6 +169,47 @@ class PortalAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/teacher-portal/academic-terms")
                         .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSeparateTeacherLeaveSelfServiceFromAdminReview() throws Exception {
+        User teacherUser = saveUser("teacher-own-leave@example.com", Role.TEACHER);
+        saveTeacher(teacherUser, "T-LEAVE");
+        User adminUser = saveUser("admin-teacher-leave@example.com", Role.ADMIN);
+        User parentUser = saveUser("parent-teacher-leave@example.com", Role.PARENT);
+        saveParent(parentUser, "Teacher Leave Parent");
+
+        String requestBody = """
+                {
+                  "leaveType": "MEDICAL",
+                  "durationType": "FULL_DAY",
+                  "startDate": "2026-07-20",
+                  "endDate": "2026-07-20",
+                  "reason": "Medical appointment"
+                }
+                """;
+
+        mockMvc.perform(post("/api/teacher-portal/my-leave-requests")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.teacherStaffCode", is("T-LEAVE")))
+                .andExpect(jsonPath("$.status", is("PENDING")))
+                .andExpect(jsonPath("$.affectedSessionCount", is(0)));
+
+        mockMvc.perform(get("/api/teacher-leave-requests")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(adminUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+
+        mockMvc.perform(get("/api/teacher-leave-requests")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/teacher-portal/my-leave-requests")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentUser)))
+                .andExpect(status().isForbidden());
     }
 
     private User saveUser(String email, Role role) {

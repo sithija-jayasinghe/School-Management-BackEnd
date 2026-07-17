@@ -9,5 +9,7 @@ public enum AuditEntityType {
     NOTICE,
     EXAM,
     DOCUMENT,
-    SYSTEM_SETTINGS
+    SYSTEM_SETTINGS,
+    TEACHER_LEAVE_REQUEST,
+    TEACHER_LEAVE_SESSION
 }
