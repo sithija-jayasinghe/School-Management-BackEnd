@@ -51,4 +51,20 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
             @Param("classIds") List<Long> classIds,
             @Param("today") LocalDate today
     );
+
+    @Query("""
+            select n
+            from Notice n
+            left join fetch n.targetClass
+            where n.active = true
+              and n.published = true
+              and (n.publishDate is null or n.publishDate <= :today)
+              and (n.expiryDate is null or n.expiryDate >= :today)
+              and (n.audience = org.edu.util.NoticeAudience.ALL or n.audience = :audience)
+            order by n.publishDate desc, n.createdAt desc
+            """)
+    List<Notice> findPortalNotices(
+            @Param("audience") NoticeAudience audience,
+            @Param("today") LocalDate today
+    );
 }

@@ -5,5 +5,6 @@ public enum NoticeAudience {
     PARENTS,
     STUDENTS,
     TEACHERS,
+    STAFF,
     CLASS
 }

@@ -59,7 +59,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
 
     @Override
     public TeacherLeaveRequestDTO submit(Long authenticatedUserId, TeacherLeaveSaveRequest input) {
-        Staff teacher = getActiveTeacher(authenticatedUserId);
+        Staff teacher = getActiveStaffMember(authenticatedUserId);
         validateInput(input);
         validateNoOverlap(teacher.getId(), input, null);
 
@@ -86,7 +86,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
             Long requestId,
             TeacherLeaveSaveRequest input
     ) {
-        Staff teacher = getActiveTeacher(authenticatedUserId);
+        Staff teacher = getActiveStaffMember(authenticatedUserId);
         TeacherLeaveRequest request = getOwnedRequest(teacher.getId(), requestId);
         ensurePending(request, "Only pending teacher leave requests can be updated");
         validateInput(input);
@@ -107,7 +107,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
 
     @Override
     public TeacherLeaveRequestDTO cancelOwnRequest(Long authenticatedUserId, Long requestId) {
-        Staff teacher = getActiveTeacher(authenticatedUserId);
+        Staff teacher = getActiveStaffMember(authenticatedUserId);
         TeacherLeaveRequest request = getOwnedRequest(teacher.getId(), requestId);
         ensurePending(request, "Only pending teacher leave requests can be cancelled");
         request.setStatus(TeacherLeaveStatus.CANCELLED);
@@ -125,7 +125,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
     @Override
     @Transactional(readOnly = true)
     public TeacherLeaveRequestDTO getOwnRequest(Long authenticatedUserId, Long requestId) {
-        Staff teacher = getActiveTeacher(authenticatedUserId);
+        Staff teacher = getActiveStaffMember(authenticatedUserId);
         return toDto(getOwnedRequest(teacher.getId(), requestId));
     }
 
@@ -136,7 +136,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
             TeacherLeaveStatus status,
             Pageable pageable
     ) {
-        Staff teacher = getActiveTeacher(authenticatedUserId);
+        Staff teacher = getActiveStaffMember(authenticatedUserId);
         Page<TeacherLeaveRequest> requests = status == null
                 ? requestRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId(), pageable)
                 : requestRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacher.getId(), status, pageable);
@@ -393,11 +393,11 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
         request.setReason(input.getReason().trim());
     }
 
-    private Staff getActiveTeacher(Long authenticatedUserId) {
+    private Staff getActiveStaffMember(Long authenticatedUserId) {
         Staff staff = staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"));
-        if (staff.getUser().getRole() != Role.TEACHER) {
-            throw new IllegalStateException("Current staff profile is not a teacher");
+                .orElseThrow(() -> new ResourceNotFoundException("Active staff profile not found for current user"));
+        if (staff.getUser().getRole() != Role.TEACHER && staff.getUser().getRole() != Role.STAFF) {
+            throw new IllegalStateException("Current account is not an employee self-service account");
         }
         return staff;
     }

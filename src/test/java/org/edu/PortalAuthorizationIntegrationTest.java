@@ -22,6 +22,8 @@ import org.edu.repository.StudentRepository;
 import org.edu.repository.UserRepository;
 import org.edu.security.JwtService;
 import org.edu.util.Role;
+import org.edu.util.EmploymentType;
+import org.edu.util.StaffCategory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -215,6 +217,38 @@ class PortalAuthorizationIntegrationTest {
 
         mockMvc.perform(get("/api/teacher-portal/my-leave-requests")
                         .header(HttpHeaders.AUTHORIZATION, bearer(parentUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldGiveNonTeachingStaffOnlyCommonStaffPortalAccess() throws Exception {
+        User staffUser = saveUser("library-assistant@example.com", Role.STAFF);
+        Staff staff = saveTeacher(staffUser, "S-LIBRARY");
+        staff.setDesignation("Library Assistant");
+        staff.setStaffCategory(StaffCategory.SUPPORT);
+        staff.setEmploymentType(EmploymentType.PERMANENT);
+        staff.setDepartment("Library");
+        staff.setTeachingCapable(false);
+        staffRepository.save(staff);
+
+        mockMvc.perform(get("/api/staff-portal/profile")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(staffUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.staffCode", is("S-LIBRARY")))
+                .andExpect(jsonPath("$.staffCategory", is("SUPPORT")))
+                .andExpect(jsonPath("$.department", is("Library")));
+
+        mockMvc.perform(get("/api/staff-portal/notices")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(staffUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        mockMvc.perform(get("/api/teacher-portal/profile")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(staffUser)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/students")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(staffUser)))
                 .andExpect(status().isForbidden());
     }
 
