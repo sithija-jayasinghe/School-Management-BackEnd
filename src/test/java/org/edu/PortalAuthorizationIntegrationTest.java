@@ -168,6 +168,11 @@ class PortalAuthorizationIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", is("ACCESS_DENIED")));
 
+        mockMvc.perform(get("/api/activities")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("ACCESS_DENIED")));
+
         mockMvc.perform(get("/api/teacher-portal/academic-terms")
                         .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
                 .andExpect(status().isOk());
