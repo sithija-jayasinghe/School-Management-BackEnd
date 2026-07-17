@@ -173,7 +173,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
     public List<SubstituteTeacherOptionDTO> getSubstituteOptions(Long sessionId) {
         TeacherLeaveSession session = getSession(sessionId);
         return staffRepository.findByActiveTrue().stream()
-                .filter(staff -> staff.getUser().getRole() == Role.TEACHER)
+                .filter(staff -> staff.getUser() != null && staff.getUser().getRole() == Role.TEACHER)
                 .filter(staff -> !staff.getId().equals(session.getLeaveRequest().getTeacher().getId()))
                 .filter(staff -> isAvailable(staff.getId(), session))
                 .map(staff -> toSubstituteOption(staff, session))
@@ -197,7 +197,9 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
             }
             Staff substitute = staffRepository.findByIdAndActiveTrue(input.getSubstituteStaffId())
                     .orElseThrow(() -> new ResourceNotFoundException("Active substitute teacher not found"));
-            if (substitute.getUser().getRole() != Role.TEACHER || !isAvailable(substitute.getId(), session)) {
+            if (substitute.getUser() == null
+                    || substitute.getUser().getRole() != Role.TEACHER
+                    || !isAvailable(substitute.getId(), session)) {
                 throw new IllegalStateException("Selected substitute teacher is not available for this session");
             }
             session.setSubstituteTeacher(substitute);
