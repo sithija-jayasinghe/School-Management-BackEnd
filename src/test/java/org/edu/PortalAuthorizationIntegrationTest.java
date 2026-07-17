@@ -198,6 +198,12 @@ class PortalAuthorizationIntegrationTest {
                 .andExpect(jsonPath("$.status", is("PENDING")))
                 .andExpect(jsonPath("$.affectedSessionCount", is(0)));
 
+        mockMvc.perform(get("/api/teacher-portal/school-day-hours")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.startTime", is("07:30:00")))
+                .andExpect(jsonPath("$.endTime", is("13:30:00")));
+
         mockMvc.perform(get("/api/teacher-leave-requests")
                         .header(HttpHeaders.AUTHORIZATION, bearer(adminUser)))
                 .andExpect(status().isOk())

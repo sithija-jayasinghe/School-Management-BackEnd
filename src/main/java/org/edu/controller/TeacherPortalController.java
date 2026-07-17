@@ -26,12 +26,14 @@ import org.edu.dto.teacherportal.TeacherPortalProfileDTO;
 import org.edu.dto.teacherportal.TeacherPortalStudentDTO;
 import org.edu.dto.teacherportal.TeacherPortalSubjectDTO;
 import org.edu.dto.teacherportal.TeacherPortalTimetableEntryDTO;
+import org.edu.dto.teacherportal.TeacherPortalSchoolDayHoursDTO;
 import org.edu.dto.teacherleave.TeacherLeaveRequestDTO;
 import org.edu.dto.teacherleave.TeacherLeaveSaveRequest;
 import org.edu.security.UserPrincipal;
 import org.edu.service.AcademicTermService;
 import org.edu.service.TeacherPortalService;
 import org.edu.service.TeacherLeaveService;
+import org.edu.service.SchoolDayPolicyService;
 import org.edu.util.TeacherLeaveStatus;
 import org.edu.util.LeaveRequestStatus;
 import org.edu.dto.request.AcademicReportUpdateRequest;
@@ -66,11 +68,21 @@ public class TeacherPortalController {
     private final TeacherPortalService teacherPortalService;
     private final AcademicTermService academicTermService;
     private final TeacherLeaveService teacherLeaveService;
+    private final SchoolDayPolicyService schoolDayPolicyService;
 
     @GetMapping("/profile")
     @Operation(summary = "Get the authenticated teacher profile")
     public TeacherPortalProfileDTO getProfile(@AuthenticationPrincipal UserPrincipal principal) {
         return teacherPortalService.getProfile(principal.getUser().getId());
+    }
+
+    @GetMapping("/school-day-hours")
+    @Operation(summary = "Get the configured school operating hours")
+    public TeacherPortalSchoolDayHoursDTO getSchoolDayHours() {
+        return new TeacherPortalSchoolDayHoursDTO(
+                schoolDayPolicyService.getSchoolStartTime(),
+                schoolDayPolicyService.getSchoolEndTime()
+        );
     }
 
     @GetMapping("/dashboard")

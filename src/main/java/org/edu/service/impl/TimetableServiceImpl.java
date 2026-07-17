@@ -12,6 +12,7 @@ import org.edu.repository.SubjectRepository;
 import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.TimetableService;
+import org.edu.service.SchoolDayPolicyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,8 @@ public class TimetableServiceImpl implements TimetableService {
     private TeachingAssignmentRepository teachingAssignmentRepository;
     @Autowired
     private TimetableMapper timetableMapper;
+    @Autowired
+    private SchoolDayPolicyService schoolDayPolicyService;
 
     @Override
     public TimetableDTO createTimetable(TimetableDTO dto) {
@@ -86,9 +89,7 @@ public class TimetableServiceImpl implements TimetableService {
     }
 
     private void validateConflicts(TimetableDTO dto, Long currentId) {
-        if (dto.getStartTime().isAfter(dto.getEndTime()) || dto.getStartTime().equals(dto.getEndTime())) {
-            throw new RuntimeException("Start time must be before end time");
-        }
+        schoolDayPolicyService.validateWithinSchoolDay(dto.getStartTime(), dto.getEndTime(), "Timetable period");
 
         // Check Teacher Conflict
         List<Timetable> teacherConflicts = timetableRepository.findTeacherConflicts(

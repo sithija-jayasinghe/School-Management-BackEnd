@@ -27,6 +27,7 @@ import org.edu.repository.TimetableRepository;
 import org.edu.repository.UserRepository;
 import org.edu.service.AuditLogService;
 import org.edu.service.TeacherLeaveService;
+import org.edu.service.SchoolDayPolicyService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
 import org.edu.util.Role;
@@ -54,6 +55,7 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
     private final TimetableRepository timetableRepository;
     private final TeachingAssignmentRepository teachingAssignmentRepository;
     private final AuditLogService auditLogService;
+    private final SchoolDayPolicyService schoolDayPolicyService;
 
     @Override
     public TeacherLeaveRequestDTO submit(Long authenticatedUserId, TeacherLeaveSaveRequest input) {
@@ -361,10 +363,11 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
             if (!input.getStartDate().equals(input.getEndDate())) {
                 throw new IllegalArgumentException("Partial-day leave must start and end on the same date");
             }
-            if (input.getStartTime() == null || input.getEndTime() == null
-                    || !input.getStartTime().isBefore(input.getEndTime())) {
-                throw new IllegalArgumentException("Partial-day leave requires a valid start and end time");
-            }
+            schoolDayPolicyService.validateWithinSchoolDay(
+                    input.getStartTime(),
+                    input.getEndTime(),
+                    "Partial-day teacher leave"
+            );
         }
     }
 

@@ -28,6 +28,7 @@ import org.edu.repository.TeachingAssignmentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.repository.UserRepository;
 import org.edu.service.AuditLogService;
+import org.edu.service.SchoolDayPolicyService;
 import org.edu.util.Role;
 import org.edu.util.TeacherLeaveCoverageStatus;
 import org.edu.util.TeacherLeaveDuration;
@@ -49,6 +50,7 @@ class TeacherLeaveServiceImplTest {
     @Mock private TimetableRepository timetableRepository;
     @Mock private TeachingAssignmentRepository teachingAssignmentRepository;
     @Mock private AuditLogService auditLogService;
+    @Mock private SchoolDayPolicyService schoolDayPolicyService;
 
     private TeacherLeaveServiceImpl service;
 
@@ -61,7 +63,8 @@ class TeacherLeaveServiceImplTest {
                 userRepository,
                 timetableRepository,
                 teachingAssignmentRepository,
-                auditLogService
+                auditLogService,
+                schoolDayPolicyService
         );
     }
 
@@ -120,6 +123,32 @@ class TeacherLeaveServiceImplTest {
         when(sessionRepository.findById(2L)).thenReturn(Optional.of(session));
 
         assertThrows(IllegalArgumentException.class, () -> service.updateCoverage(2L, input));
+    }
+
+    @Test
+    void shouldValidatePartialDayLeaveAgainstConfiguredSchoolHours() {
+        Staff teacher = teacher(10L, 100L, "Anuradha Jayalath");
+        TeacherLeaveSaveRequest input = fullDayRequest(LocalDate.of(2026, 7, 20));
+        input.setDurationType(TeacherLeaveDuration.PARTIAL_DAY);
+        input.setStartTime(LocalTime.of(9, 0));
+        input.setEndTime(LocalTime.of(11, 0));
+
+        when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(teacher));
+        when(requestRepository.existsOverlappingRequest(any(), any(), any(), any(), any())).thenReturn(false);
+        when(timetableRepository.findTeacherPortalScheduleByStaffId(10L)).thenReturn(List.of());
+        when(requestRepository.saveAndFlush(any(TeacherLeaveRequest.class))).thenAnswer(invocation -> {
+            TeacherLeaveRequest saved = invocation.getArgument(0);
+            saved.setId(3L);
+            return saved;
+        });
+
+        service.submit(100L, input);
+
+        verify(schoolDayPolicyService).validateWithinSchoolDay(
+                LocalTime.of(9, 0),
+                LocalTime.of(11, 0),
+                "Partial-day teacher leave"
+        );
     }
 
     private TeacherLeaveSaveRequest fullDayRequest(LocalDate date) {
