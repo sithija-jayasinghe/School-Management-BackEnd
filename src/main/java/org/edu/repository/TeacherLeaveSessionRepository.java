@@ -13,6 +13,8 @@ public interface TeacherLeaveSessionRepository extends JpaRepository<TeacherLeav
 
     List<TeacherLeaveSession> findByLeaveRequestIdOrderBySessionDateAscStartTimeAsc(Long leaveRequestId);
 
+    void deleteByTimetableId(Long timetableId);
+
     long countByLeaveRequestIdAndCoverageStatus(Long leaveRequestId, TeacherLeaveCoverageStatus coverageStatus);
 
     @Query("""

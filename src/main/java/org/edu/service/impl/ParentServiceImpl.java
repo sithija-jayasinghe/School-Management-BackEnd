@@ -65,7 +65,12 @@ public class ParentServiceImpl implements ParentService {
         Parent parent = parentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Parent not found with id: " + id));
 
-        parentRepository.delete(parent);
+        if (!parent.isActive()) {
+            throw new IllegalStateException("Parent already inactive");
+        }
+
+        parent.setActive(false);
+        parentRepository.save(parent);
     }
 
     @Override
@@ -122,6 +127,7 @@ public class ParentServiceImpl implements ParentService {
         }
 
         parent.setActive(true);
+        parentRepository.save(parent);
     }
 
     @Override
@@ -134,6 +140,7 @@ public class ParentServiceImpl implements ParentService {
         }
 
         parent.setActive(false);
+        parentRepository.save(parent);
     }
 
     @Override

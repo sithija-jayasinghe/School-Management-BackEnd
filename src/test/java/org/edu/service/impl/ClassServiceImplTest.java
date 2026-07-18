@@ -49,6 +49,7 @@ class ClassServiceImplTest {
         classService.deleteClass(1L);
 
         assertFalse(clazz.isActive());
+        verify(classRepository).save(clazz);
     }
 
     @Test

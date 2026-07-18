@@ -6,7 +6,6 @@ import org.edu.dto.request.SystemSettingsUpdateRequest;
 import org.edu.entity.SystemSettings;
 import org.edu.repository.AcademicYearRepository;
 import org.edu.repository.SystemSettingsRepository;
-import org.edu.repository.TimetableRepository;
 import org.edu.service.SchoolDayPolicyService;
 import org.edu.service.SystemSettingsService;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,6 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
 
     private final SystemSettingsRepository systemSettingsRepository;
     private final AcademicYearRepository academicYearRepository;
-    private final TimetableRepository timetableRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,7 +33,6 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
         SystemSettings settings = getOrCreateSettings();
         apply(settings, request);
         validateTimes(settings);
-        validateExistingTimetable(settings, request);
         return toDTO(systemSettingsRepository.save(settings));
     }
 
@@ -120,22 +117,6 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
                 && settings.getSchoolEndTime() != null
                 && settings.getAttendanceCutoffTime().isAfter(settings.getSchoolEndTime())) {
             throw new IllegalArgumentException("Attendance cutoff time must be before or equal to school end time");
-        }
-    }
-
-    private void validateExistingTimetable(SystemSettings settings, SystemSettingsUpdateRequest request) {
-        if (request.getSchoolStartTime() == null && request.getSchoolEndTime() == null) {
-            return;
-        }
-
-        var conflicts = timetableRepository.findByStartTimeBeforeOrEndTimeAfter(
-                settings.getSchoolStartTime(),
-                settings.getSchoolEndTime()
-        );
-        if (!conflicts.isEmpty()) {
-            throw new IllegalStateException(
-                    "School hours cannot exclude existing timetable periods; update those periods first"
-            );
         }
     }
 

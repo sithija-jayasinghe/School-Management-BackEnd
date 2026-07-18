@@ -6,7 +6,9 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.edu.dto.SubjectDTO;
 import org.edu.entity.Grade;
 import org.edu.entity.Subject;
@@ -80,5 +82,40 @@ class SubjectServiceImplTest {
         assertEquals(List.of(10L), saved.getClassIds());
         assertTrue(schoolClass.getSubjects().stream().anyMatch(subject -> subject.getId().equals(4L)));
         verify(classRepository).saveAll(List.of(schoolClass));
+    }
+
+    @Test
+    void shouldRemoveSubjectFromClassWhenSubjectListIsNull() {
+        org.edu.entity.Class schoolClass = new org.edu.entity.Class();
+        schoolClass.setId(10L);
+
+        when(classRepository.findById(10L)).thenReturn(Optional.of(schoolClass));
+
+        subjectService.removeSubjectFromClass(10L, 4L);
+
+        assertTrue(schoolClass.getSubjects().isEmpty());
+        verify(classRepository).save(schoolClass);
+    }
+
+    @Test
+    void shouldUnlinkSubjectBeforeDeleting() {
+        Subject subject = new Subject();
+        subject.setId(4L);
+
+        org.edu.entity.Class schoolClass = new org.edu.entity.Class();
+        schoolClass.setId(10L);
+        schoolClass.setSubjects(new ArrayList<>(List.of(subject)));
+
+        when(subjectRepository.findById(4L)).thenReturn(Optional.of(subject));
+        when(classRepository.findClassesLinkedToSubject(4L)).thenReturn(List.of(schoolClass));
+
+        subjectService.deleteSubjects(4L);
+
+        assertTrue(schoolClass.getSubjects().isEmpty());
+        assertTrue(subject.getGrades().isEmpty());
+        assertTrue(subject.getClasses().isEmpty());
+        verify(classRepository).saveAll(List.of(schoolClass));
+        verify(subjectRepository).save(subject);
+        verify(subjectRepository).delete(subject);
     }
 }

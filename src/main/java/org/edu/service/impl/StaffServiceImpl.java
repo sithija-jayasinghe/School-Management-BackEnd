@@ -67,7 +67,7 @@ public class StaffServiceImpl implements StaffService {
         }
 
         staff.setActive(false);
-
+        staffRepository.save(staff);
     }
 
     @Override
@@ -88,6 +88,16 @@ public class StaffServiceImpl implements StaffService {
     public Page<StaffDTO> searchStaff(String name, Pageable pageable) {
         return staffRepository
                 .findByNameContainingIgnoreCaseAndActiveTrue(name, pageable)
+                .map(staffMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<StaffDTO> filterStaff(String keyword, StaffCategory category, EmploymentType employmentType, String department, Boolean teachingCapable, Role role, Boolean active, Pageable pageable) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        String normalizedDepartment = department == null || department.trim().isEmpty() ? null : department.trim();
+        return staffRepository
+                .filterStaff(normalizedKeyword, category, employmentType, normalizedDepartment, teachingCapable, role, active, pageable)
                 .map(staffMapper::toDTO);
     }
 

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamDTO;
@@ -11,8 +12,10 @@ import org.edu.service.AuditLogService;
 import org.edu.service.ExamService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
+import org.edu.util.ExamType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,7 +48,7 @@ public class ExamController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update an exam")
-    public ExamDTO updateExam(@PathVariable Long id, @RequestBody ExamDTO dto) {
+    public ExamDTO updateExam(@PathVariable Long id, @Valid @RequestBody ExamDTO dto) {
         ExamDTO response = examService.updateExam(id, dto);
         auditLogService.log(AuditAction.UPDATE, AuditEntityType.EXAM, response.getId(), response.getName(), "Updated exam");
         return response;
@@ -71,16 +74,27 @@ public class ExamController {
         return examService.getAllExams(pageable);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get an exam by id")
-    public ExamDTO getExamById(@PathVariable Long id) {
-        return examService.getExamById(id);
-    }
-
     @GetMapping("/search")
     @Operation(summary = "Search exams by name")
     public Page<ExamDTO> searchExams(@RequestParam String name, Pageable pageable) {
         return examService.searchExams(name, pageable);
+    }
+
+    @GetMapping("/filter")
+    @Operation(summary = "Filter exams by text, academic period, class, subject, type, status, and date range")
+    public Page<ExamDTO> filterExams(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long academicYearId,
+            @RequestParam(required = false) Long academicTermId,
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) ExamType type,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            Pageable pageable
+    ) {
+        return examService.filterExams(keyword, academicYearId, academicTermId, classId, subjectId, type, active, from, to, pageable);
     }
 
     @GetMapping("/classes/{classId}")
@@ -93,5 +107,11 @@ public class ExamController {
     @Operation(summary = "List exams for an academic term")
     public List<ExamDTO> getExamsByAcademicTerm(@PathVariable Long academicTermId) {
         return examService.getExamsByAcademicTerm(academicTermId);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get an exam by id")
+    public ExamDTO getExamById(@PathVariable Long id) {
+        return examService.getExamById(id);
     }
 }

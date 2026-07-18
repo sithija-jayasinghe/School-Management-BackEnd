@@ -164,7 +164,21 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Override
     public void deleteSubjects(Long id) {
-        subjectRepository.deleteById(id);
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+
+        List<Class> linkedClasses = classRepository.findClassesLinkedToSubject(id);
+        for (Class linkedClass : linkedClasses) {
+            ensureSubjects(linkedClass).removeIf(existingSubject -> existingSubject.getId().equals(id));
+        }
+        if (!linkedClasses.isEmpty()) {
+            classRepository.saveAll(linkedClasses);
+        }
+
+        subject.setClasses(List.of());
+        subject.setGrades(List.of());
+        subjectRepository.save(subject);
+        subjectRepository.delete(subject);
     }
 
     @Override
@@ -202,7 +216,7 @@ public class SubjectServiceImpl implements SubjectService {
         Class clazz = classRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
-        clazz.getSubjects().removeIf(s -> s.getId().equals(subjectId));
+        ensureSubjects(clazz).removeIf(s -> s.getId().equals(subjectId));
 
         classRepository.save(clazz);
     }

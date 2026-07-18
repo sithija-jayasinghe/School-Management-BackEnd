@@ -52,6 +52,7 @@ class StaffServiceImplTest {
         staffService.deleteStaff(1L);
 
         assertFalse(staff.isActive());
+        verify(staffRepository).save(staff);
     }
 
     @Test

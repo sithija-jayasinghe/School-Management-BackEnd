@@ -38,7 +38,7 @@ public class StudentController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update a student")
     public StudentDTO updateStudent(@PathVariable Long id,
-                                    @RequestBody StudentDTO studentDTO) {
+                                    @Valid @RequestBody StudentDTO studentDTO) {
         return studentService.updateStudent(id, studentDTO);
     }
 

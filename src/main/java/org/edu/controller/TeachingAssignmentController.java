@@ -39,7 +39,7 @@ public class TeachingAssignmentController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update a teaching assignment")
-    public TeachingAssignmentDTO updateAssignment(@PathVariable Long id, @RequestBody TeachingAssignmentDTO dto) {
+    public TeachingAssignmentDTO updateAssignment(@PathVariable Long id, @Valid @RequestBody TeachingAssignmentDTO dto) {
         return teachingAssignmentService.updateAssignment(id, dto);
     }
 

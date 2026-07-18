@@ -36,7 +36,7 @@ public class ClassController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update a class")
     public ClassDTO updateClass(@PathVariable Long id,
-                                @RequestBody ClassDTO classDTO) {
+                                @Valid @RequestBody ClassDTO classDTO) {
         return classService.updateClass(id, classDTO);
     }
 

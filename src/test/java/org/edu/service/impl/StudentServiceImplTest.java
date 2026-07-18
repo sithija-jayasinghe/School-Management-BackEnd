@@ -122,6 +122,7 @@ class StudentServiceImplTest {
         studentService.deleteStudent(1L);
 
         assertFalse(student.isActive());
+        verify(studentRepository).save(student);
     }
 
     @Test

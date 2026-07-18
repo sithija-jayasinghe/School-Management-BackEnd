@@ -110,6 +110,7 @@ public class StudentServiceImpl implements StudentService {
         }
 
         student.setActive(false);
+        studentRepository.save(student);
     }
 
     @Override

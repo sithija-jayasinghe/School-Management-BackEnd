@@ -44,7 +44,7 @@ public class AcademicYearController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update an academic year")
     public AcademicYearDTO updateAcademicYear(@PathVariable Long id,
-                                              @RequestBody AcademicYearDTO academicYearDTO) {
+                                              @Valid @RequestBody AcademicYearDTO academicYearDTO) {
         return academicYearService.updateAcademicYear(id, academicYearDTO);
     }
 

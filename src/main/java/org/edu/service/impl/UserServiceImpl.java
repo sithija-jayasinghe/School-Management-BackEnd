@@ -30,13 +30,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse register(UserRegistrationRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new DuplicateEmailException("Email is already registered");
         }
 
         User user = new User();
         user.setName(request.getName().trim());
-        user.setEmail(request.getEmail().trim().toLowerCase());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole());
         user.setActive(true);
