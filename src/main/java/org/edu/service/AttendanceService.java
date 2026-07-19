@@ -6,6 +6,7 @@ import org.edu.dto.AttendanceDTO;
 import org.edu.dto.AttendanceSummaryDTO;
 import org.edu.dto.parentportal.ParentPortalAttendanceDTO;
 import org.edu.dto.request.BulkAttendanceRequest;
+import org.edu.util.AttendanceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -26,6 +27,8 @@ public interface AttendanceService {
     Page<AttendanceDTO> getStudentAttendance(Long studentId, Pageable pageable);
 
     Page<AttendanceDTO> getClassAttendanceByDate(Long classId, LocalDate attendanceDate, Pageable pageable);
+
+    Page<AttendanceDTO> filterAttendance(Long classId, Long studentId, Long subjectId, Long markedByStaffId, AttendanceStatus status, LocalDate fromDate, LocalDate toDate, Pageable pageable);
 
     AttendanceSummaryDTO getStudentAttendanceSummary(Long studentId, LocalDate fromDate, LocalDate toDate);
 

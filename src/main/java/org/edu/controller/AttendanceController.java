@@ -14,6 +14,7 @@ import org.edu.service.AuditLogService;
 import org.edu.service.AttendanceService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
+import org.edu.util.AttendanceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -71,6 +72,21 @@ public class AttendanceController {
     @Operation(summary = "List attendance records")
     public Page<AttendanceDTO> getAllAttendance(Pageable pageable) {
         return attendanceService.getAllAttendance(pageable);
+    }
+
+    @GetMapping("/filter")
+    @Operation(summary = "Filter attendance by class, student, subject, marker, status, and date range")
+    public Page<AttendanceDTO> filterAttendance(
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) Long markedByStaffId,
+            @RequestParam(required = false) AttendanceStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            Pageable pageable
+    ) {
+        return attendanceService.filterAttendance(classId, studentId, subjectId, markedByStaffId, status, from, to, pageable);
     }
 
     @GetMapping("/{id}")

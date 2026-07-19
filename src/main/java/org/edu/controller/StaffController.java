@@ -11,6 +11,9 @@ import org.edu.service.AuditLogService;
 import org.edu.service.StaffService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
+import org.edu.util.EmploymentType;
+import org.edu.util.Role;
+import org.edu.util.StaffCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,7 +43,7 @@ public class StaffController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update a staff record")
     public StaffDTO updateStaff(@PathVariable Long id,
-                                    @RequestBody StaffDTO staffDTO) {
+                                    @Valid @RequestBody StaffDTO staffDTO) {
         StaffDTO response = staffService.updateStaff(id, staffDTO);
         auditLogService.log(AuditAction.UPDATE, AuditEntityType.STAFF, response.getId(), response.getName(), "Updated staff record");
         return response;
@@ -59,12 +62,6 @@ public class StaffController {
         return staffService.getAllStaff(pageable);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a staff record by id")
-    public StaffDTO getStaffById(@PathVariable Long id) {
-        return staffService.getStaffById(id);
-    }
-
     @GetMapping("/search")
     @Operation(summary = "Search staff by name")
     public Page<StaffDTO> searchStaff(@RequestParam String name,
@@ -72,9 +69,30 @@ public class StaffController {
         return staffService.searchStaff(name, pageable);
     }
 
+    @GetMapping("/filter")
+    @Operation(summary = "Filter staff by directory, role, category, employment, department, teaching capability, and status")
+    public Page<StaffDTO> filterStaff(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) StaffCategory category,
+            @RequestParam(required = false) EmploymentType employmentType,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) Boolean teachingCapable,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) Boolean active,
+            Pageable pageable
+    ) {
+        return staffService.filterStaff(keyword, category, employmentType, department, teachingCapable, role, active, pageable);
+    }
+
     @GetMapping("/active")
     @Operation(summary = "List active staff members")
     public List<StaffDTO> getActiveStaff() {
         return staffService.getAllActiveStaff();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get a staff record by id")
+    public StaffDTO getStaffById(@PathVariable Long id) {
+        return staffService.getStaffById(id);
     }
 }

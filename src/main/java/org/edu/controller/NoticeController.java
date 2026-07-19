@@ -46,7 +46,7 @@ public class NoticeController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update a notice")
-    public NoticeDTO updateNotice(@PathVariable Long id, @RequestBody NoticeDTO dto) {
+    public NoticeDTO updateNotice(@PathVariable Long id, @Valid @RequestBody NoticeDTO dto) {
         NoticeDTO response = noticeService.updateNotice(id, dto);
         auditLogService.log(AuditAction.UPDATE, AuditEntityType.NOTICE, response.getId(), response.getTitle(), "Updated notice");
         return response;

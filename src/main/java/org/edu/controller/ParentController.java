@@ -53,7 +53,7 @@ public class ParentController {
     @PatchMapping("/{parentId}")
     @Operation(summary = "Update a parent")
     public ParentDTO updateParent(@PathVariable Long parentId,
-                                  @RequestBody ParentDTO parentDTO) {
+                                  @Valid @RequestBody ParentDTO parentDTO) {
         ParentDTO response = parentService.updateParent(parentId, parentDTO);
         auditLogService.log(AuditAction.UPDATE, AuditEntityType.PARENT, response.getId(), response.getName(), "Updated parent record");
         return response;

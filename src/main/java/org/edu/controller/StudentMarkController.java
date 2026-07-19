@@ -38,7 +38,7 @@ public class StudentMarkController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update a student mark record")
-    public StudentMarkDTO updateStudentMark(@PathVariable Long id, @RequestBody StudentMarkDTO dto) {
+    public StudentMarkDTO updateStudentMark(@PathVariable Long id, @Valid @RequestBody StudentMarkDTO dto) {
         return studentMarkService.updateStudentMark(id, dto);
     }
 

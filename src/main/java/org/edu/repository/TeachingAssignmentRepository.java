@@ -19,6 +19,8 @@ public interface TeachingAssignmentRepository extends JpaRepository<TeachingAssi
 
     List<TeachingAssignment> findByStudentClassIdAndActiveTrue(Long classId);
 
+    boolean existsByStaffIdAndSubjectIdAndActiveTrue(Long staffId, Long subjectId);
+
     boolean existsByStaffIdAndStudentClassIdAndActiveTrue(Long staffId, Long classId);
 
     boolean existsByStaffIdAndStudentClassIdAndSubjectIdAndActiveTrue(Long staffId, Long classId, Long subjectId);

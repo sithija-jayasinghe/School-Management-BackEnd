@@ -38,6 +38,8 @@ class SystemSettingsServiceImplTest {
     @BeforeEach
     void setUp() {
         lenient().when(academicYearRepository.findByCurrentTrueAndActiveTrue()).thenReturn(Optional.empty());
+        lenient().when(systemSettingsRepository.save(any(SystemSettings.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -46,6 +48,8 @@ class SystemSettingsServiceImplTest {
         saved.setId(1L);
         saved.setDefaultLanguage("en");
         saved.setTimeZone("Asia/Colombo");
+        saved.setSchoolStartTime(LocalTime.of(7, 30));
+        saved.setSchoolEndTime(LocalTime.of(13, 30));
 
         when(systemSettingsRepository.findTopByOrderByIdAsc()).thenReturn(Optional.empty());
         when(systemSettingsRepository.save(any(SystemSettings.class))).thenReturn(saved);
@@ -55,6 +59,8 @@ class SystemSettingsServiceImplTest {
         assertEquals(1L, response.getId());
         assertEquals("en", response.getDefaultLanguage());
         assertEquals("Asia/Colombo", response.getTimeZone());
+        assertEquals(LocalTime.of(7, 30), response.getSchoolStartTime());
+        assertEquals(LocalTime.of(13, 30), response.getSchoolEndTime());
         verify(systemSettingsRepository).save(any(SystemSettings.class));
     }
 
@@ -139,5 +145,27 @@ class SystemSettingsServiceImplTest {
         when(systemSettingsRepository.findTopByOrderByIdAsc()).thenReturn(Optional.of(settings));
 
         assertThrows(IllegalArgumentException.class, () -> systemSettingsService.updateSystemSettings(request));
+    }
+
+    @Test
+    void shouldAllowUpdatingSchoolHoursEvenWhenExistingTimetableNeedsCleanup() {
+        SystemSettings settings = new SystemSettings();
+        settings.setId(1L);
+        settings.setDefaultLanguage("en");
+        settings.setTimeZone("Asia/Colombo");
+        settings.setSchoolStartTime(LocalTime.of(7, 30));
+        settings.setSchoolEndTime(LocalTime.of(13, 30));
+
+        SystemSettingsUpdateRequest request = new SystemSettingsUpdateRequest();
+        request.setSchoolStartTime(LocalTime.of(8, 0));
+        request.setSchoolEndTime(LocalTime.of(13, 0));
+
+        when(systemSettingsRepository.findTopByOrderByIdAsc()).thenReturn(Optional.of(settings));
+        when(systemSettingsRepository.save(settings)).thenReturn(settings);
+
+        SystemSettingsDTO response = systemSettingsService.updateSystemSettings(request);
+
+        assertEquals(LocalTime.of(8, 0), response.getSchoolStartTime());
+        assertEquals(LocalTime.of(13, 0), response.getSchoolEndTime());
     }
 }

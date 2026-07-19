@@ -39,7 +39,7 @@ public class LeaveRequestController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update a pending leave request")
-    public LeaveRequestDTO updateLeaveRequest(@PathVariable Long id, @RequestBody LeaveRequestDTO dto) {
+    public LeaveRequestDTO updateLeaveRequest(@PathVariable Long id, @Valid @RequestBody LeaveRequestDTO dto) {
         return leaveRequestService.updateLeaveRequest(id, dto);
     }
 

@@ -7,11 +7,13 @@ import org.edu.entity.Subject;
 import org.edu.entity.Timetable;
 import org.edu.mapper.TimetableMapper;
 import org.edu.repository.ClassRepository;
+import org.edu.repository.AttendanceRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.SubjectRepository;
-import org.edu.repository.TeachingAssignmentRepository;
+import org.edu.repository.TeacherLeaveSessionRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.TimetableService;
+import org.edu.service.SchoolDayPolicyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +34,13 @@ public class TimetableServiceImpl implements TimetableService {
     @Autowired
     private StaffRepository staffRepository;
     @Autowired
-    private TeachingAssignmentRepository teachingAssignmentRepository;
+    private AttendanceRepository attendanceRepository;
+    @Autowired
+    private TeacherLeaveSessionRepository teacherLeaveSessionRepository;
     @Autowired
     private TimetableMapper timetableMapper;
+    @Autowired
+    private SchoolDayPolicyService schoolDayPolicyService;
 
     @Override
     public TimetableDTO createTimetable(TimetableDTO dto) {
@@ -60,6 +66,8 @@ public class TimetableServiceImpl implements TimetableService {
         if (!timetableRepository.existsById(id)) {
             throw new RuntimeException("Timetable entry not found");
         }
+        attendanceRepository.detachTimetable(id);
+        teacherLeaveSessionRepository.deleteByTimetableId(id);
         timetableRepository.deleteById(id);
     }
 
@@ -86,9 +94,7 @@ public class TimetableServiceImpl implements TimetableService {
     }
 
     private void validateConflicts(TimetableDTO dto, Long currentId) {
-        if (dto.getStartTime().isAfter(dto.getEndTime()) || dto.getStartTime().equals(dto.getEndTime())) {
-            throw new RuntimeException("Start time must be before end time");
-        }
+        schoolDayPolicyService.validateWithinSchoolDay(dto.getStartTime(), dto.getEndTime(), "Timetable period");
 
         // Check Teacher Conflict
         List<Timetable> teacherConflicts = timetableRepository.findTeacherConflicts(
@@ -114,7 +120,6 @@ public class TimetableServiceImpl implements TimetableService {
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
         Staff staff = staffRepository.findByIdAndActiveTrue(dto.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Active staff not found"));
-        validateTeacherAssignment(staff, aClass, subject);
 
         timetable.setStudentClass(aClass);
         timetable.setSubject(subject);
@@ -125,16 +130,5 @@ public class TimetableServiceImpl implements TimetableService {
         timetable.setRoomNumber(dto.getRoomNumber());
 
         return timetable;
-    }
-
-    private void validateTeacherAssignment(Staff staff, Class studentClass, Subject subject) {
-        boolean assigned = teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndSubjectIdAndActiveTrue(
-                staff.getId(),
-                studentClass.getId(),
-                subject.getId()
-        );
-        if (!assigned) {
-            throw new RuntimeException("Staff member is not assigned to teach this class subject.");
-        }
     }
 }

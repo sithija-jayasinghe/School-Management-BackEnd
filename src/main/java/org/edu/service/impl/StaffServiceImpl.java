@@ -10,6 +10,8 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.UserRepository;
 import org.edu.service.StaffService;
 import org.edu.util.Role;
+import org.edu.util.EmploymentType;
+import org.edu.util.StaffCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,20 +31,12 @@ public class StaffServiceImpl implements StaffService {
     @Override
     public StaffDTO createStaff(StaffDTO staffDTO) {
 
-        User user = userRepository.findById(staffDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (staffRepository.existsByUser(user)) {
-            throw new IllegalArgumentException("User already assigned to a teacher");
-        }
-
-        if (user.getRole() != Role.TEACHER) {
-            throw new IllegalArgumentException("User must have TEACHER role");
-        }
+        User user = resolveOptionalUser(staffDTO.getUserId());
 
         Staff staff = staffMapper.toEntity(staffDTO);
         staff.setUser(user);
         staff.setActive(true);
+        applyStaffDefaults(staff, user);
 
         Staff updated = staffRepository.save(staff);
         return staffMapper.toDTO(updated);
@@ -73,7 +67,7 @@ public class StaffServiceImpl implements StaffService {
         }
 
         staff.setActive(false);
-
+        staffRepository.save(staff);
     }
 
     @Override
@@ -98,10 +92,50 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<StaffDTO> filterStaff(String keyword, StaffCategory category, EmploymentType employmentType, String department, Boolean teachingCapable, Role role, Boolean active, Pageable pageable) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        String normalizedDepartment = department == null || department.trim().isEmpty() ? null : department.trim();
+        return staffRepository
+                .filterStaff(normalizedKeyword, category, employmentType, normalizedDepartment, teachingCapable, role, active, pageable)
+                .map(staffMapper::toDTO);
+    }
+
+    @Override
     public List<StaffDTO> getAllActiveStaff() {
         return staffRepository.findByActiveTrue()
                 .stream()
                 .map(staffMapper::toDTO)
                 .toList();
+    }
+
+    private User resolveOptionalUser(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (staffRepository.existsByUser(user)) {
+            throw new IllegalArgumentException("User is already linked to a staff record");
+        }
+        if (user.getRole() != Role.TEACHER && user.getRole() != Role.STAFF && user.getRole() != Role.ADMIN) {
+            throw new IllegalArgumentException("Staff accounts must have ADMIN, TEACHER, or STAFF role");
+        }
+        return user;
+    }
+
+    private void applyStaffDefaults(Staff staff, User user) {
+        if (staff.getStaffCategory() == null) {
+            staff.setStaffCategory(user != null && user.getRole() == Role.TEACHER
+                    ? StaffCategory.ACADEMIC
+                    : StaffCategory.SUPPORT);
+        }
+        if (staff.getEmploymentType() == null) {
+            staff.setEmploymentType(EmploymentType.PERMANENT);
+        }
+        if (staff.getTeachingCapable() == null) {
+            staff.setTeachingCapable(user != null && user.getRole() == Role.TEACHER);
+        }
     }
 }

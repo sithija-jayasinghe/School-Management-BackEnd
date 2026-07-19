@@ -28,6 +28,8 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     // Useful for showing a Teacher's schedule
     List<Timetable> findByStaffIdOrderByDayOfWeekAscStartTimeAsc(Long staffId);
 
+    List<Timetable> findByStartTimeBeforeOrEndTimeAfter(LocalTime schoolStartTime, LocalTime schoolEndTime);
+
     @Query("""
             select t
             from Timetable t

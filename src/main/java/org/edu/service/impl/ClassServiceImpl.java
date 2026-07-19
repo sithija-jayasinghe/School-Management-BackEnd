@@ -96,6 +96,7 @@ public class ClassServiceImpl implements ClassService {
         }
 
         clazz.setActive(false);
+        classRepository.save(clazz);
     }
 
     @Override

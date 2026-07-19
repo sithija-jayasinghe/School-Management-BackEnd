@@ -6,6 +6,7 @@ import org.edu.dto.request.SystemSettingsUpdateRequest;
 import org.edu.entity.SystemSettings;
 import org.edu.repository.AcademicYearRepository;
 import org.edu.repository.SystemSettingsRepository;
+import org.edu.service.SchoolDayPolicyService;
 import org.edu.service.SystemSettingsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +37,28 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
     }
 
     private SystemSettings getOrCreateSettings() {
-        return systemSettingsRepository.findTopByOrderByIdAsc()
-                .orElseGet(() -> {
-                    SystemSettings settings = new SystemSettings();
-                    settings.setDefaultLanguage(DEFAULT_LANGUAGE);
-                    settings.setTimeZone(DEFAULT_TIME_ZONE);
-                    return systemSettingsRepository.save(settings);
-                });
+        SystemSettings settings = systemSettingsRepository.findTopByOrderByIdAsc()
+                .orElseGet(SystemSettings::new);
+        boolean changed = settings.getId() == null;
+
+        if (settings.getDefaultLanguage() == null) {
+            settings.setDefaultLanguage(DEFAULT_LANGUAGE);
+            changed = true;
+        }
+        if (settings.getTimeZone() == null) {
+            settings.setTimeZone(DEFAULT_TIME_ZONE);
+            changed = true;
+        }
+        if (settings.getSchoolStartTime() == null) {
+            settings.setSchoolStartTime(SchoolDayPolicyService.DEFAULT_START_TIME);
+            changed = true;
+        }
+        if (settings.getSchoolEndTime() == null) {
+            settings.setSchoolEndTime(SchoolDayPolicyService.DEFAULT_END_TIME);
+            changed = true;
+        }
+
+        return changed ? systemSettingsRepository.save(settings) : settings;
     }
 
     private void apply(SystemSettings settings, SystemSettingsUpdateRequest request) {

@@ -42,7 +42,7 @@ public class SubjectController {
 
         @PatchMapping("/{id}")
         @Operation(summary = "Update a subject")
-        public SubjectDTO updateSubjects(@PathVariable Long id, @RequestBody SubjectDTO dto) {
+        public SubjectDTO updateSubjects(@PathVariable Long id, @Valid @RequestBody SubjectDTO dto) {
             return subjectService.updateSubjects(id, dto);
         }
 

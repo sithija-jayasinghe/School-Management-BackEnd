@@ -87,7 +87,7 @@ class UserServiceImplTest {
     void shouldRejectDuplicateEmail() {
         UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
-        request.setEmail("john@example.com");
+        request.setEmail(" John@Example.com ");
         request.setPassword("Password123");
         request.setRole(Role.TEACHER);
 

@@ -1,6 +1,7 @@
 package org.edu.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamDTO;
@@ -16,6 +17,7 @@ import org.edu.repository.ClassRepository;
 import org.edu.repository.ExamRepository;
 import org.edu.repository.SubjectRepository;
 import org.edu.service.ExamService;
+import org.edu.util.ExamType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -111,6 +113,16 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<ExamDTO> filterExams(String keyword, Long academicYearId, Long academicTermId, Long classId, Long subjectId, ExamType type, Boolean active, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
+        validateOptionalDateRange(fromDate, toDate);
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        return examRepository
+                .filterExams(normalizedKeyword, academicYearId, academicTermId, classId, subjectId, type, active, fromDate, toDate, pageable)
+                .map(examMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ExamDTO> getExamsByAcademicTerm(Long academicTermId) {
         return examRepository.findByAcademicTermIdAndActiveTrueOrderByExamDateAsc(academicTermId)
                 .stream()
@@ -146,6 +158,12 @@ public class ExamServiceImpl implements ExamService {
     private void validateExamDateInsideTerm(ExamDTO dto, AcademicTerm academicTerm) {
         if (dto.getExamDate().isBefore(academicTerm.getStartDate()) || dto.getExamDate().isAfter(academicTerm.getEndDate())) {
             throw new IllegalArgumentException("Exam date must be within the academic term date range");
+        }
+    }
+
+    private void validateOptionalDateRange(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new IllegalArgumentException("From date must be before or equal to to date");
         }
     }
 

@@ -154,6 +154,15 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AttendanceDTO> filterAttendance(Long classId, Long studentId, Long subjectId, Long markedByStaffId, AttendanceStatus status, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
+        validateOptionalDateRange(fromDate, toDate);
+        return attendanceRepository
+                .filterAttendance(classId, studentId, subjectId, markedByStaffId, status, fromDate, toDate, pageable)
+                .map(attendanceMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public AttendanceSummaryDTO getStudentAttendanceSummary(Long studentId, LocalDate fromDate, LocalDate toDate) {
         Student student = getActiveStudent(studentId);
         validateDateRange(fromDate, toDate);
@@ -343,6 +352,12 @@ public class AttendanceServiceImpl implements AttendanceService {
             throw new IllegalArgumentException("From date and to date are required");
         }
         if (fromDate.isAfter(toDate)) {
+            throw new IllegalArgumentException("From date must be before or equal to to date");
+        }
+    }
+
+    private void validateOptionalDateRange(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
             throw new IllegalArgumentException("From date must be before or equal to to date");
         }
     }

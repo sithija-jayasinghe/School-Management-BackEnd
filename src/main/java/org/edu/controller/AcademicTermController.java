@@ -41,7 +41,7 @@ public class AcademicTermController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update an academic term")
     public AcademicTermDTO updateAcademicTerm(@PathVariable Long id,
-                                              @RequestBody AcademicTermDTO academicTermDTO) {
+                                              @Valid @RequestBody AcademicTermDTO academicTermDTO) {
         return academicTermService.updateAcademicTerm(id, academicTermDTO);
     }
 

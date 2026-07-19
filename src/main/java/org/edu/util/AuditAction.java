@@ -10,5 +10,10 @@ public enum AuditAction {
     UNLINK,
     PUBLISH,
     UNPUBLISH,
-    BULK_MARK
+    BULK_MARK,
+    SUBMIT,
+    APPROVE,
+    REJECT,
+    CANCEL,
+    ASSIGN_COVERAGE
 }
