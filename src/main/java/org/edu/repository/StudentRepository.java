@@ -15,6 +15,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByIdAndActiveTrue(Long id);
 
+    Optional<Student> findByUser_IdAndActiveTrue(Long userId);
+
     Page<Student> findByActiveTrue(Pageable pageable);
 
     List<Student> findByActiveTrue();

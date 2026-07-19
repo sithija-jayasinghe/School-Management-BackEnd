@@ -29,7 +29,7 @@ public class SystemSettingsController {
     private final AuditLogService auditLogService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get school system settings", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<SystemSettingsDTO> getSystemSettings() {
         return ResponseEntity.ok(systemSettingsService.getSystemSettings());
