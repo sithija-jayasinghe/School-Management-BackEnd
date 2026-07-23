@@ -4,11 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.AcademicYearDTO;
 import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
+import org.edu.entity.Grade;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AcademicYearMapper;
 import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.AcademicYearRepository;
+import org.edu.repository.ClassRepository;
+import org.edu.repository.GradeRepository;
 import org.edu.service.AcademicYearService;
+import org.edu.util.ClassSection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,8 @@ public class AcademicYearServiceImpl implements AcademicYearService {
 
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermRepository academicTermRepository;
+    private final GradeRepository gradeRepository;
+    private final ClassRepository classRepository;
     private final AcademicYearMapper academicYearMapper;
 
     @Override
@@ -38,8 +44,10 @@ public class AcademicYearServiceImpl implements AcademicYearService {
         AcademicYear academicYear = academicYearMapper.toEntity(academicYearDTO);
         academicYear.setActive(true);
         academicYear.setCurrent(false);
+        AcademicYear savedAcademicYear = academicYearRepository.save(academicYear);
+        ensurePrimaryClasses(savedAcademicYear);
 
-        return academicYearMapper.toDTO(academicYearRepository.save(academicYear));
+        return academicYearMapper.toDTO(savedAcademicYear);
     }
 
     @Override
@@ -155,6 +163,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
                 .ifPresent(currentTerm -> currentTerm.setCurrent(false));
 
         selectedAcademicYear.setCurrent(true);
+        ensurePrimaryClasses(selectedAcademicYear);
         return academicYearMapper.toDTO(selectedAcademicYear);
     }
 
@@ -189,5 +198,50 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     private void clearTerm(AcademicTerm academicTerm) {
         academicTerm.setCurrent(false);
         academicTerm.setActive(false);
+    }
+
+    private void ensurePrimaryClasses(AcademicYear academicYear) {
+        for (int level = 1; level <= 5; level++) {
+            Grade grade = ensurePrimaryGrade(level);
+            for (ClassSection section : ClassSection.values()) {
+                ensurePrimaryClass(academicYear, grade, section);
+            }
+        }
+    }
+
+    private Grade ensurePrimaryGrade(int level) {
+        return gradeRepository.findByLevel(level)
+                .map(grade -> {
+                    grade.setName("Grade " + level);
+                    grade.setActive(true);
+                    return grade;
+                })
+                .orElseGet(() -> {
+                    Grade grade = new Grade();
+                    grade.setName("Grade " + level);
+                    grade.setLevel(level);
+                    grade.setActive(true);
+                    return gradeRepository.save(grade);
+                });
+    }
+
+    private void ensurePrimaryClass(AcademicYear academicYear, Grade grade, ClassSection section) {
+        String sectionName = section.name();
+        classRepository.findByAcademicYearIdAndGradeIdAndSection(academicYear.getId(), grade.getId(), sectionName)
+                .ifPresentOrElse(existingClass -> {
+                    existingClass.setAcademicYear(academicYear);
+                    existingClass.setGrade(grade);
+                    existingClass.setSection(sectionName);
+                    existingClass.setName(grade.getName() + " " + sectionName);
+                    existingClass.setActive(true);
+                }, () -> {
+                    org.edu.entity.Class studentClass = new org.edu.entity.Class();
+                    studentClass.setAcademicYear(academicYear);
+                    studentClass.setGrade(grade);
+                    studentClass.setSection(sectionName);
+                    studentClass.setName(grade.getName() + " " + sectionName);
+                    studentClass.setActive(true);
+                    classRepository.save(studentClass);
+                });
     }
 }

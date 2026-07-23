@@ -29,10 +29,10 @@ class GradeServiceImplTest {
 
     @Test
     void shouldCreateGradeWhenNameAndLevelAreUnique() {
-        GradeDTO request = request("Grade 12", 12, true);
+        GradeDTO request = request("Grade 3", 3, true);
 
-        when(gradeRepository.existsByNameIgnoreCase("Grade 12")).thenReturn(false);
-        when(gradeRepository.existsByLevel(12)).thenReturn(false);
+        when(gradeRepository.existsByNameIgnoreCase("Grade 3")).thenReturn(false);
+        when(gradeRepository.existsByLevel(3)).thenReturn(false);
         when(gradeRepository.save(org.mockito.ArgumentMatchers.any(Grade.class)))
                 .thenAnswer(invocation -> {
                     Grade grade = invocation.getArgument(0);
@@ -43,18 +43,26 @@ class GradeServiceImplTest {
         GradeDTO saved = gradeService.createGrade(request);
 
         assertEquals(1L, saved.getId());
-        assertEquals("Grade 12", saved.getName());
-        assertEquals(12, saved.getLevel());
+        assertEquals("Grade 3", saved.getName());
+        assertEquals(3, saved.getLevel());
     }
 
     @Test
     void shouldRejectDuplicateGradeLevel() {
-        GradeDTO request = request("Grade 12", 12, true);
+        GradeDTO request = request("Grade 3", 3, true);
 
-        when(gradeRepository.existsByNameIgnoreCase("Grade 12")).thenReturn(false);
-        when(gradeRepository.existsByLevel(12)).thenReturn(true);
+        when(gradeRepository.existsByNameIgnoreCase("Grade 3")).thenReturn(false);
+        when(gradeRepository.existsByLevel(3)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> gradeService.createGrade(request));
+        verify(gradeRepository, never()).save(org.mockito.ArgumentMatchers.any(Grade.class));
+    }
+
+    @Test
+    void shouldRejectNonPrimaryGrade() {
+        GradeDTO request = request("Grade 6", 6, true);
+
+        assertThrows(IllegalArgumentException.class, () -> gradeService.createGrade(request));
         verify(gradeRepository, never()).save(org.mockito.ArgumentMatchers.any(Grade.class));
     }
 
@@ -78,6 +86,16 @@ class GradeServiceImplTest {
 
         assertFalse(grade.isActive());
         verify(gradeRepository).save(grade);
+    }
+
+    @Test
+    void shouldNotDeactivatePrimarySystemGrade() {
+        Grade grade = grade(1L, "Grade 1", 1, true);
+
+        when(gradeRepository.findById(1L)).thenReturn(Optional.of(grade));
+
+        assertThrows(IllegalStateException.class, () -> gradeService.deactivateGrade(1L));
+        verify(gradeRepository, never()).save(grade);
     }
 
     private GradeDTO request(String name, Integer level, boolean active) {

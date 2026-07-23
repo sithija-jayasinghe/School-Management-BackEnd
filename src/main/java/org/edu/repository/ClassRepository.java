@@ -14,6 +14,12 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     Optional<Class> findByIdAndActiveTrue(Long id);
 
+    Optional<Class> findByAcademicYearIdAndGradeIdAndSection(
+            Long academicYearId,
+            Long gradeId,
+            String section
+    );
+
     List<Class> findByActiveTrue();
 
     Page<Class> findByActiveTrue(Pageable pageable);

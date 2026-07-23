@@ -24,17 +24,24 @@ public class GradeSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (gradeRepository.count() == 0) {
-            for (int level = 1; level <= 5; level++) {
-                Grade grade = new Grade();
-                grade.setName("Grade " + level);
-                grade.setLevel(level);
-                grade.setActive(true);
-                gradeRepository.save(grade);
-            }
+        for (int level = 1; level <= 5; level++) {
+            ensurePrimaryGrade(level);
         }
 
         backfillExistingClassSections();
+    }
+
+    private void ensurePrimaryGrade(int level) {
+        gradeRepository.findByLevel(level).ifPresentOrElse(grade -> {
+            grade.setName("Grade " + level);
+            grade.setActive(true);
+        }, () -> {
+            Grade grade = new Grade();
+            grade.setName("Grade " + level);
+            grade.setLevel(level);
+            grade.setActive(true);
+            gradeRepository.save(grade);
+        });
     }
 
     private void backfillExistingClassSections() {
