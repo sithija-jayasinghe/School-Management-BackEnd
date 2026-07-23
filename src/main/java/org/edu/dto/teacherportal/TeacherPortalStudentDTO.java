@@ -15,7 +15,7 @@ public class TeacherPortalStudentDTO {
     private Long studentId;
     private String name;
     private LocalDate dateOfBirth;
-    private String phoneNumber;
+    private String house;
     private boolean active;
     private Long classId;
     private String className;

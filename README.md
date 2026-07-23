@@ -122,8 +122,8 @@ Notice audiences:
 
 - `ALL`
 - `PARENTS`
-- `STUDENTS`
 - `TEACHERS`
+- `STAFF`
 - `CLASS`
 
 Core endpoints:

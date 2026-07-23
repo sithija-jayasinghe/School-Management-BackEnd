@@ -109,13 +109,13 @@ class StaffServiceImplTest {
     }
 
     @Test
-    void shouldRejectStudentAccountForStaffRecord() {
+    void shouldRejectParentAccountForStaffRecord() {
         StaffDTO input = staffInput();
         input.setUserId(8L);
-        User studentUser = new User();
-        studentUser.setId(8L);
-        studentUser.setRole(Role.STUDENT);
-        when(userRepository.findById(8L)).thenReturn(Optional.of(studentUser));
+        User parentUser = new User();
+        parentUser.setId(8L);
+        parentUser.setRole(Role.PARENT);
+        when(userRepository.findById(8L)).thenReturn(Optional.of(parentUser));
 
         assertThrows(IllegalArgumentException.class, () -> staffService.createStaff(input));
         verify(staffRepository, never()).save(any());

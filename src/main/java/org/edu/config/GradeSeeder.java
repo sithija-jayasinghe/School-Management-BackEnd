@@ -25,7 +25,7 @@ public class GradeSeeder implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         if (gradeRepository.count() == 0) {
-            for (int level = 1; level <= 13; level++) {
+            for (int level = 1; level <= 5; level++) {
                 Grade grade = new Grade();
                 grade.setName("Grade " + level);
                 grade.setLevel(level);

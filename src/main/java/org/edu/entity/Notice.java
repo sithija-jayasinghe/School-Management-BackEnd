@@ -1,10 +1,9 @@
 package org.edu.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,6 +16,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.edu.mapper.NoticeAudienceConverter;
 import org.edu.util.NoticeAudience;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -40,7 +40,7 @@ public class Notice {
     @Column(nullable = false, length = 3000)
     private String message;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = NoticeAudienceConverter.class)
     @Column(nullable = false, length = 30)
     private NoticeAudience audience;
 

@@ -525,33 +525,104 @@ forkJoin({
 
 ## 8. Add Create API
 
-Controller:
+Example request:
+
+```txt
+Add Create Grade API.
+```
+
+Files:
+
+```txt
+Backend:
+src/main/java/org/edu/controller/GradeController.java
+src/main/java/org/edu/service/GradeService.java
+src/main/java/org/edu/service/impl/GradeServiceImpl.java
+
+Frontend:
+src/app/features/grades/models/grade.model.ts
+src/app/features/grades/services/grade-api.service.ts
+src/app/features/grades/pages/grade-form-page.component.ts
+```
+
+Backend controller:
 
 ```java
 @PostMapping
-public GradeDTO createGrade(@Valid @RequestBody GradeDTO dto) {
-    return gradeService.createGrade(dto);
+@Operation(summary = "Create a grade")
+public GradeDTO createGrade(@Valid @RequestBody GradeDTO gradeDTO) {
+    return gradeService.createGrade(gradeDTO);
 }
 ```
 
-Service interface:
+Backend service interface:
 
 ```java
-GradeDTO createGrade(GradeDTO dto);
+GradeDTO createGrade(GradeDTO gradeDTO);
 ```
 
-ServiceImpl:
+Backend service implementation:
 
 ```java
 @Override
-public GradeDTO createGrade(GradeDTO dto) {
-    Grade grade = gradeMapper.toEntity(dto);
+public GradeDTO createGrade(GradeDTO gradeDTO) {
+    validateDuplicateName(gradeDTO.getName(), null);
+    validateDuplicateLevel(gradeDTO.getLevel(), null);
+
+    Grade grade = new Grade();
+    applyFields(grade, gradeDTO);
     grade.setActive(true);
-    return gradeMapper.toDTO(gradeRepository.save(grade));
+    return toDTO(gradeRepository.save(grade));
 }
 ```
 
-Frontend API:
+Required helper methods in same ServiceImpl:
+
+```java
+private void applyFields(Grade grade, GradeDTO dto) {
+    grade.setName(dto.getName().trim());
+    grade.setLevel(dto.getLevel());
+}
+
+private void validateDuplicateName(String name, Long currentId) {
+    boolean exists = currentId == null
+            ? gradeRepository.existsByNameIgnoreCase(name.trim())
+            : gradeRepository.existsByNameIgnoreCaseAndIdNot(name.trim(), currentId);
+    if (exists) {
+        throw new IllegalStateException("Grade name already exists");
+    }
+}
+
+private void validateDuplicateLevel(Integer level, Long currentId) {
+    boolean exists = currentId == null
+            ? gradeRepository.existsByLevel(level)
+            : gradeRepository.existsByLevelAndIdNot(level, currentId);
+    if (exists) {
+        throw new IllegalStateException("Grade level already exists");
+    }
+}
+
+private GradeDTO toDTO(Grade grade) {
+    GradeDTO dto = new GradeDTO();
+    dto.setId(grade.getId());
+    dto.setName(grade.getName());
+    dto.setLevel(grade.getLevel());
+    dto.setActive(grade.isActive());
+    return dto;
+}
+```
+
+Frontend model:
+
+```ts
+export interface GradeSaveRequest {
+  name: string;
+  level: number;
+  active: boolean;
+}
+```
+
+Frontend API service:
 
 ```ts
 createGrade(request: GradeSaveRequest): Observable<GradeRecord> {
@@ -559,7 +630,7 @@ createGrade(request: GradeSaveRequest): Observable<GradeRecord> {
 }
 ```
 
-Frontend save:
+Frontend form save:
 
 ```ts
 protected saveGrade(): void {
@@ -571,7 +642,12 @@ protected saveGrade(): void {
   this.saving.set(true);
   this.errorMessage.set('');
 
-  const request = this.gradeForm.getRawValue();
+  const formValue = this.gradeForm.getRawValue();
+  const request: GradeSaveRequest = {
+    name: formValue.name.trim(),
+    level: formValue.level,
+    active: formValue.active
+  };
 
   this.gradeApi.createGrade(request).subscribe({
     next: (grade) => this.router.navigate(['/grades', grade.id]),
@@ -2649,4 +2725,3 @@ For UI:
 ```txt
 Sir, this is frontend-only. I will update the component TS state/form, template binding, and SCSS layout. If it needs backend data, I will add the API service method too.
 ```
-

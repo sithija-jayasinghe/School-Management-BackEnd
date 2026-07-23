@@ -1,7 +1,6 @@
 package org.edu.repository;
 
 import org.edu.entity.Student;
-import org.edu.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +13,6 @@ import java.util.Optional;
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByIdAndActiveTrue(Long id);
-
-    Optional<Student> findByUser_IdAndActiveTrue(Long userId);
 
     Page<Student> findByActiveTrue(Pageable pageable);
 
@@ -34,7 +31,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
               and (
                 :keyword is null
                 or lower(student.name) like lower(concat('%', :keyword, '%'))
-                or lower(student.phoneNumber) like lower(concat('%', :keyword, '%'))
+                or lower(student.house) like lower(concat('%', :keyword, '%'))
                 or str(student.id) like concat('%', :keyword, '%')
               )
             """)
@@ -45,5 +42,4 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             Pageable pageable
     );
 
-    boolean existsByUser(User user);
 }

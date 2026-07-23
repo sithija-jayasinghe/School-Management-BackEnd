@@ -20,10 +20,6 @@ public class Student {
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
 
-        @OneToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "user_id", unique = true)
-        private User user;
-
         @Column(nullable = false, length = 150)
         private String name;
 
@@ -37,8 +33,8 @@ public class Student {
         @JoinColumn(name = "class_id")
         private org.edu.entity.Class currentClass;
 
-        @Column(nullable = false, length = 15)
-        private String phoneNumber;
+        @Column(length = 50)
+        private String house;
 
         @CreatedDate
         private LocalDateTime createdAt;

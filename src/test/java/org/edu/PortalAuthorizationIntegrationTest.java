@@ -298,11 +298,10 @@ class PortalAuthorizationIntegrationTest {
 
     private Student saveStudent(String email, String name, org.edu.entity.Class studentClass) {
         Student student = new Student();
-        student.setUser(saveUser(email, Role.STUDENT));
         student.setName(name);
         student.setDateOfBirth(LocalDate.of(2010, 1, 1));
         student.setCurrentClass(studentClass);
-        student.setPhoneNumber("0751234567");
+        student.setHouse("Blue");
         student.setActive(true);
         return studentRepository.save(student);
     }
