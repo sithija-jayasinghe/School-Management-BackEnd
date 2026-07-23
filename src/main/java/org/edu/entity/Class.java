@@ -11,7 +11,13 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "classes")
+@Table(
+        name = "classes",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_classes_academic_year_grade_section",
+                columnNames = {"academic_year_id", "grade_id", "section"}
+        )
+)
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor
 @Getter
@@ -28,6 +34,10 @@ public class Class {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "grade_id")
     private Grade grade;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_year_id")
+    private AcademicYear academicYear;
 
     @Column(length = 20)
     private String section;

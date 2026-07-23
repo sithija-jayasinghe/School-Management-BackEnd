@@ -31,6 +31,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
               and (
                 :keyword is null
                 or lower(student.name) like lower(concat('%', :keyword, '%'))
+                or lower(student.admissionNumber) like lower(concat('%', :keyword, '%'))
+                or lower(student.nameWithInitials) like lower(concat('%', :keyword, '%'))
                 or lower(student.house) like lower(concat('%', :keyword, '%'))
                 or str(student.id) like concat('%', :keyword, '%')
               )
@@ -42,4 +44,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             Pageable pageable
     );
 
+    boolean existsByAdmissionNumberIgnoreCase(String admissionNumber);
+
+    long countByAssignedHouseIdAndActiveTrue(Long houseId);
 }

@@ -19,6 +19,8 @@ public interface ClassMapper extends BaseMapper<ClassDTO, Class> {
     @Override
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "grade", ignore = true)
+    @Mapping(target = "academicYear", ignore = true)
+    @Mapping(target = "section", ignore = true)
     @Mapping(target = "classTeacher", ignore = true)
     @Mapping(target = "students", ignore = true)
     @Mapping(target = "subjects", ignore = true)
@@ -33,6 +35,8 @@ public interface ClassMapper extends BaseMapper<ClassDTO, Class> {
     @Mapping(target = "gradeId", source = "grade.id")
     @Mapping(target = "gradeName", source = "grade.name")
     @Mapping(target = "gradeLevel", source = "grade.level")
+    @Mapping(target = "academicYearId", source = "academicYear.id")
+    @Mapping(target = "academicYearName", source = "academicYear.name")
     @Mapping(target = "subjectIds", source = "subjects")
     ClassDTO toDTO(Class clazz);
 
@@ -40,6 +44,8 @@ public interface ClassMapper extends BaseMapper<ClassDTO, Class> {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "grade", ignore = true)
+    @Mapping(target = "academicYear", ignore = true)
+    @Mapping(target = "section", ignore = true)
     @Mapping(target = "classTeacher", ignore = true)
     @Mapping(target = "students", ignore = true)
     @Mapping(target = "subjects", ignore = true)

@@ -24,14 +24,38 @@ public class StudentDTO {
     @NotBlank(message = "Name is required")
     private String name;
 
+    private String admissionNumber;
+
+    private String nameWithInitials;
+
     @NotNull(message = "Date of birth is required")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
+    private String gender;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate admissionDate;
+
     private boolean active;
 
-    @NotBlank(message = "House is required")
     private String house;
+
+    private Long houseId;
+
+    private String houseName;
+
+    private String medium;
+
+    private String homeAddress;
+
+    private String guardianRelationship;
+
+    private String medicalConditions;
+
+    private String previousSchool;
+
+    private String status;
 
     private Long currentClassId;
 

@@ -45,4 +45,16 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     boolean existsByIdAndClassTeacherIdAndActiveTrue(Long id, Long classTeacherId);
 
+    boolean existsByAcademicYearIdAndGradeIdAndSectionAndActiveTrue(
+            Long academicYearId,
+            Long gradeId,
+            String section
+    );
+
+    boolean existsByAcademicYearIdAndGradeIdAndSectionAndIdNotAndActiveTrue(
+            Long academicYearId,
+            Long gradeId,
+            String section,
+            Long id
+    );
 }

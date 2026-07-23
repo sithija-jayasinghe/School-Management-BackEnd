@@ -15,6 +15,8 @@ public interface StudentMapper extends BaseMapper<StudentDTO, Student> {
     @Override
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "currentClass", ignore = true)
+    @Mapping(target = "assignedHouse", ignore = true)
+    @Mapping(target = "legacyPhoneNumber", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -23,12 +25,16 @@ public interface StudentMapper extends BaseMapper<StudentDTO, Student> {
     @Override
     @Mapping(target = "currentClassId", source = "currentClass.id")
     @Mapping(target = "currentClassName", source = "currentClass.name")
+    @Mapping(target = "houseId", source = "assignedHouse.id")
+    @Mapping(target = "houseName", source = "assignedHouse.name")
     StudentDTO toDTO(Student student);
 
     @Override
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "currentClass", ignore = true)
+    @Mapping(target = "assignedHouse", ignore = true)
+    @Mapping(target = "legacyPhoneNumber", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

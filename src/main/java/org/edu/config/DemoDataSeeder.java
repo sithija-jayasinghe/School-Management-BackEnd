@@ -327,7 +327,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private Class createClass(Grade grade, String section, Staff classTeacher, List<Subject> subjects) {
         Class studentClass = new Class();
         studentClass.setGrade(grade);
-        studentClass.setSection(section);
+        studentClass.setSection(section.trim().toUpperCase());
         studentClass.setName(grade.getName() + " " + section);
         studentClass.setClassTeacher(classTeacher);
         studentClass.setSubjects(new ArrayList<>(subjects));

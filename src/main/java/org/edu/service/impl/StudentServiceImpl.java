@@ -14,8 +14,10 @@ import org.edu.mapper.StudentMapper;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.AcademicYearRepository;
 import org.edu.repository.ClassRepository;
+import org.edu.repository.HouseRepository;
 import org.edu.service.StudentService;
 import org.edu.util.EnrollmentStatus;
+import org.edu.util.StudentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StudentEnrollmentRepository;
 import org.edu.entity.Parent;
 import org.edu.entity.ParentStudent;
+import org.edu.entity.House;
 
 @Service
 @Transactional
@@ -40,6 +43,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentMapper studentMapper;
     private final AcademicYearRepository academicYearRepository;
     private final ClassRepository classRepository;
+    private final HouseRepository houseRepository;
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final StudentEnrollmentRepository studentEnrollmentRepository;
@@ -53,6 +57,8 @@ public class StudentServiceImpl implements StudentService {
 
         Student student = studentMapper.toEntity(studentDTO);
         student.setActive(true);
+        applyStudentDefaults(student);
+        applyHouse(student, studentDTO);
 
         if (studentDTO.getCurrentClassId() != null) {
             Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
@@ -82,6 +88,8 @@ public class StudentServiceImpl implements StudentService {
         }
 
         studentMapper.updateEntityFromDTO(studentDTO, student);
+        applyStudentDefaults(student);
+        applyHouse(student, studentDTO);
 
         if (studentDTO.getParentIds() != null) {
             syncParentLinks(student, studentDTO.getParentIds());
@@ -215,6 +223,23 @@ public class StudentServiceImpl implements StudentService {
                     parentStudent.setEmergencyContact(false);
                     parentStudentRepository.save(parentStudent);
                 });
+    }
+
+    private void applyStudentDefaults(Student student) {
+        if (student.getStatus() == null) {
+            student.setStatus(StudentStatus.ACTIVE);
+        }
+    }
+
+    private void applyHouse(Student student, StudentDTO studentDTO) {
+        if (studentDTO.getHouseId() == null) {
+            return;
+        }
+
+        House house = houseRepository.findByIdAndActiveTrue(studentDTO.getHouseId())
+                .orElseThrow(() -> new ResourceNotFoundException("House not found with id: " + studentDTO.getHouseId()));
+        student.setAssignedHouse(house);
+        student.setHouse(house.getName());
     }
 
     private void createAndLinkNewParents(Student student, List<StudentParentInlineRequest> newParents) {

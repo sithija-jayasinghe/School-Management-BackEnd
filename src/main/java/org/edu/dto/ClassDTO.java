@@ -1,6 +1,7 @@
 package org.edu.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,11 @@ public class ClassDTO {
 
     private Integer gradeLevel;
 
+    private Long academicYearId;
+
+    private String academicYearName;
+
+    @NotNull(message = "Section is required")
     private String section;
 
     private Long classTeacherId;

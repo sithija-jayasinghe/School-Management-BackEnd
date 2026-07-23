@@ -24,6 +24,7 @@ import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StudentEnrollmentRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.util.EnrollmentStatus;
+import org.edu.util.StudentStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -58,6 +59,30 @@ class StudentServiceImplTest {
 
     @InjectMocks
     private StudentServiceImpl studentService;
+
+    @Test
+    void shouldDefaultStatusWhenCreatingStudentWithoutStatus() {
+        StudentDTO request = new StudentDTO();
+        request.setName("Sahan Perera");
+        request.setDateOfBirth(LocalDate.of(2010, 3, 4));
+        Student mapped = new Student();
+        mapped.setName("Sahan Perera");
+        mapped.setDateOfBirth(LocalDate.of(2010, 3, 4));
+        mapped.setStatus(null);
+
+        when(studentMapper.toEntity(request)).thenReturn(mapped);
+        when(studentRepository.save(mapped)).thenReturn(mapped);
+        when(parentStudentRepository.findByStudentId(null)).thenReturn(List.of());
+        when(studentMapper.toDTO(mapped)).thenReturn(new StudentDTO());
+        when(studentEnrollmentRepository.findByStudentIdAndStatusOrderByAcademicYearStartDateDesc(
+                null,
+                EnrollmentStatus.ACTIVE
+        )).thenReturn(List.of());
+
+        studentService.createStudent(request);
+
+        assertEquals(StudentStatus.ACTIVE, mapped.getStatus());
+    }
 
     @Test
     void shouldSoftDeleteActiveStudent() {
