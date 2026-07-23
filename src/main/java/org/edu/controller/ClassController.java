@@ -71,6 +71,12 @@ public class ClassController {
         return classService.getAllActiveClasses();
     }
 
+    @GetMapping("/active/current-academic-year")
+    @Operation(summary = "List active classes for the current academic year")
+    public List<ClassDTO> getCurrentAcademicYearActiveClasses() {
+        return classService.getCurrentAcademicYearActiveClasses();
+    }
+
     @GetMapping("/{id}/students")
     @Operation(summary = "List students in a class")
     public List<StudentDTO> getStudentsByClass(@PathVariable Long id) {

@@ -51,25 +51,29 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public StudentDTO createStudent(StudentDTO studentDTO) {
 
+        validateAdmissionDetails(studentDTO, null);
+
         if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
             throw new InvalidAgeException("Invalid student age: Must be at least 3 years old");
         }
 
         Student student = studentMapper.toEntity(studentDTO);
         student.setActive(true);
+        normalizeAdmissionDetails(student);
         applyStudentDefaults(student);
         applyHouse(student, studentDTO);
 
         if (studentDTO.getCurrentClassId() != null) {
             Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
                     .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + studentDTO.getCurrentClassId()));
+            validateInitialClassForCurrentAcademicYear(clazz);
             student.setCurrentClass(clazz);
         }
 
         Student savedStudent = studentRepository.save(student);
 
-        syncParentLinks(savedStudent, studentDTO.getParentIds());
-        createAndLinkNewParents(savedStudent, studentDTO.getNewParents());
+        syncParentLinks(savedStudent, studentDTO.getParentIds(), studentDTO.getGuardianRelationship());
+        createAndLinkNewParents(savedStudent, studentDTO.getNewParents(), studentDTO.getGuardianRelationship());
         syncCurrentEnrollment(savedStudent);
 
         return toDTOWithParentIds(savedStudent);
@@ -80,6 +84,7 @@ public class StudentServiceImpl implements StudentService {
 
         Student student = studentRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+        validateAdmissionDetails(studentDTO, id);
 
         if (studentDTO.getDateOfBirth() != null) {
             if (studentDTO.getDateOfBirth().isAfter(LocalDate.now().minusYears(3))) {
@@ -88,14 +93,15 @@ public class StudentServiceImpl implements StudentService {
         }
 
         studentMapper.updateEntityFromDTO(studentDTO, student);
+        normalizeAdmissionDetails(student);
         applyStudentDefaults(student);
         applyHouse(student, studentDTO);
 
         if (studentDTO.getParentIds() != null) {
-            syncParentLinks(student, studentDTO.getParentIds());
+            syncParentLinks(student, studentDTO.getParentIds(), studentDTO.getGuardianRelationship());
         }
 
-        createAndLinkNewParents(student, studentDTO.getNewParents());
+        createAndLinkNewParents(student, studentDTO.getNewParents(), studentDTO.getGuardianRelationship());
 
         return toDTOWithParentIds(student);
     }
@@ -198,9 +204,10 @@ public class StudentServiceImpl implements StudentService {
         return closeStudentEnrollment(studentId, EnrollmentStatus.COMPLETED);
     }
 
-    private void syncParentLinks(Student student, List<Long> parentIds) {
+    private void syncParentLinks(Student student, List<Long> parentIds, String relationshipType) {
         Set<Long> requestedParentIds = new LinkedHashSet<>(parentIds == null ? List.of() : parentIds);
         List<ParentStudent> existingLinks = parentStudentRepository.findByStudentId(student.getId());
+        String normalizedRelationship = normalizeRelationshipType(relationshipType);
 
         existingLinks.stream()
                 .filter(link -> !requestedParentIds.contains(link.getParent().getId()))
@@ -210,6 +217,14 @@ public class StudentServiceImpl implements StudentService {
                 .map(link -> link.getParent().getId())
                 .collect(java.util.stream.Collectors.toSet());
 
+        existingLinks.stream()
+                .filter(link -> requestedParentIds.contains(link.getParent().getId()))
+                .forEach(link -> {
+                    link.setRelationshipType(normalizedRelationship);
+                    link.setPrimaryContact(true);
+                    link.setEmergencyContact(false);
+                });
+
         requestedParentIds.stream()
                 .filter(parentId -> !existingParentIds.contains(parentId))
                 .forEach(parentId -> {
@@ -218,7 +233,7 @@ public class StudentServiceImpl implements StudentService {
                     ParentStudent parentStudent = new ParentStudent();
                     parentStudent.setParent(parent);
                     parentStudent.setStudent(student);
-                    parentStudent.setRelationshipType("Parent");
+                    parentStudent.setRelationshipType(normalizedRelationship);
                     parentStudent.setPrimaryContact(true);
                     parentStudent.setEmergencyContact(false);
                     parentStudentRepository.save(parentStudent);
@@ -229,6 +244,49 @@ public class StudentServiceImpl implements StudentService {
         if (student.getStatus() == null) {
             student.setStatus(StudentStatus.ACTIVE);
         }
+    }
+
+    private void validateAdmissionDetails(StudentDTO studentDTO, Long currentStudentId) {
+        requireText(studentDTO.getNameWithInitials(), "Name with initials is required");
+        requireText(studentDTO.getGender(), "Gender is required");
+        requireText(studentDTO.getHomeAddress(), "Home address is required");
+        requireText(studentDTO.getGuardianRelationship(), "Guardian relationship is required");
+
+        if (studentDTO.getAdmissionDate() == null) {
+            throw new IllegalArgumentException("Admission date is required");
+        }
+
+        if (studentDTO.getMedium() == null || studentDTO.getMedium().isBlank()) {
+            throw new IllegalArgumentException("Medium is required");
+        }
+
+        if (studentDTO.getDateOfBirth() != null && studentDTO.getAdmissionDate().isBefore(studentDTO.getDateOfBirth())) {
+            throw new IllegalArgumentException("Admission date cannot be before date of birth");
+        }
+    }
+
+    private void requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    private void normalizeAdmissionDetails(Student student) {
+        student.setAdmissionNumber(trimToNull(student.getAdmissionNumber()));
+        student.setName(trimToNull(student.getName()));
+        student.setNameWithInitials(trimToNull(student.getNameWithInitials()));
+        student.setGender(trimToNull(student.getGender()));
+        student.setHomeAddress(trimToNull(student.getHomeAddress()));
+        student.setGuardianRelationship(trimToNull(student.getGuardianRelationship()));
+        student.setMedicalConditions(trimToNull(student.getMedicalConditions()));
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
     }
 
     private void applyHouse(Student student, StudentDTO studentDTO) {
@@ -242,28 +300,57 @@ public class StudentServiceImpl implements StudentService {
         student.setHouse(house.getName());
     }
 
-    private void createAndLinkNewParents(Student student, List<StudentParentInlineRequest> newParents) {
+    private void createAndLinkNewParents(Student student, List<StudentParentInlineRequest> newParents, String relationshipType) {
         if (newParents == null || newParents.isEmpty()) {
             return;
         }
 
+        String normalizedRelationship = normalizeRelationshipType(relationshipType);
         for (StudentParentInlineRequest parentRequest : newParents) {
-            Parent parent = new Parent();
-            parent.setName(parentRequest.getName().trim());
-            parent.setPhoneNumber(parentRequest.getPhoneNumber().trim());
-            parent.setAddress(parentRequest.getAddress().trim());
-            parent.setOccupation(parentRequest.getOccupation().trim());
-            parent.setActive(true);
-            Parent savedParent = parentRepository.save(parent);
-
-            ParentStudent parentStudent = new ParentStudent();
-            parentStudent.setParent(savedParent);
-            parentStudent.setStudent(student);
-            parentStudent.setRelationshipType("Parent");
-            parentStudent.setPrimaryContact(true);
-            parentStudent.setEmergencyContact(false);
-            parentStudentRepository.save(parentStudent);
+            Parent parent = findOrCreateParent(parentRequest);
+            linkParentToStudent(parent, student, normalizedRelationship);
         }
+    }
+
+    private Parent findOrCreateParent(StudentParentInlineRequest parentRequest) {
+        String phoneNumber = parentRequest.getPhoneNumber().trim();
+        return parentRepository.findByPhoneNumber(phoneNumber)
+                .map(parent -> {
+                    parent.setActive(true);
+                    return parent;
+                })
+                .orElseGet(() -> {
+                    Parent parent = new Parent();
+                    parent.setName(parentRequest.getName().trim());
+                    parent.setPhoneNumber(phoneNumber);
+                    parent.setAddress(parentRequest.getAddress().trim());
+                    parent.setOccupation(parentRequest.getOccupation().trim());
+                    parent.setActive(true);
+                    return parentRepository.save(parent);
+                });
+    }
+
+    private void linkParentToStudent(Parent parent, Student student, String relationshipType) {
+        parentStudentRepository.findByParentIdAndStudentId(parent.getId(), student.getId())
+                .ifPresentOrElse(existingLink -> {
+                    existingLink.setRelationshipType(relationshipType);
+                    existingLink.setPrimaryContact(true);
+                    existingLink.setEmergencyContact(false);
+                }, () -> {
+                    ParentStudent parentStudent = new ParentStudent();
+                    parentStudent.setParent(parent);
+                    parentStudent.setStudent(student);
+                    parentStudent.setRelationshipType(relationshipType);
+                    parentStudent.setPrimaryContact(true);
+                    parentStudent.setEmergencyContact(false);
+                    parentStudentRepository.save(parentStudent);
+                });
+    }
+
+    private String normalizeRelationshipType(String relationshipType) {
+        return relationshipType == null || relationshipType.isBlank()
+                ? "Guardian"
+                : relationshipType.trim();
     }
 
     private StudentDTO toDTOWithParentIds(Student student) {
@@ -371,6 +458,13 @@ public class StudentServiceImpl implements StudentService {
     private AcademicYear getCurrentAcademicYear() {
         return academicYearRepository.findByCurrentTrueAndActiveTrue()
                 .orElseThrow(() -> new ResourceNotFoundException("Current academic year not found"));
+    }
+
+    private void validateInitialClassForCurrentAcademicYear(Class clazz) {
+        AcademicYear currentAcademicYear = getCurrentAcademicYear();
+        if (clazz.getAcademicYear() == null || !currentAcademicYear.getId().equals(clazz.getAcademicYear().getId())) {
+            throw new IllegalArgumentException("Initial class must belong to the current academic year");
+        }
     }
 
     private void closeCurrentEnrollment(Student student) {

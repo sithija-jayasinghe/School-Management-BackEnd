@@ -136,6 +136,19 @@ public class ClassServiceImpl implements ClassService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassDTO> getCurrentAcademicYearActiveClasses() {
+        AcademicYear currentAcademicYear = academicYearRepository.findByCurrentTrueAndActiveTrue()
+                .orElseThrow(() -> new ResourceNotFoundException("Current academic year not found"));
+
+        return classRepository.findByAcademicYearIdAndActiveTrueOrderByNameAsc(currentAcademicYear.getId())
+                .stream()
+                .filter(this::isPrimaryClass)
+                .map(classMapper::toDTO)
+                .toList();
+    }
+
     private void applyAcademicYearGradeAndSection(Class clazz, ClassDTO classDTO, Long currentClassId) {
         Long academicYearId = classDTO.getAcademicYearId() == null && clazz.getAcademicYear() != null
                 ? clazz.getAcademicYear().getId()
@@ -187,5 +200,15 @@ public class ClassServiceImpl implements ClassService {
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Class section must be A, B, C, D, or E");
         }
+    }
+
+    private boolean isPrimaryClass(Class clazz) {
+        return clazz.getGrade() != null
+                && clazz.getGrade().getLevel() != null
+                && clazz.getGrade().getLevel() >= 1
+                && clazz.getGrade().getLevel() <= 5
+                && clazz.getSection() != null
+                && java.util.Arrays.stream(ClassSection.values())
+                        .anyMatch(section -> section.name().equalsIgnoreCase(clazz.getSection()));
     }
 }

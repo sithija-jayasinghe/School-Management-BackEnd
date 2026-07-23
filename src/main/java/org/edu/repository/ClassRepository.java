@@ -22,6 +22,8 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     List<Class> findByActiveTrue();
 
+    List<Class> findByAcademicYearIdAndActiveTrueOrderByNameAsc(Long academicYearId);
+
     Page<Class> findByActiveTrue(Pageable pageable);
 
     @Query("""

@@ -15,6 +15,8 @@ public interface ParentRepository extends JpaRepository<Parent, Long> {
 
     Optional<Parent> findByIdAndActiveTrue(Long id);
 
+    Optional<Parent> findByPhoneNumber(String phoneNumber);
+
     Page<Parent> findByActiveTrue(Pageable pageable);
 
     List<Parent> findByActiveTrue();

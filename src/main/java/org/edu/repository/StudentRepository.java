@@ -44,7 +44,5 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             Pageable pageable
     );
 
-    boolean existsByAdmissionNumberIgnoreCase(String admissionNumber);
-
     long countByAssignedHouseIdAndActiveTrue(Long houseId);
 }

@@ -15,4 +15,5 @@ public interface ClassService {
     ClassDTO getClassById(Long id);
     Page<ClassDTO> searchClasses(String name, Pageable pageable);
     List<ClassDTO> getAllActiveClasses();
+    List<ClassDTO> getCurrentAcademicYearActiveClasses();
 }
