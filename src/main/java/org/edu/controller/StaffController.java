@@ -86,12 +86,14 @@ public class StaffController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active staff members")
     public List<StaffDTO> getActiveStaff() {
         return staffService.getAllActiveStaff();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get a staff record by id")
     public StaffDTO getStaffById(@PathVariable Long id) {
         return staffService.getStaffById(id);

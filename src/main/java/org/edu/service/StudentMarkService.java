@@ -9,11 +9,11 @@ import org.springframework.data.domain.Pageable;
 
 public interface StudentMarkService {
 
-    StudentMarkDTO createStudentMark(StudentMarkDTO dto);
+    StudentMarkDTO createStudentMark(Long authenticatedUserId, StudentMarkDTO dto);
 
-    StudentMarkDTO updateStudentMark(Long id, StudentMarkDTO dto);
+    StudentMarkDTO updateStudentMark(Long authenticatedUserId, Long id, StudentMarkDTO dto);
 
-    void deleteStudentMark(Long id);
+    void deleteStudentMark(Long authenticatedUserId, Long id);
 
     StudentMarkDTO getStudentMarkById(Long id);
 

@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamDTO;
+import org.edu.dto.request.BulkExamCreateRequest;
 import org.edu.service.AuditLogService;
 import org.edu.service.ExamService;
 import org.edu.util.AuditAction;
@@ -44,6 +45,20 @@ public class ExamController {
         ExamDTO response = examService.createExam(dto);
         auditLogService.log(AuditAction.CREATE, AuditEntityType.EXAM, response.getId(), response.getName(), "Created exam");
         return response;
+    }
+
+    @PostMapping("/bulk")
+    @Operation(summary = "Create exams for multiple subjects in one class/term at once")
+    public List<ExamDTO> bulkCreateExams(@Valid @RequestBody BulkExamCreateRequest request) {
+        List<ExamDTO> responses = examService.bulkCreateExams(request);
+        auditLogService.log(
+                AuditAction.CREATE,
+                AuditEntityType.EXAM,
+                null,
+                request.getSubjectIds().size() + " subjects",
+                "Bulk created " + responses.size() + " exams for class/term"
+        );
+        return responses;
     }
 
     @PatchMapping("/{id}")

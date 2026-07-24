@@ -7,10 +7,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamResultSummaryDTO;
 import org.edu.dto.StudentMarkDTO;
+import org.edu.security.UserPrincipal;
 import org.edu.service.StudentMarkService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -32,20 +34,24 @@ public class StudentMarkController {
 
     @PostMapping
     @Operation(summary = "Create a student mark record")
-    public StudentMarkDTO createStudentMark(@Valid @RequestBody StudentMarkDTO dto) {
-        return studentMarkService.createStudentMark(dto);
+    public StudentMarkDTO createStudentMark(@AuthenticationPrincipal UserPrincipal principal, @Valid @RequestBody StudentMarkDTO dto) {
+        return studentMarkService.createStudentMark(principal.getUser().getId(), dto);
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update a student mark record")
-    public StudentMarkDTO updateStudentMark(@PathVariable Long id, @Valid @RequestBody StudentMarkDTO dto) {
-        return studentMarkService.updateStudentMark(id, dto);
+    public StudentMarkDTO updateStudentMark(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @Valid @RequestBody StudentMarkDTO dto
+    ) {
+        return studentMarkService.updateStudentMark(principal.getUser().getId(), id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a student mark record")
-    public void deleteStudentMark(@PathVariable Long id) {
-        studentMarkService.deleteStudentMark(id);
+    public void deleteStudentMark(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+        studentMarkService.deleteStudentMark(principal.getUser().getId(), id);
     }
 
     @GetMapping("/{id}")

@@ -75,6 +75,7 @@ public class ParentController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active parents")
     public List<ParentDTO> getActiveParents() {
         return parentService.getAllActiveParents();
@@ -143,6 +144,7 @@ public class ParentController {
     }
 
     @GetMapping("/{parentId}/students")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List students linked to a parent")
     public List<ParentStudentDTO> getStudentsByParent(@PathVariable Long parentId) {
         return parentService.getStudentsByParent(parentId);
