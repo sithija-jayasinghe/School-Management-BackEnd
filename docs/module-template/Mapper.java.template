@@ -1,0 +1,23 @@
+package org.edu.mapper;
+
+import org.edu.dto.{{ModuleDTO}};
+import org.edu.entity.{{Module}};
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface {{Module}}Mapper extends BaseMapper<{{ModuleDTO}}, {{Module}}> {
+
+    @Mapping(target = "id", ignore = true)
+    {{Module}} toEntity({{ModuleDTO}} dto);
+
+    {{ModuleDTO}} toDTO({{Module}} {{module}});
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    void updateEntityFromDTO({{ModuleDTO}} dto, @MappingTarget {{Module}} {{module}});
+}

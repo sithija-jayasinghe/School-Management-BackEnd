@@ -1,0 +1,17 @@
+package org.edu.util;
+
+public enum AuditEntityType {
+    USER,
+    STAFF,
+    PARENT,
+    PARENT_STUDENT_LINK,
+    ATTENDANCE,
+    NOTICE,
+    EXAM,
+    DOCUMENT,
+    SYSTEM_SETTINGS,
+    TEACHER_LEAVE_REQUEST,
+    TEACHER_LEAVE_SESSION,
+    ACTIVITY,
+    ACTIVITY_TEACHER_ASSIGNMENT
+}
