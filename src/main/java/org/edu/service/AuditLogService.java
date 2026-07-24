@@ -1,5 +1,6 @@
 package org.edu.service;
 
+import java.time.LocalDateTime;
 import org.edu.dto.AuditLogDTO;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
@@ -11,6 +12,16 @@ public interface AuditLogService {
     void log(AuditAction action, AuditEntityType entityType, Long entityId, String entityName, String description);
 
     Page<AuditLogDTO> getAllAuditLogs(Pageable pageable);
+
+    Page<AuditLogDTO> filterAuditLogs(
+            String keyword,
+            AuditAction action,
+            AuditEntityType entityType,
+            Long actorUserId,
+            LocalDateTime from,
+            LocalDateTime to,
+            Pageable pageable
+    );
 
     Page<AuditLogDTO> searchAuditLogs(String keyword, Pageable pageable);
 

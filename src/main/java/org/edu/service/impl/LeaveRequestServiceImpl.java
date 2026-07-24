@@ -235,7 +235,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             attendanceDTO.setStatus(AttendanceStatus.EXCUSED);
             attendanceDTO.setMarkedByStaffId(staff.getId());
             attendanceDTO.setRemarks("Applied from approved leave request #" + leaveRequest.getId());
-            attendanceService.createAttendance(attendanceDTO);
+            attendanceService.createAttendance(null, attendanceDTO);
             current = current.plusDays(1);
         }
 

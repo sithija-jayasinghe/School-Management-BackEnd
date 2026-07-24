@@ -169,14 +169,14 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     ) {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
         validateTeacherClassAccess(staff.getId(), classId);
-        return attendanceService.getClassAttendanceByDate(classId, attendanceDate, pageable);
+        return attendanceService.getClassAttendanceByDate(null, classId, attendanceDate, pageable);
     }
 
     @Override
     public Page<AttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, Pageable pageable) {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
         Student student = getAccessibleStudent(staff.getId(), studentId);
-        return attendanceService.getStudentAttendance(student.getId(), pageable);
+        return attendanceService.getStudentAttendance(null, student.getId(), pageable);
     }
 
     @Override
@@ -188,7 +188,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     ) {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
         Student student = getAccessibleStudent(staff.getId(), studentId);
-        return attendanceService.getStudentAttendanceSummary(student.getId(), fromDate, toDate);
+        return attendanceService.getStudentAttendanceSummary(null, student.getId(), fromDate, toDate);
     }
 
     @Override
@@ -336,7 +336,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
         bulkRequest.setAttendanceDate(request.getAttendanceDate());
         bulkRequest.setStudents(request.getStudents());
 
-        return attendanceService.markClassAttendance(bulkRequest);
+        return attendanceService.markClassAttendance(null, bulkRequest);
     }
 
     @Override

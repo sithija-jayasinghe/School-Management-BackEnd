@@ -106,12 +106,13 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Activate a user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> activateUser(@PathVariable Long userId) {
+        String userName = userService.getUserById(userId).getName();
         userService.activateUser(userId);
         auditLogService.log(
             AuditAction.ACTIVATE,
             AuditEntityType.USER,
             userId,
-            "User #" + userId,
+            userName,
             "Activated user account"
         );
         return ResponseEntity.ok().build();
@@ -121,12 +122,13 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Deactivate a user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> deactivateUser(@PathVariable Long userId) {
+        String userName = userService.getUserById(userId).getName();
         userService.deactivateUser(userId);
         auditLogService.log(
             AuditAction.DEACTIVATE,
             AuditEntityType.USER,
             userId,
-            "User #" + userId,
+            userName,
             "Deactivated user account"
         );
         return ResponseEntity.ok().build();

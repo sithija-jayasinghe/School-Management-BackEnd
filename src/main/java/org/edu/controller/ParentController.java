@@ -62,8 +62,9 @@ public class ParentController {
     @DeleteMapping("/{parentId}")
     @Operation(summary = "Deactivate a parent")
     public void deleteParent(@PathVariable Long parentId) {
+        String parentName = parentService.getParentById(parentId).getName();
         parentService.deleteParent(parentId);
-        auditLogService.log(AuditAction.DELETE, AuditEntityType.PARENT, parentId, "Parent #" + parentId, "Deleted parent record");
+        auditLogService.log(AuditAction.DELETE, AuditEntityType.PARENT, parentId, parentName, "Deleted parent record");
     }
 
     @GetMapping("/search")
@@ -94,15 +95,17 @@ public class ParentController {
     @PostMapping("/{parentId}/activate")
     @Operation(summary = "Activate a parent")
     public void activateParent(@PathVariable Long parentId) {
+        String parentName = parentService.getParentById(parentId).getName();
         parentService.activateParent(parentId);
-        auditLogService.log(AuditAction.ACTIVATE, AuditEntityType.PARENT, parentId, "Parent #" + parentId, "Activated parent record");
+        auditLogService.log(AuditAction.ACTIVATE, AuditEntityType.PARENT, parentId, parentName, "Activated parent record");
     }
 
     @PostMapping("/{parentId}/deactivate")
     @Operation(summary = "Deactivate a parent")
     public void deactivateParent(@PathVariable Long parentId) {
+        String parentName = parentService.getParentById(parentId).getName();
         parentService.deactivateParent(parentId);
-        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.PARENT, parentId, "Parent #" + parentId, "Deactivated parent record");
+        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.PARENT, parentId, parentName, "Deactivated parent record");
     }
 
     // Parent-Student Relationship APIs

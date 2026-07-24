@@ -16,6 +16,7 @@ import org.edu.entity.Staff;
 import org.edu.entity.Student;
 import org.edu.entity.Subject;
 import org.edu.entity.Timetable;
+import org.edu.entity.User;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AttendanceMapper;
 import org.edu.repository.AttendanceRepository;
@@ -24,8 +25,10 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.SubjectRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.repository.UserRepository;
 import org.edu.service.AttendanceService;
 import org.edu.util.AttendanceStatus;
+import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,30 +45,33 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final SubjectRepository subjectRepository;
     private final TimetableRepository timetableRepository;
     private final StaffRepository staffRepository;
+    private final UserRepository userRepository;
     private final AttendanceMapper attendanceMapper;
 
     @Override
-    public AttendanceDTO createAttendance(AttendanceDTO dto) {
+    public AttendanceDTO createAttendance(Long authenticatedUserId, AttendanceDTO dto) {
         Student student = getActiveStudent(dto.getStudentId());
         validateStudentHasClass(student);
+        validateClassAccess(authenticatedUserId, student.getCurrentClass().getId());
         validateDuplicate(dto, null);
 
         Attendance attendance = new Attendance();
         attendanceMapper.updateEntityFromDTO(dto, attendance);
-        applyRelations(attendance, dto, student);
+        applyRelations(authenticatedUserId, attendance, dto, student);
 
         return attendanceMapper.toDTO(attendanceRepository.save(attendance));
     }
 
     @Override
-    public List<AttendanceDTO> markClassAttendance(BulkAttendanceRequest request) {
+    public List<AttendanceDTO> markClassAttendance(Long authenticatedUserId, BulkAttendanceRequest request) {
         org.edu.entity.Class studentClass = classRepository.findByIdAndActiveTrue(request.getClassId())
                 .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + request.getClassId()));
+        validateClassAccess(authenticatedUserId, studentClass.getId());
         validateUniqueStudents(request.getStudents());
 
         Timetable timetable = resolveTimetable(request.getTimetableId(), studentClass.getId());
         Subject subject = timetable == null ? resolveSubject(request.getSubjectId()) : timetable.getSubject();
-        Staff markedBy = resolveMarkedBy(request.getMarkedByStaffId());
+        Staff markedBy = resolveMarkedByForCurrentUser(authenticatedUserId, request.getMarkedByStaffId());
 
         List<Attendance> attendanceRecords = new ArrayList<>();
 
@@ -98,43 +104,58 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public AttendanceDTO updateAttendance(Long id, AttendanceDTO dto) {
+    public AttendanceDTO updateAttendance(Long authenticatedUserId, Long id, AttendanceDTO dto) {
         Attendance attendance = getAttendance(id);
+        validateClassAccess(authenticatedUserId, attendance.getStudentClass().getId());
         Long studentId = dto.getStudentId() == null ? attendance.getStudent().getId() : dto.getStudentId();
         Student student = getActiveStudent(studentId);
         validateStudentHasClass(student);
+        validateClassAccess(authenticatedUserId, student.getCurrentClass().getId());
         validateDuplicate(dtoWithResolvedFields(dto, attendance, studentId), id);
 
         attendanceMapper.updateEntityFromDTO(dto, attendance);
-        applyRelations(attendance, dtoWithResolvedFields(dto, attendance, studentId), student);
+        applyRelations(authenticatedUserId, attendance, dtoWithResolvedFields(dto, attendance, studentId), student);
 
         return attendanceMapper.toDTO(attendanceRepository.save(attendance));
     }
 
     @Override
-    public void deleteAttendance(Long id) {
+    public void deleteAttendance(Long authenticatedUserId, Long id) {
         Attendance attendance = getAttendance(id);
+        validateClassAccess(authenticatedUserId, attendance.getStudentClass().getId());
         attendanceRepository.delete(attendance);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public AttendanceDTO getAttendanceById(Long id) {
-        return attendanceMapper.toDTO(getAttendance(id));
+    public AttendanceDTO getAttendanceById(Long authenticatedUserId, Long id) {
+        Attendance attendance = getAttendance(id);
+        validateClassAccess(authenticatedUserId, attendance.getStudentClass().getId());
+        return attendanceMapper.toDTO(attendance);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AttendanceDTO> getAllAttendance(Pageable pageable) {
+    public Page<AttendanceDTO> getAllAttendance(Long authenticatedUserId, Pageable pageable) {
+        List<Long> accessibleClassIds = resolveAccessibleClassIds(authenticatedUserId);
+        if (accessibleClassIds != null) {
+            if (accessibleClassIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return attendanceRepository.findByStudentClassIdIn(accessibleClassIds, pageable)
+                    .map(attendanceMapper::toDTO);
+        }
         return attendanceRepository.findAll(pageable)
                 .map(attendanceMapper::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AttendanceDTO> getStudentAttendance(Long studentId, Pageable pageable) {
-        if (!studentRepository.existsById(studentId)) {
-            throw new ResourceNotFoundException("Student not found with id: " + studentId);
+    public Page<AttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, Pageable pageable) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        if (student.getCurrentClass() != null) {
+            validateClassAccess(authenticatedUserId, student.getCurrentClass().getId());
         }
 
         return attendanceRepository.findByStudentIdOrderByAttendanceDateDesc(studentId, pageable)
@@ -143,7 +164,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AttendanceDTO> getClassAttendanceByDate(Long classId, LocalDate attendanceDate, Pageable pageable) {
+    public Page<AttendanceDTO> getClassAttendanceByDate(Long authenticatedUserId, Long classId, LocalDate attendanceDate, Pageable pageable) {
+        validateClassAccess(authenticatedUserId, classId);
         return attendanceRepository.findByStudentClassIdAndAttendanceDateOrderByStudentNameAsc(
                         classId,
                         attendanceDate,
@@ -154,17 +176,38 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AttendanceDTO> filterAttendance(Long classId, Long studentId, Long subjectId, Long markedByStaffId, AttendanceStatus status, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
+    public Page<AttendanceDTO> filterAttendance(Long authenticatedUserId, Long classId, Long studentId, Long subjectId, Long markedByStaffId, AttendanceStatus status, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
         validateOptionalDateRange(fromDate, toDate);
+
+        if (classId != null) {
+            validateClassAccess(authenticatedUserId, classId);
+            return attendanceRepository
+                    .filterAttendance(classId, studentId, subjectId, markedByStaffId, status, fromDate, toDate, pageable)
+                    .map(attendanceMapper::toDTO);
+        }
+
+        List<Long> accessibleClassIds = resolveAccessibleClassIds(authenticatedUserId);
+        if (accessibleClassIds != null) {
+            if (accessibleClassIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return attendanceRepository
+                    .filterAttendanceByClassIds(accessibleClassIds, studentId, subjectId, markedByStaffId, status, fromDate, toDate, pageable)
+                    .map(attendanceMapper::toDTO);
+        }
+
         return attendanceRepository
-                .filterAttendance(classId, studentId, subjectId, markedByStaffId, status, fromDate, toDate, pageable)
+                .filterAttendance(null, studentId, subjectId, markedByStaffId, status, fromDate, toDate, pageable)
                 .map(attendanceMapper::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public AttendanceSummaryDTO getStudentAttendanceSummary(Long studentId, LocalDate fromDate, LocalDate toDate) {
+    public AttendanceSummaryDTO getStudentAttendanceSummary(Long authenticatedUserId, Long studentId, LocalDate fromDate, LocalDate toDate) {
         Student student = getActiveStudent(studentId);
+        if (student.getCurrentClass() != null) {
+            validateClassAccess(authenticatedUserId, student.getCurrentClass().getId());
+        }
         validateDateRange(fromDate, toDate);
 
         List<Attendance> records = attendanceRepository.findByStudentIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
@@ -207,6 +250,70 @@ public class AttendanceServiceImpl implements AttendanceService {
     private Attendance getAttendance(Long id) {
         return attendanceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance record not found with id: " + id));
+    }
+
+    /**
+     * authenticatedUserId == null means a trusted internal/system caller (e.g. auto-marking
+     * attendance when a leave request is approved) that already validated access elsewhere.
+     */
+    private void validateClassAccess(Long authenticatedUserId, Long classId) {
+        if (authenticatedUserId == null) {
+            return;
+        }
+
+        User user = userRepository.findById(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + authenticatedUserId));
+
+        if (user.getRole() == Role.ADMIN) {
+            return;
+        }
+
+        if (user.getRole() != Role.TEACHER) {
+            throw new ResourceNotFoundException("Attendance access is not available for current user");
+        }
+
+        Staff staff = staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"));
+
+        boolean classTeacherAccess = classRepository.existsByIdAndClassTeacherIdAndActiveTrue(classId, staff.getId());
+        boolean teachingAccess = timetableRepository.existsByStaffIdAndStudentClassId(staff.getId(), classId);
+
+        if (!classTeacherAccess && !teachingAccess) {
+            throw new ResourceNotFoundException("Class not found in current teacher attendance access");
+        }
+    }
+
+    /**
+     * Returns null when the caller has unrestricted access (ADMIN, or a trusted internal
+     * caller with authenticatedUserId == null); otherwise returns the set of class ids the
+     * teacher may see (as class teacher or via a teaching assignment/timetable entry).
+     */
+    private List<Long> resolveAccessibleClassIds(Long authenticatedUserId) {
+        if (authenticatedUserId == null) {
+            return null;
+        }
+
+        User user = userRepository.findById(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + authenticatedUserId));
+
+        if (user.getRole() == Role.ADMIN) {
+            return null;
+        }
+
+        if (user.getRole() != Role.TEACHER) {
+            throw new ResourceNotFoundException("Attendance access is not available for current user");
+        }
+
+        Staff staff = staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"));
+
+        Set<Long> classIds = new HashSet<>();
+        classRepository.findByClassTeacherIdAndActiveTrueOrderByNameAsc(staff.getId())
+                .forEach(schoolClass -> classIds.add(schoolClass.getId()));
+        timetableRepository.findByStaffIdOrderByDayOfWeekAscStartTimeAsc(staff.getId())
+                .forEach(timetable -> classIds.add(timetable.getStudentClass().getId()));
+
+        return new ArrayList<>(classIds);
     }
 
     private Student getActiveStudent(Long studentId) {
@@ -273,7 +380,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
     }
 
-    private void applyRelations(Attendance attendance, AttendanceDTO dto, Student student) {
+    private void applyRelations(Long authenticatedUserId, Attendance attendance, AttendanceDTO dto, Student student) {
         attendance.setStudent(student);
         attendance.setStudentClass(student.getCurrentClass());
 
@@ -291,9 +398,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             attendance.setSubject(timetable.getSubject());
         }
 
-        if (dto.getMarkedByStaffId() != null) {
-            Staff markedBy = staffRepository.findByIdAndActiveTrue(dto.getMarkedByStaffId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + dto.getMarkedByStaffId()));
+        Staff markedBy = resolveMarkedByForCurrentUser(authenticatedUserId, dto.getMarkedByStaffId());
+        if (markedBy != null) {
             attendance.setMarkedBy(markedBy);
         }
     }
@@ -323,6 +429,16 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
         return subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + subjectId));
+    }
+
+    private Staff resolveMarkedByForCurrentUser(Long authenticatedUserId, Long fallbackStaffId) {
+        if (authenticatedUserId != null) {
+            User user = userRepository.findById(authenticatedUserId).orElse(null);
+            if (user != null && user.getRole() == Role.TEACHER) {
+                return staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId).orElse(null);
+            }
+        }
+        return resolveMarkedBy(fallbackStaffId);
     }
 
     private Staff resolveMarkedBy(Long markedByStaffId) {

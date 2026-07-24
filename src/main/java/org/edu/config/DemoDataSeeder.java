@@ -149,7 +149,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                 "Sinhala Teacher"
         );
 
-        Subject mathematics = createSubject("DMTH", "Mathematics", "Core mathematics syllabus for secondary level");
+        Subject mathematics = createSubject("DMTH", "Mathematics", "Core mathematics syllabus for primary level");
         Subject science = createSubject("DSCI", "Science", "General science with theory and practical foundations");
         Subject english = createSubject("DENG", "English", "English language and literature studies");
         Subject ict = createSubject("DICT", "Information Technology", "Computer literacy, applications, and digital skills");

@@ -21,6 +21,30 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
             Pageable pageable
     );
 
+    Page<Attendance> findByStudentClassIdIn(List<Long> classIds, Pageable pageable);
+
+    @Query("""
+            select attendance
+            from Attendance attendance
+            where attendance.studentClass.id in :classIds
+              and (:studentId is null or attendance.student.id = :studentId)
+              and (:subjectId is null or attendance.subject.id = :subjectId)
+              and (:markedByStaffId is null or attendance.markedBy.id = :markedByStaffId)
+              and (:status is null or attendance.status = :status)
+              and (:fromDate is null or attendance.attendanceDate >= :fromDate)
+              and (:toDate is null or attendance.attendanceDate <= :toDate)
+            """)
+    Page<Attendance> filterAttendanceByClassIds(
+            @Param("classIds") List<Long> classIds,
+            @Param("studentId") Long studentId,
+            @Param("subjectId") Long subjectId,
+            @Param("markedByStaffId") Long markedByStaffId,
+            @Param("status") AttendanceStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            Pageable pageable
+    );
+
     @Modifying
     @Query("update Attendance attendance set attendance.timetable = null where attendance.timetable.id = :timetableId")
     void detachTimetable(@Param("timetableId") Long timetableId);
