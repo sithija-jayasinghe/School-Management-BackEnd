@@ -52,12 +52,6 @@ public class ClassController {
         return classService.getAllClasses(pageable);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a class by id")
-    public ClassDTO getClassById(@PathVariable Long id) {
-        return classService.getClassById(id);
-    }
-
     @GetMapping("/search")
     @Operation(summary = "Search classes by name")
     public Page<ClassDTO> searchClasses(@RequestParam String name,
@@ -69,6 +63,18 @@ public class ClassController {
     @Operation(summary = "List active classes")
     public List<ClassDTO> getActiveClasses() {
         return classService.getAllActiveClasses();
+    }
+
+    @GetMapping("/active/current-academic-year")
+    @Operation(summary = "List active classes for the current academic year")
+    public List<ClassDTO> getCurrentAcademicYearActiveClasses() {
+        return classService.getCurrentAcademicYearActiveClasses();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get a class by id")
+    public ClassDTO getClassById(@PathVariable Long id) {
+        return classService.getClassById(id);
     }
 
     @GetMapping("/{id}/students")

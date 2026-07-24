@@ -1,6 +1,8 @@
 package org.edu.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -20,15 +22,42 @@ public class Student {
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
 
-        @OneToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "user_id", unique = true)
-        private User user;
-
         @Column(nullable = false, length = 150)
         private String name;
 
+        @Column(length = 60, unique = true)
+        private String admissionNumber;
+
+        @Column(length = 150)
+        private String nameWithInitials;
+
         @Column(nullable = false)
         private LocalDate dateOfBirth;
+
+        @Column(length = 20)
+        private String gender;
+
+        private LocalDate admissionDate;
+
+        @Enumerated(EnumType.STRING)
+        @Column(length = 20)
+        private org.edu.util.SchoolMedium medium;
+
+        @Column(length = 500)
+        private String homeAddress;
+
+        @Column(length = 50)
+        private String guardianRelationship;
+
+        @Column(length = 500)
+        private String medicalConditions;
+
+        @Column(length = 150)
+        private String previousSchool;
+
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false, length = 20)
+        private org.edu.util.StudentStatus status = org.edu.util.StudentStatus.ACTIVE;
 
         @Column(nullable = false)
         private boolean active = true;
@@ -37,12 +66,27 @@ public class Student {
         @JoinColumn(name = "class_id")
         private org.edu.entity.Class currentClass;
 
-        @Column(nullable = false, length = 15)
-        private String phoneNumber;
+        @Column(length = 50)
+        private String house;
+
+        @Column(name = "phone_number", nullable = false, length = 20)
+        private String legacyPhoneNumber = "";
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "house_id")
+        private House assignedHouse;
 
         @CreatedDate
         private LocalDateTime createdAt;
 
         @LastModifiedDate
         private LocalDateTime updatedAt;
+
+        @PrePersist
+        @PreUpdate
+        private void applyLegacyColumnDefaults() {
+                if (legacyPhoneNumber == null) {
+                        legacyPhoneNumber = "";
+                }
+        }
 }

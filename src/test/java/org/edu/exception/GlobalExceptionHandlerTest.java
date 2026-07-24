@@ -32,13 +32,13 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldReturnBadRequestForIllegalArgument() {
         ResponseEntity<ErrorResponse> response = handler.handleIllegalArgument(
-            new IllegalArgumentException("User must have STUDENT role"),
+            new IllegalArgumentException("User must have TEACHER or STAFF role"),
             request
         );
 
         assertEquals(BAD_REQUEST, response.getStatusCode());
         assertEquals("INVALID_ARGUMENT", response.getBody().getCode());
-        assertEquals("User must have STUDENT role", response.getBody().getMessage());
+        assertEquals("User must have TEACHER or STAFF role", response.getBody().getMessage());
     }
 
     @Test

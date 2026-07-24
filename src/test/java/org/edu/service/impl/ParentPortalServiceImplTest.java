@@ -416,7 +416,7 @@ class ParentPortalServiceImplTest {
         student.setId(studentId);
         student.setName("Student User");
         student.setDateOfBirth(LocalDate.of(2010, 1, 1));
-        student.setPhoneNumber("0777654321");
+        student.setHouse("Blue");
         student.setCurrentClass(studentClass);
         student.setActive(true);
         return student;

@@ -24,17 +24,24 @@ public class GradeSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (gradeRepository.count() == 0) {
-            for (int level = 1; level <= 13; level++) {
-                Grade grade = new Grade();
-                grade.setName("Grade " + level);
-                grade.setLevel(level);
-                grade.setActive(true);
-                gradeRepository.save(grade);
-            }
+        for (int level = 1; level <= 5; level++) {
+            ensurePrimaryGrade(level);
         }
 
         backfillExistingClassSections();
+    }
+
+    private void ensurePrimaryGrade(int level) {
+        gradeRepository.findByLevel(level).ifPresentOrElse(grade -> {
+            grade.setName("Grade " + level);
+            grade.setActive(true);
+        }, () -> {
+            Grade grade = new Grade();
+            grade.setName("Grade " + level);
+            grade.setLevel(level);
+            grade.setActive(true);
+            gradeRepository.save(grade);
+        });
     }
 
     private void backfillExistingClassSections() {
@@ -47,7 +54,10 @@ public class GradeSeeder implements CommandLineRunner {
                     }
 
                     int level = Integer.parseInt(matcher.group(1));
-                    String section = matcher.group(2).trim();
+                    String section = parseSection(matcher.group(2));
+                    if (section == null) {
+                        return;
+                    }
                     gradeRepository.findByLevel(level).ifPresent(grade -> {
                         studentClass.setGrade(grade);
                         studentClass.setSection(section);
@@ -55,5 +65,13 @@ public class GradeSeeder implements CommandLineRunner {
                         classRepository.save(studentClass);
                     });
                 });
+    }
+
+    private String parseSection(String value) {
+        try {
+            return org.edu.util.ClassSection.valueOf(value.trim().toUpperCase()).name();
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 }

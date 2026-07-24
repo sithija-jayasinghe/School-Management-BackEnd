@@ -477,7 +477,7 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
                 student.getId(),
                 student.getName(),
                 student.getDateOfBirth(),
-                student.getPhoneNumber(),
+                student.getHouse(),
                 student.isActive(),
                 student.getCurrentClass() == null ? null : student.getCurrentClass().getId(),
                 student.getCurrentClass() == null ? null : student.getCurrentClass().getName()

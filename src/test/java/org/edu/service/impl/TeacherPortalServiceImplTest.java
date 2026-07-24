@@ -675,7 +675,7 @@ class TeacherPortalServiceImplTest {
         student.setId(studentId);
         student.setName(name);
         student.setDateOfBirth(LocalDate.of(2010, 1, 1));
-        student.setPhoneNumber("0771234567");
+        student.setHouse("Blue");
         student.setCurrentClass(studentClass);
         student.setActive(true);
         return student;

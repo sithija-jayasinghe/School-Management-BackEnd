@@ -3,6 +3,8 @@ package org.edu.repository;
 import java.util.List;
 import java.util.Optional;
 import org.edu.entity.Grade;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GradeRepository extends JpaRepository<Grade, Long> {
@@ -12,6 +14,10 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
     Optional<Grade> findByLevel(Integer level);
 
     List<Grade> findByActiveTrueOrderByLevelAsc();
+
+    Page<Grade> findByLevelBetween(Integer minLevel, Integer maxLevel, Pageable pageable);
+
+    List<Grade> findByLevelBetweenAndActiveTrueOrderByLevelAsc(Integer minLevel, Integer maxLevel);
 
     boolean existsByNameIgnoreCase(String name);
 

@@ -12,6 +12,7 @@ public interface SubjectService {
     SubjectDTO updateSubjects(Long id,SubjectDTO subjectDTO);
     void deleteSubjects(Long id);
     Page<SubjectDTO> getAllSubjects(Pageable pageable);
+    Page<SubjectDTO> filterSubjects(String keyword, Long gradeId, Boolean hasClassCoverage, Pageable pageable);
     SubjectDTO getSubjectById(Long id);
     Page<SubjectDTO> searchSubjects(String keyword, Pageable pageable);
     SubjectDTO getSubjectsByCodeId(String code);

@@ -56,12 +56,12 @@ class AuthServiceImplTest {
         User user = new User();
         user.setEmail("john@example.com");
         user.setPassword("hashed-password");
-        user.setRole(Role.STUDENT);
+        user.setRole(Role.PARENT);
         user.setActive(true);
 
         UserResponse userResponse = new UserResponse();
         userResponse.setEmail("john@example.com");
-        userResponse.setRole(Role.STUDENT);
+        userResponse.setRole(Role.PARENT);
         userResponse.setActive(true);
 
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user));

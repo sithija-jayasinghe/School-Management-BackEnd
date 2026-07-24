@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,23 +21,41 @@ public class StudentDTO {
 
     private Long id;
 
-    private Long userId;
-
     @NotBlank(message = "Name is required")
     private String name;
+
+    private String admissionNumber;
+
+    private String nameWithInitials;
 
     @NotNull(message = "Date of birth is required")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
+    private String gender;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate admissionDate;
+
     private boolean active;
 
-    @NotBlank(message = "Phone number is required")
-    @Pattern(
-            regexp = "^(?:0\\d{9}|\\+94\\d{9})$",
-            message = "Phone number must be valid (e.g., 0771234567 or +94771234567)"
-    )
-    private String phoneNumber;
+    private String house;
+
+    private Long houseId;
+
+    private String houseName;
+
+    private String medium;
+
+    private String homeAddress;
+
+    private String guardianRelationship;
+
+    private String medicalConditions;
+
+    private String previousSchool;
+
+    private String status;
 
     private Long currentClassId;
 

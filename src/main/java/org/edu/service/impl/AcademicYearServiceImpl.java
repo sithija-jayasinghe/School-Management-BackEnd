@@ -1,20 +1,28 @@
 package org.edu.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AcademicCalendarSummaryDTO;
+import org.edu.dto.AcademicTermDTO;
 import org.edu.dto.AcademicYearDTO;
 import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
+import org.edu.entity.Grade;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.AcademicYearMapper;
 import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.AcademicYearRepository;
+import org.edu.repository.ClassRepository;
+import org.edu.repository.GradeRepository;
 import org.edu.service.AcademicYearService;
+import org.edu.util.ClassSection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,6 +32,8 @@ public class AcademicYearServiceImpl implements AcademicYearService {
 
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermRepository academicTermRepository;
+    private final GradeRepository gradeRepository;
+    private final ClassRepository classRepository;
     private final AcademicYearMapper academicYearMapper;
 
     @Override
@@ -38,8 +48,10 @@ public class AcademicYearServiceImpl implements AcademicYearService {
         AcademicYear academicYear = academicYearMapper.toEntity(academicYearDTO);
         academicYear.setActive(true);
         academicYear.setCurrent(false);
+        AcademicYear savedAcademicYear = academicYearRepository.save(academicYear);
+        ensurePrimaryClasses(savedAcademicYear);
 
-        return academicYearMapper.toDTO(academicYearRepository.save(academicYear));
+        return academicYearMapper.toDTO(savedAcademicYear);
     }
 
     @Override
@@ -110,6 +122,48 @@ public class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AcademicYearDTO> filterAcademicYears(String keyword, String status, Boolean current, Pageable pageable) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        Boolean active = switch (status == null ? "active" : status.trim().toLowerCase()) {
+            case "all" -> null;
+            case "inactive" -> false;
+            default -> true;
+        };
+
+        return academicYearRepository.filterAcademicYears(normalizedKeyword, active, current, pageable)
+                .map(academicYearMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AcademicCalendarSummaryDTO getAcademicCalendarSummary() {
+        AcademicYear currentYear = academicYearRepository.findByCurrentTrueAndActiveTrue().orElse(null);
+        AcademicTerm currentTerm = academicTermRepository.findByCurrentTrueAndActiveTrue().orElse(null);
+        AcademicTerm nextTerm = currentYear == null
+                ? null
+                : academicTermRepository
+                        .findFirstByAcademicYearIdAndActiveTrueAndStartDateAfterOrderByStartDateAsc(
+                                currentYear.getId(),
+                                LocalDate.now()
+                        )
+                        .orElse(null);
+        long activeTermCount = currentYear == null
+                ? academicTermRepository.findByActiveTrue().size()
+                : academicTermRepository.countByAcademicYearIdAndActiveTrue(currentYear.getId());
+
+        return new AcademicCalendarSummaryDTO(
+                currentYear == null ? null : academicYearMapper.toDTO(currentYear),
+                currentTerm == null ? null : toTermDTO(currentTerm),
+                nextTerm == null ? null : toTermDTO(nextTerm),
+                activeTermCount,
+                daysRemaining(currentTerm),
+                progressPercent(currentTerm),
+                buildCalendarWarnings(currentYear, currentTerm, activeTermCount)
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public AcademicYearDTO getAcademicYearById(Long id) {
         AcademicYear academicYear = academicYearRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Academic year not found with id: " + id));
@@ -155,6 +209,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
                 .ifPresent(currentTerm -> currentTerm.setCurrent(false));
 
         selectedAcademicYear.setCurrent(true);
+        ensurePrimaryClasses(selectedAcademicYear);
         return academicYearMapper.toDTO(selectedAcademicYear);
     }
 
@@ -189,5 +244,101 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     private void clearTerm(AcademicTerm academicTerm) {
         academicTerm.setCurrent(false);
         academicTerm.setActive(false);
+    }
+
+    private AcademicTermDTO toTermDTO(AcademicTerm term) {
+        AcademicTermDTO dto = new AcademicTermDTO();
+        dto.setId(term.getId());
+        dto.setAcademicYearId(term.getAcademicYear().getId());
+        dto.setAcademicYearName(term.getAcademicYear().getName());
+        dto.setName(term.getName());
+        dto.setStartDate(term.getStartDate());
+        dto.setEndDate(term.getEndDate());
+        dto.setCurrent(term.isCurrent());
+        dto.setActive(term.isActive());
+        dto.setCreatedAt(term.getCreatedAt());
+        dto.setUpdatedAt(term.getUpdatedAt());
+        return dto;
+    }
+
+    private Long daysRemaining(AcademicTerm term) {
+        if (term == null || term.getEndDate() == null) {
+            return null;
+        }
+
+        return Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), term.getEndDate()));
+    }
+
+    private Integer progressPercent(AcademicTerm term) {
+        if (term == null || term.getStartDate() == null || term.getEndDate() == null) {
+            return null;
+        }
+
+        long totalDays = Math.max(1, ChronoUnit.DAYS.between(term.getStartDate(), term.getEndDate()));
+        long elapsedDays = Math.min(Math.max(0, ChronoUnit.DAYS.between(term.getStartDate(), LocalDate.now())), totalDays);
+        return (int) Math.round((elapsedDays * 100.0) / totalDays);
+    }
+
+    private List<String> buildCalendarWarnings(AcademicYear currentYear, AcademicTerm currentTerm, long activeTermCount) {
+        List<String> warnings = new ArrayList<>();
+
+        if (currentYear == null) {
+            warnings.add("No current academic year is set");
+        }
+
+        if (currentYear != null && activeTermCount == 0) {
+            warnings.add("Current academic year has no active terms");
+        }
+
+        if (currentYear != null && currentTerm == null) {
+            warnings.add("No current academic term is set");
+        }
+
+        return warnings;
+    }
+
+    private void ensurePrimaryClasses(AcademicYear academicYear) {
+        for (int level = 1; level <= 5; level++) {
+            Grade grade = ensurePrimaryGrade(level);
+            for (ClassSection section : ClassSection.values()) {
+                ensurePrimaryClass(academicYear, grade, section);
+            }
+        }
+    }
+
+    private Grade ensurePrimaryGrade(int level) {
+        return gradeRepository.findByLevel(level)
+                .map(grade -> {
+                    grade.setName("Grade " + level);
+                    grade.setActive(true);
+                    return grade;
+                })
+                .orElseGet(() -> {
+                    Grade grade = new Grade();
+                    grade.setName("Grade " + level);
+                    grade.setLevel(level);
+                    grade.setActive(true);
+                    return gradeRepository.save(grade);
+                });
+    }
+
+    private void ensurePrimaryClass(AcademicYear academicYear, Grade grade, ClassSection section) {
+        String sectionName = section.name();
+        classRepository.findByAcademicYearIdAndGradeIdAndSection(academicYear.getId(), grade.getId(), sectionName)
+                .ifPresentOrElse(existingClass -> {
+                    existingClass.setAcademicYear(academicYear);
+                    existingClass.setGrade(grade);
+                    existingClass.setSection(sectionName);
+                    existingClass.setName(grade.getName() + " " + sectionName);
+                    existingClass.setActive(true);
+                }, () -> {
+                    org.edu.entity.Class studentClass = new org.edu.entity.Class();
+                    studentClass.setAcademicYear(academicYear);
+                    studentClass.setGrade(grade);
+                    studentClass.setSection(sectionName);
+                    studentClass.setName(grade.getName() + " " + sectionName);
+                    studentClass.setActive(true);
+                    classRepository.save(studentClass);
+                });
     }
 }

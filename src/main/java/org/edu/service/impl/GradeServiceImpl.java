@@ -17,10 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GradeServiceImpl implements GradeService {
 
+    private static final int MIN_PRIMARY_GRADE = 1;
+    private static final int MAX_PRIMARY_GRADE = 5;
+
     private final GradeRepository gradeRepository;
 
     @Override
     public GradeDTO createGrade(GradeDTO gradeDTO) {
+        validatePrimaryGrade(gradeDTO);
         validateDuplicateName(gradeDTO.getName(), null);
         validateDuplicateLevel(gradeDTO.getLevel(), null);
 
@@ -34,6 +38,7 @@ public class GradeServiceImpl implements GradeService {
     public GradeDTO updateGrade(Long id, GradeDTO gradeDTO) {
         Grade grade = gradeRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Active grade not found with id: " + id));
+        validatePrimaryGrade(gradeDTO);
         validateDuplicateName(gradeDTO.getName(), id);
         validateDuplicateLevel(gradeDTO.getLevel(), id);
         applyFields(grade, gradeDTO);
@@ -47,6 +52,9 @@ public class GradeServiceImpl implements GradeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Grade not found with id: " + id));
         if (!grade.isActive()) {
             throw new IllegalStateException("Grade already inactive");
+        }
+        if (isPrimaryGrade(grade.getLevel())) {
+            throw new IllegalStateException("Primary system grades cannot be deactivated");
         }
         grade.setActive(false);
         gradeRepository.save(grade);
@@ -66,7 +74,7 @@ public class GradeServiceImpl implements GradeService {
     @Override
     @Transactional(readOnly = true)
     public Page<GradeDTO> getAllGrades(Pageable pageable) {
-        return gradeRepository.findAll(pageable).map(this::toDTO);
+        return gradeRepository.findByLevelBetween(MIN_PRIMARY_GRADE, MAX_PRIMARY_GRADE, pageable).map(this::toDTO);
     }
 
     @Override
@@ -79,7 +87,7 @@ public class GradeServiceImpl implements GradeService {
     @Override
     @Transactional(readOnly = true)
     public List<GradeDTO> getAllActiveGrades() {
-        return gradeRepository.findByActiveTrueOrderByLevelAsc()
+        return gradeRepository.findByLevelBetweenAndActiveTrueOrderByLevelAsc(MIN_PRIMARY_GRADE, MAX_PRIMARY_GRADE)
                 .stream()
                 .map(this::toDTO)
                 .toList();
@@ -106,6 +114,21 @@ public class GradeServiceImpl implements GradeService {
         if (exists) {
             throw new IllegalStateException("Grade level already exists");
         }
+    }
+
+    private void validatePrimaryGrade(GradeDTO dto) {
+        if (dto.getLevel() == null || !isPrimaryGrade(dto.getLevel())) {
+            throw new IllegalArgumentException("Only Grade 1 to Grade 5 are supported");
+        }
+
+        String expectedName = "Grade " + dto.getLevel();
+        if (dto.getName() == null || !expectedName.equalsIgnoreCase(dto.getName().trim())) {
+            throw new IllegalArgumentException("Primary grade name must be " + expectedName);
+        }
+    }
+
+    private boolean isPrimaryGrade(Integer level) {
+        return level != null && level >= MIN_PRIMARY_GRADE && level <= MAX_PRIMARY_GRADE;
     }
 
     private GradeDTO toDTO(Grade grade) {

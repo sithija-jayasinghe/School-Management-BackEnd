@@ -158,23 +158,23 @@ public class DemoDataSeeder implements CommandLineRunner {
         AcademicYear academicYear = createAcademicYear("2026 Academic Year", LocalDate.of(2026, 1, 6), LocalDate.of(2026, 12, 18));
         AcademicTerm termOne = createAcademicTerm(academicYear, "Term 1", LocalDate.of(2026, 1, 6), LocalDate.of(2026, 4, 10));
 
-        Grade grade10 = createGrade("Grade 10", 10);
-        Grade grade11 = createGrade("Grade 11", 11);
-        Class grade10A = createClass(grade10, "Demo A", nimal, List.of(mathematics, science, english, ict, sinhala));
-        Class grade11A = createClass(grade11, "Demo A", saman, List.of(mathematics, science, english, ict, sinhala));
+        Grade grade4 = createGrade("Grade 4", 4);
+        Grade grade5 = createGrade("Grade 5", 5);
+        Class grade4A = createClass(grade4, "Demo A", nimal, List.of(mathematics, science, english, ict, sinhala));
+        Class grade5A = createClass(grade5, "Demo A", saman, List.of(mathematics, science, english, ict, sinhala));
 
         Map<String, Timetable> timetableMap = new LinkedHashMap<>();
-        createTimetableEntries(grade10A, nimal, saman, dinithi, ravindu, chathuri, timetableMap);
-        createTimetableEntries(grade11A, nimal, saman, dinithi, ravindu, chathuri, timetableMap);
+        createTimetableEntries(grade4A, nimal, saman, dinithi, ravindu, chathuri, timetableMap);
+        createTimetableEntries(grade5A, nimal, saman, dinithi, ravindu, chathuri, timetableMap);
 
-        Student saduni = createStudent(createUser("Saduni Perera", "saduni.perera.demo@sms.lk", Role.STUDENT), "Saduni Perera", LocalDate.of(2010, 3, 14), "0771234501", grade10A);
-        Student lakshan = createStudent(createUser("Lakshan Silva", "lakshan.silva.demo@sms.lk", Role.STUDENT), "Lakshan Silva", LocalDate.of(2010, 7, 2), "0771234502", grade10A);
-        Student tharushi = createStudent(createUser("Tharushi Nethmini", "tharushi.nethmini.demo@sms.lk", Role.STUDENT), "Tharushi Nethmini", LocalDate.of(2010, 11, 8), "0771234503", grade10A);
-        Student kavindu = createStudent(createUser("Kavindu Madushan", "kavindu.madushan.demo@sms.lk", Role.STUDENT), "Kavindu Madushan", LocalDate.of(2010, 1, 19), "0771234504", grade10A);
-        Student anudi = createStudent(createUser("Anudi Jayasekara", "anudi.jayasekara.demo@sms.lk", Role.STUDENT), "Anudi Jayasekara", LocalDate.of(2009, 4, 28), "0771234505", grade11A);
-        Student dhanuka = createStudent(createUser("Dhanuka Ekanayake", "dhanuka.ekanayake.demo@sms.lk", Role.STUDENT), "Dhanuka Ekanayake", LocalDate.of(2009, 9, 12), "0771234506", grade11A);
-        Student malsha = createStudent(createUser("Malsha Fernando", "malsha.fernando.demo@sms.lk", Role.STUDENT), "Malsha Fernando", LocalDate.of(2009, 6, 7), "0771234507", grade11A);
-        Student vihanga = createStudent(createUser("Vihanga Gunasekara", "vihanga.gunasekara.demo@sms.lk", Role.STUDENT), "Vihanga Gunasekara", LocalDate.of(2009, 12, 4), "0771234508", grade11A);
+        Student saduni = createStudent("Saduni Perera", LocalDate.of(2017, 3, 14), "Blue", grade4A);
+        Student lakshan = createStudent("Lakshan Silva", LocalDate.of(2017, 7, 2), "Green", grade4A);
+        Student tharushi = createStudent("Tharushi Nethmini", LocalDate.of(2017, 11, 8), "Red", grade4A);
+        Student kavindu = createStudent("Kavindu Madushan", LocalDate.of(2017, 1, 19), "Yellow", grade4A);
+        Student anudi = createStudent("Anudi Jayasekara", LocalDate.of(2016, 4, 28), "Blue", grade5A);
+        Student dhanuka = createStudent("Dhanuka Ekanayake", LocalDate.of(2016, 9, 12), "Green", grade5A);
+        Student malsha = createStudent("Malsha Fernando", LocalDate.of(2016, 6, 7), "Red", grade5A);
+        Student vihanga = createStudent("Vihanga Gunasekara", LocalDate.of(2016, 12, 4), "Yellow", grade5A);
 
         Parent sunil = createParent(createUser("Sunil Perera", "sunil.perera.demo@sms.lk", Role.PARENT), "Sunil Perera", "0779876501", "12 Temple Road, Maharagama", "Bank Officer");
         Parent kumari = createParent(createUser("Kumari Silva", "kumari.silva.demo@sms.lk", Role.PARENT), "Kumari Silva", "0779876502", "45 Lake Drive, Piliyandala", "Teacher");
@@ -193,18 +193,18 @@ public class DemoDataSeeder implements CommandLineRunner {
         linkParentToStudent(priyantha, malsha, "Father", true, true);
         linkParentToStudent(priyantha, vihanga, "Father", true, true);
 
-        List<Exam> exams = createExams(termOne, academicYear, grade10A, grade11A, mathematics, science, english, ict, sinhala);
+        List<Exam> exams = createExams(termOne, academicYear, grade4A, grade5A, mathematics, science, english, ict, sinhala);
 
-        createMarksForGrade10(exams, nimal, dinithi, ravindu, chathuri, saman, saduni, lakshan, tharushi, kavindu);
-        createMarksForGrade11(exams, nimal, dinithi, ravindu, chathuri, saman, anudi, dhanuka, malsha, vihanga);
+        createMarksForGrade4(exams, nimal, dinithi, ravindu, chathuri, saman, saduni, lakshan, tharushi, kavindu);
+        createMarksForGrade5(exams, nimal, dinithi, ravindu, chathuri, saman, anudi, dhanuka, malsha, vihanga);
 
-        seedAttendance(grade10A, List.of(saduni, lakshan, tharushi, kavindu), timetableMap);
-        seedAttendance(grade11A, List.of(anudi, dhanuka, malsha, vihanga), timetableMap);
+        seedAttendance(grade4A, List.of(saduni, lakshan, tharushi, kavindu), timetableMap);
+        seedAttendance(grade5A, List.of(anudi, dhanuka, malsha, vihanga), timetableMap);
 
         createNotice("School Reopening for 2026", "The first school term begins on 6 January 2026. Students should report by 7.20 a.m. in full uniform.", NoticeAudience.ALL, null, true, LocalDate.of(2026, 1, 2), LocalDate.of(2026, 1, 20));
         createNotice("Parent-Teacher Meeting", "Parents are invited for the Term 1 parent-teacher meeting on 15 February 2026 from 8.30 a.m. to 1.00 p.m.", NoticeAudience.PARENTS, null, true, LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 16));
-        createNotice("Grade 10 Demo A Science Activity Day", "Grade 10 Demo A students should bring chart paper and lab coats for the science activity day next Wednesday.", NoticeAudience.CLASS, grade10A, true, LocalDate.of(2026, 2, 8), LocalDate.of(2026, 2, 20));
-        createNotice("Grade 11 Demo A ICT Career Session", "Grade 11 Demo A students will attend the ICT career guidance session in the auditorium after interval.", NoticeAudience.CLASS, grade11A, true, LocalDate.of(2026, 3, 3), LocalDate.of(2026, 3, 10));
+        createNotice("Grade 4 Demo A Science Activity Day", "Grade 4 Demo A students should bring chart paper for the science activity day next Wednesday.", NoticeAudience.CLASS, grade4A, true, LocalDate.of(2026, 2, 8), LocalDate.of(2026, 2, 20));
+        createNotice("Grade 5 Demo A ICT Session", "Grade 5 Demo A students will attend the ICT skills session in the auditorium after interval.", NoticeAudience.CLASS, grade5A, true, LocalDate.of(2026, 3, 3), LocalDate.of(2026, 3, 10));
 
         createLeaveRequest(sunil, saduni, LocalDate.of(2026, 2, 11), LocalDate.of(2026, 2, 12), "Fever and rest advised by doctor", "Medical certificate submitted to class teacher", LeaveRequestStatus.APPROVED, nimal, "Approved with medical proof", true);
         createLeaveRequest(ruwan, anudi, LocalDate.of(2026, 3, 5), LocalDate.of(2026, 3, 5), "Family religious observance", "Student will collect missed notes the next day", LeaveRequestStatus.PENDING, null, null, false);
@@ -265,12 +265,11 @@ public class DemoDataSeeder implements CommandLineRunner {
         return parentRepository.save(parent);
     }
 
-    private Student createStudent(User user, String name, LocalDate dateOfBirth, String phoneNumber, Class studentClass) {
+    private Student createStudent(String name, LocalDate dateOfBirth, String house, Class studentClass) {
         Student student = new Student();
-        student.setUser(user);
         student.setName(name);
         student.setDateOfBirth(dateOfBirth);
-        student.setPhoneNumber(phoneNumber);
+        student.setHouse(house);
         student.setCurrentClass(studentClass);
         student.setActive(true);
         return studentRepository.save(student);
@@ -328,7 +327,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private Class createClass(Grade grade, String section, Staff classTeacher, List<Subject> subjects) {
         Class studentClass = new Class();
         studentClass.setGrade(grade);
-        studentClass.setSection(section);
+        studentClass.setSection(section.trim().toUpperCase());
         studentClass.setName(grade.getName() + " " + section);
         studentClass.setClassTeacher(classTeacher);
         studentClass.setSubjects(new ArrayList<>(subjects));
@@ -378,8 +377,8 @@ public class DemoDataSeeder implements CommandLineRunner {
     private List<Exam> createExams(
             AcademicTerm term,
             AcademicYear year,
-            Class grade10A,
-            Class grade11A,
+            Class grade4A,
+            Class grade5A,
             Subject mathematics,
             Subject science,
             Subject english,
@@ -387,16 +386,16 @@ public class DemoDataSeeder implements CommandLineRunner {
             Subject sinhala
     ) {
         List<Exam> exams = new ArrayList<>();
-        exams.add(createExam(year, term, grade10A, mathematics, "Grade 10 Demo A Term 1 Mathematics", LocalDate.of(2026, 2, 10), "Term 1 mathematics paper"));
-        exams.add(createExam(year, term, grade10A, science, "Grade 10 Demo A Term 1 Science", LocalDate.of(2026, 2, 12), "Term 1 integrated science paper"));
-        exams.add(createExam(year, term, grade10A, english, "Grade 10 Demo A Term 1 English", LocalDate.of(2026, 2, 16), "Term 1 English language paper"));
-        exams.add(createExam(year, term, grade10A, ict, "Grade 10 Demo A Term 1 ICT", LocalDate.of(2026, 2, 18), "Term 1 ICT theory test"));
-        exams.add(createExam(year, term, grade10A, sinhala, "Grade 10 Demo A Term 1 Sinhala", LocalDate.of(2026, 2, 20), "Term 1 Sinhala paper"));
-        exams.add(createExam(year, term, grade11A, mathematics, "Grade 11 Demo A Term 1 Mathematics", LocalDate.of(2026, 2, 11), "Term 1 mathematics paper"));
-        exams.add(createExam(year, term, grade11A, science, "Grade 11 Demo A Term 1 Science", LocalDate.of(2026, 2, 13), "Term 1 integrated science paper"));
-        exams.add(createExam(year, term, grade11A, english, "Grade 11 Demo A Term 1 English", LocalDate.of(2026, 2, 17), "Term 1 English language paper"));
-        exams.add(createExam(year, term, grade11A, ict, "Grade 11 Demo A Term 1 ICT", LocalDate.of(2026, 2, 19), "Term 1 ICT theory test"));
-        exams.add(createExam(year, term, grade11A, sinhala, "Grade 11 Demo A Term 1 Sinhala", LocalDate.of(2026, 2, 23), "Term 1 Sinhala paper"));
+        exams.add(createExam(year, term, grade4A, mathematics, "Grade 4 Demo A Term 1 Mathematics", LocalDate.of(2026, 2, 10), "Term 1 mathematics paper"));
+        exams.add(createExam(year, term, grade4A, science, "Grade 4 Demo A Term 1 Science", LocalDate.of(2026, 2, 12), "Term 1 integrated science paper"));
+        exams.add(createExam(year, term, grade4A, english, "Grade 4 Demo A Term 1 English", LocalDate.of(2026, 2, 16), "Term 1 English language paper"));
+        exams.add(createExam(year, term, grade4A, ict, "Grade 4 Demo A Term 1 ICT", LocalDate.of(2026, 2, 18), "Term 1 ICT theory test"));
+        exams.add(createExam(year, term, grade4A, sinhala, "Grade 4 Demo A Term 1 Sinhala", LocalDate.of(2026, 2, 20), "Term 1 Sinhala paper"));
+        exams.add(createExam(year, term, grade5A, mathematics, "Grade 5 Demo A Term 1 Mathematics", LocalDate.of(2026, 2, 11), "Term 1 mathematics paper"));
+        exams.add(createExam(year, term, grade5A, science, "Grade 5 Demo A Term 1 Science", LocalDate.of(2026, 2, 13), "Term 1 integrated science paper"));
+        exams.add(createExam(year, term, grade5A, english, "Grade 5 Demo A Term 1 English", LocalDate.of(2026, 2, 17), "Term 1 English language paper"));
+        exams.add(createExam(year, term, grade5A, ict, "Grade 5 Demo A Term 1 ICT", LocalDate.of(2026, 2, 19), "Term 1 ICT theory test"));
+        exams.add(createExam(year, term, grade5A, sinhala, "Grade 5 Demo A Term 1 Sinhala", LocalDate.of(2026, 2, 23), "Term 1 Sinhala paper"));
         return exams;
     }
 
@@ -416,7 +415,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         return examRepository.save(exam);
     }
 
-    private void createMarksForGrade10(
+    private void createMarksForGrade4(
             List<Exam> exams,
             Staff mathematicsTeacher,
             Staff englishTeacher,
@@ -440,7 +439,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         ), Map.of("DMTH", mathematicsTeacher, "DSCI", scienceTeacher, "DENG", englishTeacher, "DICT", ictTeacher, "DSIN", sinhalaTeacher));
     }
 
-    private void createMarksForGrade11(
+    private void createMarksForGrade5(
             List<Exam> exams,
             Staff mathematicsTeacher,
             Staff englishTeacher,

@@ -30,7 +30,16 @@ public class SubjectController {
 
         @GetMapping
         @Operation(summary = "List subjects")
-        public Page<SubjectDTO> getAllSubjects(Pageable pageable) {
+        public Page<SubjectDTO> getAllSubjects(
+                @RequestParam(required = false) String keyword,
+                @RequestParam(required = false) Long gradeId,
+                @RequestParam(required = false) Boolean hasClassCoverage,
+                Pageable pageable
+        ) {
+            if ((keyword != null && !keyword.isBlank()) || gradeId != null || hasClassCoverage != null) {
+                return subjectService.filterSubjects(keyword, gradeId, hasClassCoverage, pageable);
+            }
+
             return subjectService.getAllSubjects(pageable);
         }
 

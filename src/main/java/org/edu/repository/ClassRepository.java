@@ -14,7 +14,15 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     Optional<Class> findByIdAndActiveTrue(Long id);
 
+    Optional<Class> findByAcademicYearIdAndGradeIdAndSection(
+            Long academicYearId,
+            Long gradeId,
+            String section
+    );
+
     List<Class> findByActiveTrue();
+
+    List<Class> findByAcademicYearIdAndActiveTrueOrderByNameAsc(Long academicYearId);
 
     Page<Class> findByActiveTrue(Pageable pageable);
 
@@ -45,4 +53,16 @@ public interface ClassRepository extends JpaRepository<Class, Long> {
 
     boolean existsByIdAndClassTeacherIdAndActiveTrue(Long id, Long classTeacherId);
 
+    boolean existsByAcademicYearIdAndGradeIdAndSectionAndActiveTrue(
+            Long academicYearId,
+            Long gradeId,
+            String section
+    );
+
+    boolean existsByAcademicYearIdAndGradeIdAndSectionAndIdNotAndActiveTrue(
+            Long academicYearId,
+            Long gradeId,
+            String section,
+            Long id
+    );
 }
