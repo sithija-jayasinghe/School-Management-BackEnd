@@ -14,10 +14,12 @@ import java.util.Optional;
 import org.edu.dto.StudentDTO;
 import org.edu.dto.StudentParentInlineRequest;
 import org.edu.entity.AcademicYear;
+import org.edu.entity.House;
 import org.edu.entity.Parent;
 import org.edu.entity.ParentStudent;
 import org.edu.entity.StudentEnrollment;
 import org.edu.entity.Student;
+import org.edu.entity.User;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.StudentMapper;
 import org.edu.repository.AcademicYearRepository;
@@ -27,7 +29,9 @@ import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StudentEnrollmentRepository;
 import org.edu.repository.StudentRepository;
+import org.edu.repository.UserRepository;
 import org.edu.util.EnrollmentStatus;
+import org.edu.util.Role;
 import org.edu.util.StudentStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +41,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class StudentServiceImplTest {
@@ -64,6 +69,12 @@ class StudentServiceImplTest {
 
     @Mock
     private StudentEnrollmentRepository studentEnrollmentRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private StudentServiceImpl studentService;
@@ -139,6 +150,8 @@ class StudentServiceImplTest {
         StudentParentInlineRequest inlineParent = new StudentParentInlineRequest();
         inlineParent.setName("Existing Father");
         inlineParent.setPhoneNumber("0771234567");
+        inlineParent.setEmail("father@sms.lk");
+        inlineParent.setPassword("password123");
         inlineParent.setAddress("Maharagama");
         inlineParent.setOccupation("Engineer");
         request.setNewParents(List.of(inlineParent));
@@ -146,6 +159,11 @@ class StudentServiceImplTest {
         Student mapped = activeStudent(1L);
         mapped.setStatus(StudentStatus.ACTIVE);
         Parent existingParent = activeParent(5L, "Existing Father", "0771234567");
+        User parentUser = new User();
+        parentUser.setId(9L);
+        parentUser.setEmail("father@sms.lk");
+        parentUser.setRole(Role.PARENT);
+        existingParent.setUser(parentUser);
 
         when(studentMapper.toEntity(request)).thenReturn(mapped);
         when(studentRepository.save(mapped)).thenReturn(mapped);
@@ -225,7 +243,12 @@ class StudentServiceImplTest {
         mapped.setId(1L);
 
         PageRequest pageable = PageRequest.of(0, 10);
-        when(studentRepository.filterStudents("kamal", 10L, true, pageable))
+        House house = new House();
+        house.setId(2L);
+        house.setName("Blue");
+
+        when(houseRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(house));
+        when(studentRepository.filterStudents("kamal", 10L, 2L, "Blue", true, pageable))
                 .thenReturn(new PageImpl<>(List.of(student), pageable, 1));
         when(studentMapper.toDTO(student)).thenReturn(mapped);
         when(parentStudentRepository.findByStudentId(1L)).thenReturn(List.of());
@@ -234,7 +257,7 @@ class StudentServiceImplTest {
                 EnrollmentStatus.ACTIVE
         )).thenReturn(List.of());
 
-        var page = studentService.filterStudents(" kamal ", 10L, true, pageable);
+        var page = studentService.filterStudents(" kamal ", 10L, 2L, true, pageable);
 
         assertEquals(1, page.getTotalElements());
         assertEquals(1L, page.getContent().get(0).getId());

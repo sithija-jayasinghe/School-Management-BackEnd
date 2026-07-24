@@ -60,15 +60,15 @@ public class GradeController {
         return gradeService.getAllGrades(pageable);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a grade by id")
-    public GradeDTO getGradeById(@PathVariable Long id) {
-        return gradeService.getGradeById(id);
-    }
-
     @GetMapping("/active")
     @Operation(summary = "List active grades")
     public List<GradeDTO> getActiveGrades() {
         return gradeService.getAllActiveGrades();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get a grade by id")
+    public GradeDTO getGradeById(@PathVariable Long id) {
+        return gradeService.getGradeById(id);
     }
 }

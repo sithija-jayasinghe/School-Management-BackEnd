@@ -50,6 +50,14 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<SubjectDTO> filterSubjects(String keyword, Long gradeId, Boolean hasClassCoverage, Pageable pageable) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        return subjectRepository.filterSubjects(normalizedKeyword, gradeId, hasClassCoverage, pageable)
+                .map(subjectMapper::toDTO);
+    }
+
+    @Override
     public SubjectDTO getSubjectById(Long id) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Subject not found"));

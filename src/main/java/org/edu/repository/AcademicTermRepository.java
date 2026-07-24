@@ -22,6 +22,13 @@ public interface AcademicTermRepository extends JpaRepository<AcademicTerm, Long
 
     List<AcademicTerm> findByAcademicYearIdAndActiveTrue(Long academicYearId);
 
+    long countByAcademicYearIdAndActiveTrue(Long academicYearId);
+
+    Optional<AcademicTerm> findFirstByAcademicYearIdAndActiveTrueAndStartDateAfterOrderByStartDateAsc(
+            Long academicYearId,
+            LocalDate startDate
+    );
+
     Optional<AcademicTerm> findByAcademicYearIdAndCurrentTrueAndActiveTrue(Long academicYearId);
 
     Page<AcademicTerm> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);

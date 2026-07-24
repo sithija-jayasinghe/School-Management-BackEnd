@@ -26,20 +26,29 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             select student
             from Student student
             left join student.currentClass studentClass
+            left join student.assignedHouse assignedHouse
             where (:active is null or student.active = :active)
               and (:classId is null or studentClass.id = :classId)
+              and (
+                :houseId is null
+                or assignedHouse.id = :houseId
+                or (:houseName is not null and lower(student.house) = lower(:houseName))
+              )
               and (
                 :keyword is null
                 or lower(student.name) like lower(concat('%', :keyword, '%'))
                 or lower(student.admissionNumber) like lower(concat('%', :keyword, '%'))
                 or lower(student.nameWithInitials) like lower(concat('%', :keyword, '%'))
                 or lower(student.house) like lower(concat('%', :keyword, '%'))
+                or lower(assignedHouse.name) like lower(concat('%', :keyword, '%'))
                 or str(student.id) like concat('%', :keyword, '%')
               )
             """)
     Page<Student> filterStudents(
             @Param("keyword") String keyword,
             @Param("classId") Long classId,
+            @Param("houseId") Long houseId,
+            @Param("houseName") String houseName,
             @Param("active") Boolean active,
             Pageable pageable
     );

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.AcademicCalendarSummaryDTO;
 import org.edu.dto.AcademicTermDTO;
 import org.edu.dto.AcademicYearDTO;
 import org.edu.service.AcademicTermService;
@@ -74,14 +75,23 @@ public class AcademicYearController {
 
     @GetMapping
     @Operation(summary = "List academic years")
-    public Page<AcademicYearDTO> getAllAcademicYears(Pageable pageable) {
+    public Page<AcademicYearDTO> getAllAcademicYears(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "active") String status,
+            @RequestParam(required = false) Boolean current,
+            Pageable pageable
+    ) {
+        if ((keyword != null && !keyword.isBlank()) || current != null || !"active".equalsIgnoreCase(status)) {
+            return academicYearService.filterAcademicYears(keyword, status, current, pageable);
+        }
+
         return academicYearService.getAllAcademicYears(pageable);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get an academic year by id")
-    public AcademicYearDTO getAcademicYearById(@PathVariable Long id) {
-        return academicYearService.getAcademicYearById(id);
+    @GetMapping("/summary")
+    @Operation(summary = "Get academic calendar summary")
+    public AcademicCalendarSummaryDTO getAcademicCalendarSummary() {
+        return academicYearService.getAcademicCalendarSummary();
     }
 
     @GetMapping("/search-academic-years")
@@ -101,6 +111,12 @@ public class AcademicYearController {
     @Operation(summary = "Get the current academic year")
     public AcademicYearDTO getCurrentAcademicYear() {
         return academicYearService.getCurrentAcademicYear();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get an academic year by id")
+    public AcademicYearDTO getAcademicYearById(@PathVariable Long id) {
+        return academicYearService.getAcademicYearById(id);
     }
 
     @PostMapping("/{id}/set-as-current-academic-year")

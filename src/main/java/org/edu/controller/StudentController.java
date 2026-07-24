@@ -52,9 +52,10 @@ public class StudentController {
     @Operation(summary = "List students")
     public Page<StudentDTO> getAllStudents(@RequestParam(required = false) String keyword,
                                            @RequestParam(required = false) Long classId,
+                                           @RequestParam(required = false) Long houseId,
                                            @RequestParam(required = false) Boolean active,
                                            Pageable pageable) {
-        return studentService.filterStudents(keyword, classId, active, pageable);
+        return studentService.filterStudents(keyword, classId, houseId, active, pageable);
     }
 
     @GetMapping("/{id}")

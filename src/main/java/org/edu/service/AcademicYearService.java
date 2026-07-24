@@ -1,5 +1,6 @@
 package org.edu.service;
 
+import org.edu.dto.AcademicCalendarSummaryDTO;
 import org.edu.dto.AcademicYearDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,10 @@ public interface AcademicYearService {
     void closeAcademicYear(Long id);
 
     Page<AcademicYearDTO> getAllAcademicYears(Pageable pageable);
+
+    Page<AcademicYearDTO> filterAcademicYears(String keyword, String status, Boolean current, Pageable pageable);
+
+    AcademicCalendarSummaryDTO getAcademicCalendarSummary();
 
     AcademicYearDTO getAcademicYearById(Long id);
 
