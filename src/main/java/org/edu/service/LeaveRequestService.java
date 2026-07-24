@@ -13,9 +13,9 @@ public interface LeaveRequestService {
 
     LeaveRequestDTO updateLeaveRequest(Long id, LeaveRequestDTO dto);
 
-    LeaveRequestDTO approveLeaveRequest(Long id, LeaveRequestReviewRequest request);
+    LeaveRequestDTO approveLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request);
 
-    LeaveRequestDTO rejectLeaveRequest(Long id, LeaveRequestReviewRequest request);
+    LeaveRequestDTO rejectLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request);
 
     LeaveRequestDTO cancelLeaveRequest(Long id, String reviewerRemarks);
 

@@ -84,18 +84,18 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
-    public LeaveRequestDTO approveLeaveRequest(Long id, LeaveRequestReviewRequest request) {
+    public LeaveRequestDTO approveLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request) {
         LeaveRequest leaveRequest = getLeaveRequest(id);
         ensurePending(leaveRequest, "Only pending leave requests can be approved");
-        applyReview(leaveRequest, request, LeaveRequestStatus.APPROVED);
+        applyReview(authenticatedUserId, leaveRequest, request, LeaveRequestStatus.APPROVED);
         return leaveRequestMapper.toDTO(leaveRequest);
     }
 
     @Override
-    public LeaveRequestDTO rejectLeaveRequest(Long id, LeaveRequestReviewRequest request) {
+    public LeaveRequestDTO rejectLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request) {
         LeaveRequest leaveRequest = getLeaveRequest(id);
         ensurePending(leaveRequest, "Only pending leave requests can be rejected");
-        applyReview(leaveRequest, request, LeaveRequestStatus.REJECTED);
+        applyReview(authenticatedUserId, leaveRequest, request, LeaveRequestStatus.REJECTED);
         return leaveRequestMapper.toDTO(leaveRequest);
     }
 
@@ -200,6 +200,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         Staff staff = getActiveStaffByUserId(authenticatedUserId);
         LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
         return approveLeaveRequest(
+                authenticatedUserId,
                 leaveRequest.getId(),
                 new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
         );
@@ -210,6 +211,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         Staff staff = getActiveStaffByUserId(authenticatedUserId);
         LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
         return rejectLeaveRequest(
+                authenticatedUserId,
                 leaveRequest.getId(),
                 new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
         );
@@ -308,12 +310,25 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         }
     }
 
-    private void applyReview(LeaveRequest leaveRequest, LeaveRequestReviewRequest request, LeaveRequestStatus status) {
-        leaveRequest.setReviewedBy(staffRepository.findByIdAndActiveTrue(request.getReviewedByStaffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Active staff not found with id: " + request.getReviewedByStaffId())));
+    private void applyReview(Long authenticatedUserId, LeaveRequest leaveRequest, LeaveRequestReviewRequest request, LeaveRequestStatus status) {
+        leaveRequest.setReviewedBy(resolveReviewerForCurrentUser(authenticatedUserId, request.getReviewedByStaffId()));
         leaveRequest.setReviewerRemarks(request.getReviewerRemarks());
         leaveRequest.setReviewedAt(LocalDateTime.now());
         leaveRequest.setStatus(status);
+    }
+
+    private Staff resolveReviewerForCurrentUser(Long authenticatedUserId, Long fallbackStaffId) {
+        if (authenticatedUserId != null) {
+            Staff currentStaff = staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId).orElse(null);
+            if (currentStaff != null) {
+                return currentStaff;
+            }
+        }
+        if (fallbackStaffId == null) {
+            return null;
+        }
+        return staffRepository.findByIdAndActiveTrue(fallbackStaffId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active staff not found with id: " + fallbackStaffId));
     }
 
     private LeaveRequest getTeacherAccessibleLeaveRequest(Long staffId, Long leaveRequestId) {

@@ -7,11 +7,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.LeaveRequestDTO;
 import org.edu.dto.request.LeaveRequestReviewRequest;
+import org.edu.security.UserPrincipal;
 import org.edu.service.LeaveRequestService;
 import org.edu.util.LeaveRequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,19 +48,21 @@ public class LeaveRequestController {
     @PostMapping("/{id}/approve")
     @Operation(summary = "Approve a leave request")
     public LeaveRequestDTO approveLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id,
             @Valid @RequestBody LeaveRequestReviewRequest request
     ) {
-        return leaveRequestService.approveLeaveRequest(id, request);
+        return leaveRequestService.approveLeaveRequest(principal.getUser().getId(), id, request);
     }
 
     @PostMapping("/{id}/reject")
     @Operation(summary = "Reject a leave request")
     public LeaveRequestDTO rejectLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id,
             @Valid @RequestBody LeaveRequestReviewRequest request
     ) {
-        return leaveRequestService.rejectLeaveRequest(id, request);
+        return leaveRequestService.rejectLeaveRequest(principal.getUser().getId(), id, request);
     }
 
     @PostMapping("/{id}/cancel")
