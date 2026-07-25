@@ -12,25 +12,25 @@ import org.springframework.data.domain.Pageable;
 
 public interface AttendanceService {
 
-    AttendanceDTO createAttendance(AttendanceDTO dto);
+    AttendanceDTO createAttendance(Long authenticatedUserId, AttendanceDTO dto);
 
-    List<AttendanceDTO> markClassAttendance(BulkAttendanceRequest request);
+    List<AttendanceDTO> markClassAttendance(Long authenticatedUserId, BulkAttendanceRequest request);
 
-    AttendanceDTO updateAttendance(Long id, AttendanceDTO dto);
+    AttendanceDTO updateAttendance(Long authenticatedUserId, Long id, AttendanceDTO dto);
 
-    void deleteAttendance(Long id);
+    void deleteAttendance(Long authenticatedUserId, Long id);
 
-    AttendanceDTO getAttendanceById(Long id);
+    AttendanceDTO getAttendanceById(Long authenticatedUserId, Long id);
 
-    Page<AttendanceDTO> getAllAttendance(Pageable pageable);
+    Page<AttendanceDTO> getAllAttendance(Long authenticatedUserId, Pageable pageable);
 
-    Page<AttendanceDTO> getStudentAttendance(Long studentId, Pageable pageable);
+    Page<AttendanceDTO> getStudentAttendance(Long authenticatedUserId, Long studentId, Pageable pageable);
 
-    Page<AttendanceDTO> getClassAttendanceByDate(Long classId, LocalDate attendanceDate, Pageable pageable);
+    Page<AttendanceDTO> getClassAttendanceByDate(Long authenticatedUserId, Long classId, LocalDate attendanceDate, Pageable pageable);
 
-    Page<AttendanceDTO> filterAttendance(Long classId, Long studentId, Long subjectId, Long markedByStaffId, AttendanceStatus status, LocalDate fromDate, LocalDate toDate, Pageable pageable);
+    Page<AttendanceDTO> filterAttendance(Long authenticatedUserId, Long classId, Long studentId, Long subjectId, Long markedByStaffId, AttendanceStatus status, LocalDate fromDate, LocalDate toDate, Pageable pageable);
 
-    AttendanceSummaryDTO getStudentAttendanceSummary(Long studentId, LocalDate fromDate, LocalDate toDate);
+    AttendanceSummaryDTO getStudentAttendanceSummary(Long authenticatedUserId, Long studentId, LocalDate fromDate, LocalDate toDate);
 
     List<ParentPortalAttendanceDTO> getPortalAttendance(Long studentId, LocalDate fromDate, LocalDate toDate);
 }

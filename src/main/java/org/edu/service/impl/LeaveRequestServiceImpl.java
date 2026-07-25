@@ -1,5 +1,6 @@
 package org.edu.service.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.edu.entity.LeaveRequest;
 import org.edu.entity.Parent;
 import org.edu.entity.Staff;
 import org.edu.entity.Student;
+import org.edu.entity.User;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.LeaveRequestMapper;
 import org.edu.repository.ClassRepository;
@@ -20,10 +22,12 @@ import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.repository.UserRepository;
 import org.edu.service.AttendanceService;
 import org.edu.service.LeaveRequestService;
 import org.edu.util.AttendanceStatus;
 import org.edu.util.LeaveRequestStatus;
+import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private final ClassRepository classRepository;
     private final TimetableRepository timetableRepository;
     private final AttendanceService attendanceService;
+    private final UserRepository userRepository;
     private final LeaveRequestMapper leaveRequestMapper;
 
     @Override
@@ -84,18 +89,18 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
-    public LeaveRequestDTO approveLeaveRequest(Long id, LeaveRequestReviewRequest request) {
+    public LeaveRequestDTO approveLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request) {
         LeaveRequest leaveRequest = getLeaveRequest(id);
         ensurePending(leaveRequest, "Only pending leave requests can be approved");
-        applyReview(leaveRequest, request, LeaveRequestStatus.APPROVED);
+        applyReview(authenticatedUserId, leaveRequest, request, LeaveRequestStatus.APPROVED);
         return leaveRequestMapper.toDTO(leaveRequest);
     }
 
     @Override
-    public LeaveRequestDTO rejectLeaveRequest(Long id, LeaveRequestReviewRequest request) {
+    public LeaveRequestDTO rejectLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request) {
         LeaveRequest leaveRequest = getLeaveRequest(id);
         ensurePending(leaveRequest, "Only pending leave requests can be rejected");
-        applyReview(leaveRequest, request, LeaveRequestStatus.REJECTED);
+        applyReview(authenticatedUserId, leaveRequest, request, LeaveRequestStatus.REJECTED);
         return leaveRequestMapper.toDTO(leaveRequest);
     }
 
@@ -118,16 +123,41 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<LeaveRequestDTO> getAllLeaveRequests(Pageable pageable) {
-        return leaveRequestRepository.findAllByOrderByCreatedAtDesc(pageable)
-                .map(leaveRequestMapper::toDTO);
+    public Page<LeaveRequestDTO> getAllLeaveRequests(Long authenticatedUserId, Pageable pageable) {
+        Long accessibleStaffId = resolveAccessibleStaffId(authenticatedUserId);
+        Page<LeaveRequest> page = accessibleStaffId == null
+                ? leaveRequestRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : leaveRequestRepository.findTeacherPortalLeaveRequestsByStaffId(accessibleStaffId, pageable);
+        return page.map(leaveRequestMapper::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<LeaveRequestDTO> getLeaveRequestsByStatus(LeaveRequestStatus status, Pageable pageable) {
-        return leaveRequestRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
-                .map(leaveRequestMapper::toDTO);
+    public Page<LeaveRequestDTO> getLeaveRequestsByStatus(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable) {
+        Long accessibleStaffId = resolveAccessibleStaffId(authenticatedUserId);
+        Page<LeaveRequest> page = accessibleStaffId == null
+                ? leaveRequestRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
+                : leaveRequestRepository.findTeacherPortalLeaveRequestsByStaffIdAndStatus(accessibleStaffId, status, pageable);
+        return page.map(leaveRequestMapper::toDTO);
+    }
+
+    /**
+     * Returns null when the caller has unrestricted access (ADMIN); otherwise returns the
+     * staff id to scope leave requests to (the teacher's own class/teaching assignments).
+     */
+    private Long resolveAccessibleStaffId(Long authenticatedUserId) {
+        if (authenticatedUserId == null) {
+            return null;
+        }
+
+        User user = userRepository.findById(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + authenticatedUserId));
+
+        if (user.getRole() == Role.ADMIN) {
+            return null;
+        }
+
+        return getActiveStaffByUserId(authenticatedUserId).getId();
     }
 
     @Override
@@ -200,6 +230,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         Staff staff = getActiveStaffByUserId(authenticatedUserId);
         LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
         return approveLeaveRequest(
+                authenticatedUserId,
                 leaveRequest.getId(),
                 new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
         );
@@ -210,6 +241,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         Staff staff = getActiveStaffByUserId(authenticatedUserId);
         LeaveRequest leaveRequest = getTeacherAccessibleLeaveRequest(staff.getId(), leaveRequestId);
         return rejectLeaveRequest(
+                authenticatedUserId,
                 leaveRequest.getId(),
                 new LeaveRequestReviewRequest(staff.getId(), reviewerRemarks)
         );
@@ -235,7 +267,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             attendanceDTO.setStatus(AttendanceStatus.EXCUSED);
             attendanceDTO.setMarkedByStaffId(staff.getId());
             attendanceDTO.setRemarks("Applied from approved leave request #" + leaveRequest.getId());
-            attendanceService.createAttendance(attendanceDTO);
+            attendanceService.createAttendance(null, attendanceDTO);
             current = current.plusDays(1);
         }
 
@@ -276,8 +308,11 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     private void validateDateRange(java.time.LocalDate startDate, java.time.LocalDate endDate) {
-        if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("Start date must be before or equal to end date");
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Leave requests can only be submitted for today or a future date");
+        }
+        if (!startDate.isBefore(endDate)) {
+            throw new IllegalArgumentException("End date must be after the start date");
         }
     }
 
@@ -308,12 +343,25 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         }
     }
 
-    private void applyReview(LeaveRequest leaveRequest, LeaveRequestReviewRequest request, LeaveRequestStatus status) {
-        leaveRequest.setReviewedBy(staffRepository.findByIdAndActiveTrue(request.getReviewedByStaffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Active staff not found with id: " + request.getReviewedByStaffId())));
+    private void applyReview(Long authenticatedUserId, LeaveRequest leaveRequest, LeaveRequestReviewRequest request, LeaveRequestStatus status) {
+        leaveRequest.setReviewedBy(resolveReviewerForCurrentUser(authenticatedUserId, request.getReviewedByStaffId()));
         leaveRequest.setReviewerRemarks(request.getReviewerRemarks());
         leaveRequest.setReviewedAt(LocalDateTime.now());
         leaveRequest.setStatus(status);
+    }
+
+    private Staff resolveReviewerForCurrentUser(Long authenticatedUserId, Long fallbackStaffId) {
+        if (authenticatedUserId != null) {
+            Staff currentStaff = staffRepository.findByUser_IdAndActiveTrue(authenticatedUserId).orElse(null);
+            if (currentStaff != null) {
+                return currentStaff;
+            }
+        }
+        if (fallbackStaffId == null) {
+            return null;
+        }
+        return staffRepository.findByIdAndActiveTrue(fallbackStaffId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active staff not found with id: " + fallbackStaffId));
     }
 
     private LeaveRequest getTeacherAccessibleLeaveRequest(Long staffId, Long leaveRequestId) {

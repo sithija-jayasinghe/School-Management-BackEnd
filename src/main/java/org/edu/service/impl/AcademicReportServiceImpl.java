@@ -274,6 +274,7 @@ public class AcademicReportServiceImpl implements AcademicReportService {
         report.setFailedSubjectCount(subjectRows.size() - passedSubjects);
 
         AttendanceSummaryDTO attendance = attendanceService.getStudentAttendanceSummary(
+                null,
                 report.getStudent().getId(),
                 report.getAcademicTerm().getStartDate(),
                 report.getAcademicTerm().getEndDate()
@@ -390,6 +391,7 @@ public class AcademicReportServiceImpl implements AcademicReportService {
                 term.getId()
         );
         AttendanceSummaryDTO attendance = attendanceService.getStudentAttendanceSummary(
+                null,
                 student.getId(),
                 term.getStartDate(),
                 term.getEndDate()

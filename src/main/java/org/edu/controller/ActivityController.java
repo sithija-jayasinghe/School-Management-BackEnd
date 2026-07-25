@@ -67,12 +67,13 @@ public class ActivityController {
     @DeleteMapping("/{activityId}")
     @Operation(summary = "Deactivate an activity and its active teacher assignments")
     public void deactivateActivity(@PathVariable Long activityId) {
+        String activityName = activityService.getActivity(activityId).getName();
         activityService.deactivateActivity(activityId);
         auditLogService.log(
                 AuditAction.DEACTIVATE,
                 AuditEntityType.ACTIVITY,
                 activityId,
-                "Activity #" + activityId,
+                activityName,
                 "Deactivated activity"
         );
     }

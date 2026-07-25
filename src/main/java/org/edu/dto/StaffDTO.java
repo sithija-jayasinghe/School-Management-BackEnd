@@ -1,8 +1,10 @@
 package org.edu.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +13,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import org.edu.util.EmploymentType;
+import org.edu.util.Role;
 import org.edu.util.StaffCategory;
 
 @Getter
@@ -22,6 +25,14 @@ public class StaffDTO {
     private Long id;
 
     private Long userId;
+
+    @Email(message = "Login email must be valid")
+    private String loginEmail;
+
+    @Size(min = 8, max = 100, message = "Login password must be between 8 and 100 characters")
+    private String loginPassword;
+
+    private Role loginRole;
 
     @NotNull(message = "Staff ID is required")
     private String staffId;

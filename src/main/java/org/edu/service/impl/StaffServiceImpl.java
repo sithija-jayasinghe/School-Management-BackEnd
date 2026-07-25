@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.StaffDTO;
 import org.edu.entity.Staff;
 import org.edu.entity.User;
+import org.edu.exception.DuplicateEmailException;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.StaffMapper;
 import org.edu.repository.StaffRepository;
@@ -14,6 +15,7 @@ import org.edu.util.EmploymentType;
 import org.edu.util.StaffCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +29,12 @@ public class StaffServiceImpl implements StaffService {
     private final StaffRepository staffRepository;
     private final StaffMapper staffMapper;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public StaffDTO createStaff(StaffDTO staffDTO) {
 
-        User user = resolveOptionalUser(staffDTO.getUserId());
+        User user = resolveUserForStaff(staffDTO);
 
         Staff staff = staffMapper.toEntity(staffDTO);
         staff.setUser(user);
@@ -109,11 +112,27 @@ public class StaffServiceImpl implements StaffService {
                 .toList();
     }
 
-    private User resolveOptionalUser(Long userId) {
-        if (userId == null) {
-            return null;
+    private User resolveUserForStaff(StaffDTO staffDTO) {
+        boolean hasInlineLogin = hasText(staffDTO.getLoginEmail()) || hasText(staffDTO.getLoginPassword());
+        if (staffDTO.getUserId() != null && hasInlineLogin) {
+            throw new IllegalArgumentException("Provide either an existing userId or new login details, not both");
         }
+        if (staffDTO.getUserId() != null) {
+            return resolveOptionalUser(staffDTO.getUserId());
+        }
+        if (hasInlineLogin) {
+            Role role = staffDTO.getLoginRole() != null
+                    ? staffDTO.getLoginRole()
+                    : (Boolean.TRUE.equals(staffDTO.getTeachingCapable()) ? Role.TEACHER : Role.STAFF);
+            if (role != Role.ADMIN && role != Role.TEACHER && role != Role.STAFF) {
+                throw new IllegalArgumentException("Staff accounts must have ADMIN, TEACHER, or STAFF role");
+            }
+            return createLinkedUser(staffDTO.getName(), staffDTO.getLoginEmail(), staffDTO.getLoginPassword(), role);
+        }
+        return null;
+    }
 
+    private User resolveOptionalUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (staffRepository.existsByUser(user)) {
@@ -123,6 +142,27 @@ public class StaffServiceImpl implements StaffService {
             throw new IllegalArgumentException("Staff accounts must have ADMIN, TEACHER, or STAFF role");
         }
         return user;
+    }
+
+    private User createLinkedUser(String name, String email, String password, Role role) {
+        if (!hasText(email) || !hasText(password)) {
+            throw new IllegalArgumentException("Login email and password are both required to create a login");
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new DuplicateEmailException("Email is already registered");
+        }
+        User user = new User();
+        user.setName(name.trim());
+        user.setEmail(normalizedEmail);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        user.setActive(true);
+        return userRepository.save(user);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private void applyStaffDefaults(Staff staff, User user) {

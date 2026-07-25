@@ -60,24 +60,28 @@ public class ClassController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active classes")
     public List<ClassDTO> getActiveClasses() {
         return classService.getAllActiveClasses();
     }
 
     @GetMapping("/active/current-academic-year")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active classes for the current academic year")
     public List<ClassDTO> getCurrentAcademicYearActiveClasses() {
         return classService.getCurrentAcademicYearActiveClasses();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get a class by id")
     public ClassDTO getClassById(@PathVariable Long id) {
         return classService.getClassById(id);
     }
 
     @GetMapping("/{id}/students")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List students in a class")
     public List<StudentDTO> getStudentsByClass(@PathVariable Long id) {
         return studentService.getStudentsByClassId(id);

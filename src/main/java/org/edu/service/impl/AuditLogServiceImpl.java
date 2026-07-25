@@ -1,5 +1,6 @@
 package org.edu.service.impl;
 
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.AuditLogDTO;
 import org.edu.entity.AuditLog;
@@ -45,6 +46,22 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Transactional(readOnly = true)
     public Page<AuditLogDTO> getAllAuditLogs(Pageable pageable) {
         return auditLogRepository.findAll(pageable)
+            .map(this::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AuditLogDTO> filterAuditLogs(
+            String keyword,
+            AuditAction action,
+            AuditEntityType entityType,
+            Long actorUserId,
+            LocalDateTime from,
+            LocalDateTime to,
+            Pageable pageable
+    ) {
+        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+        return auditLogRepository.filterAuditLogs(normalizedKeyword, action, entityType, actorUserId, from, to, pageable)
             .map(this::toDto);
     }
 

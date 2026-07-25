@@ -29,6 +29,7 @@ public class SubjectController {
         }
 
         @GetMapping
+        @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
         @Operation(summary = "List subjects")
         public Page<SubjectDTO> getAllSubjects(
                 @RequestParam(required = false) String keyword,
@@ -44,6 +45,7 @@ public class SubjectController {
         }
 
         @GetMapping("/{id}")
+        @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
         @Operation(summary = "Get a subject by id")
         public SubjectDTO getSubjectById(@PathVariable Long id) {
             return subjectService.getSubjectById(id);

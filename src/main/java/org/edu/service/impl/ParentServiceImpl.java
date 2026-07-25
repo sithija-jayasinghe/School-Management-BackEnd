@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.ParentDTO;
 import org.edu.entity.Parent;
 import org.edu.entity.User;
+import org.edu.exception.DuplicateEmailException;
 import org.edu.exception.ResourceNotFoundException;
 import org.edu.mapper.ParentMapper;
 import org.edu.repository.ParentRepository;
@@ -19,6 +20,7 @@ import org.edu.mapper.ParentStudentMapper;
 import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,12 +37,14 @@ public class ParentServiceImpl implements ParentService {
     private final StudentRepository studentRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final ParentStudentMapper parentStudentMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public ParentDTO createParent(ParentDTO parentDTO) {
         Parent parent = parentMapper.toEntity(parentDTO);
-        if (parentDTO.getUserId() != null) {
-            parent.setUser(resolveAvailableParentUser(parentDTO.getUserId()));
+        User user = resolveUserForParent(parentDTO);
+        if (user != null) {
+            parent.setUser(user);
         }
         parent.setActive(true);
 
@@ -264,5 +268,40 @@ public class ParentServiceImpl implements ParentService {
         }
 
         return user;
+    }
+
+    private User resolveUserForParent(ParentDTO parentDTO) {
+        boolean hasInlineLogin = hasText(parentDTO.getLoginEmail()) || hasText(parentDTO.getLoginPassword());
+        if (parentDTO.getUserId() != null && hasInlineLogin) {
+            throw new IllegalArgumentException("Provide either an existing userId or new login details, not both");
+        }
+        if (parentDTO.getUserId() != null) {
+            return resolveAvailableParentUser(parentDTO.getUserId());
+        }
+        if (hasInlineLogin) {
+            return createLinkedUser(parentDTO.getName(), parentDTO.getLoginEmail(), parentDTO.getLoginPassword());
+        }
+        return null;
+    }
+
+    private User createLinkedUser(String name, String email, String password) {
+        if (!hasText(email) || !hasText(password)) {
+            throw new IllegalArgumentException("Login email and password are both required to create a login");
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new DuplicateEmailException("Email is already registered");
+        }
+        User user = new User();
+        user.setName(name.trim());
+        user.setEmail(normalizedEmail);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(Role.PARENT);
+        user.setActive(true);
+        return userRepository.save(user);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

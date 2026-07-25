@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.ClassTeacherAssignmentRequest;
 import org.edu.dto.TeachingAssignmentDTO;
 import org.edu.service.TeachingAssignmentService;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,12 @@ public class TeachingAssignmentController {
     @Operation(summary = "Create a teaching assignment")
     public TeachingAssignmentDTO createAssignment(@Valid @RequestBody TeachingAssignmentDTO dto) {
         return teachingAssignmentService.createAssignment(dto);
+    }
+
+    @PostMapping("/class-teacher")
+    @Operation(summary = "Assign a teacher to all selected subjects for a class in one action")
+    public List<TeachingAssignmentDTO> assignClassTeacher(@Valid @RequestBody ClassTeacherAssignmentRequest request) {
+        return teachingAssignmentService.assignClassTeacher(request);
     }
 
     @PatchMapping("/{id}")

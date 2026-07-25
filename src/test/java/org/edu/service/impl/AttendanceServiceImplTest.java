@@ -26,6 +26,7 @@ import org.edu.repository.StaffRepository;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.SubjectRepository;
 import org.edu.repository.TimetableRepository;
+import org.edu.repository.UserRepository;
 import org.edu.util.AttendanceStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,9 @@ class AttendanceServiceImplTest {
     @Mock
     private StaffRepository staffRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private AttendanceServiceImpl attendanceService;
 
     @BeforeEach
@@ -67,6 +71,7 @@ class AttendanceServiceImplTest {
                 subjectRepository,
                 timetableRepository,
                 staffRepository,
+                userRepository,
                 attendanceMapper
         );
     }
@@ -80,7 +85,7 @@ class AttendanceServiceImplTest {
         when(attendanceRepository.existsByStudentIdAndAttendanceDateAndTimetableIsNull(1L, dto.getAttendanceDate()))
                 .thenReturn(true);
 
-        assertThrows(IllegalStateException.class, () -> attendanceService.createAttendance(dto));
+        assertThrows(IllegalStateException.class, () -> attendanceService.createAttendance(null, dto));
         verify(attendanceRepository, never()).save(org.mockito.Mockito.any(Attendance.class));
     }
 
@@ -100,7 +105,7 @@ class AttendanceServiceImplTest {
                 .thenReturn(false);
         when(timetableRepository.findById(99L)).thenReturn(Optional.of(timetable));
 
-        assertThrows(IllegalArgumentException.class, () -> attendanceService.createAttendance(dto));
+        assertThrows(IllegalArgumentException.class, () -> attendanceService.createAttendance(null, dto));
     }
 
     @Test
@@ -118,7 +123,7 @@ class AttendanceServiceImplTest {
                     return attendance;
                 });
 
-        AttendanceDTO saved = attendanceService.createAttendance(dto);
+        AttendanceDTO saved = attendanceService.createAttendance(null, dto);
 
         assertEquals(5L, saved.getId());
         assertEquals(10L, saved.getClassId());
@@ -150,7 +155,7 @@ class AttendanceServiceImplTest {
                     return records;
                 });
 
-        List<AttendanceDTO> saved = attendanceService.markClassAttendance(request);
+        List<AttendanceDTO> saved = attendanceService.markClassAttendance(null, request);
 
         assertEquals(2, saved.size());
         assertEquals(101L, saved.get(0).getId());
@@ -168,7 +173,7 @@ class AttendanceServiceImplTest {
         when(classRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(studentClass));
         when(studentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(student));
 
-        assertThrows(IllegalArgumentException.class, () -> attendanceService.markClassAttendance(request));
+        assertThrows(IllegalArgumentException.class, () -> attendanceService.markClassAttendance(null, request));
         verify(attendanceRepository, never()).saveAll(org.mockito.Mockito.anyList());
     }
 
@@ -182,7 +187,7 @@ class AttendanceServiceImplTest {
 
         when(classRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(studentClass));
 
-        assertThrows(IllegalArgumentException.class, () -> attendanceService.markClassAttendance(request));
+        assertThrows(IllegalArgumentException.class, () -> attendanceService.markClassAttendance(null, request));
         verify(attendanceRepository, never()).saveAll(org.mockito.Mockito.anyList());
     }
 
@@ -201,7 +206,7 @@ class AttendanceServiceImplTest {
                         attendance(student, AttendanceStatus.EXCUSED)
                 ));
 
-        AttendanceSummaryDTO summary = attendanceService.getStudentAttendanceSummary(1L, from, to);
+        AttendanceSummaryDTO summary = attendanceService.getStudentAttendanceSummary(null, 1L, from, to);
 
         assertEquals(4, summary.getTotalRecords());
         assertEquals(1, summary.getPresentCount());
@@ -217,6 +222,7 @@ class AttendanceServiceImplTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> attendanceService.getStudentAttendanceSummary(
+                        null,
                         404L,
                         LocalDate.of(2026, 1, 1),
                         LocalDate.of(2026, 1, 31)

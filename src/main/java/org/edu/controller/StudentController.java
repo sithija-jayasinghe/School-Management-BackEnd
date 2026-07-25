@@ -72,6 +72,7 @@ public class StudentController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active students")
     public List<StudentDTO> getActiveStudents() {
         return studentService.getAllActiveStudents();

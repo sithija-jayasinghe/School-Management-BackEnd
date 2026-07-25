@@ -76,6 +76,7 @@ public class AcademicTermController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get an academic term by id")
     public AcademicTermDTO getAcademicTermById(@PathVariable Long id) {
         return academicTermService.getAcademicTermById(id);
@@ -89,12 +90,14 @@ public class AcademicTermController {
     }
 
     @GetMapping("/active-academic-terms")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active academic terms")
     public List<AcademicTermDTO> getActiveAcademicTerms() {
         return academicTermService.getAllActiveAcademicTerms();
     }
 
     @GetMapping("/current-academic-term")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get the current academic term")
     public AcademicTermDTO getCurrentAcademicTerm() {
         return academicTermService.getCurrentAcademicTerm();

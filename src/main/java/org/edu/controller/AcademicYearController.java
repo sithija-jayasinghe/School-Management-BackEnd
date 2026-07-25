@@ -102,18 +102,21 @@ public class AcademicYearController {
     }
 
     @GetMapping("/active-academic-years")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active academic years")
     public List<AcademicYearDTO> getActiveAcademicYears() {
         return academicYearService.getAllActiveAcademicYears();
     }
 
     @GetMapping("/current-academic-year")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get the current academic year")
     public AcademicYearDTO getCurrentAcademicYear() {
         return academicYearService.getCurrentAcademicYear();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get an academic year by id")
     public AcademicYearDTO getAcademicYearById(@PathVariable Long id) {
         return academicYearService.getAcademicYearById(id);
@@ -126,18 +129,21 @@ public class AcademicYearController {
     }
 
     @GetMapping("/{id}/academic-terms")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List academic terms in an academic year")
     public List<AcademicTermDTO> getTermsByAcademicYear(@PathVariable Long id) {
         return academicTermService.getTermsByAcademicYear(id);
     }
 
     @GetMapping("/{id}/active-academic-terms")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active academic terms in an academic year")
     public List<AcademicTermDTO> getActiveTermsByAcademicYear(@PathVariable Long id) {
         return academicTermService.getActiveTermsByAcademicYear(id);
     }
 
     @GetMapping("/{id}/current-academic-term")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get the current academic term for an academic year")
     public AcademicTermDTO getCurrentTermByAcademicYear(@PathVariable Long id) {
         return academicTermService.getCurrentAcademicTermByAcademicYear(id);
