@@ -76,8 +76,10 @@ public class LeaveRequestController {
 
     @GetMapping
     @Operation(summary = "List leave requests")
-    public Page<LeaveRequestDTO> getAllLeaveRequests(Pageable pageable) {
-        return leaveRequestService.getAllLeaveRequests(pageable);
+    public Page<LeaveRequestDTO> getAllLeaveRequests(
+            @AuthenticationPrincipal UserPrincipal principal,
+            Pageable pageable) {
+        return leaveRequestService.getAllLeaveRequests(principal.getUser().getId(), pageable);
     }
 
     @GetMapping("/{id}")
@@ -88,8 +90,11 @@ public class LeaveRequestController {
 
     @GetMapping("/status/{status}")
     @Operation(summary = "List leave requests by status")
-    public Page<LeaveRequestDTO> getLeaveRequestsByStatus(@PathVariable LeaveRequestStatus status, Pageable pageable) {
-        return leaveRequestService.getLeaveRequestsByStatus(status, pageable);
+    public Page<LeaveRequestDTO> getLeaveRequestsByStatus(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable LeaveRequestStatus status,
+            Pageable pageable) {
+        return leaveRequestService.getLeaveRequestsByStatus(principal.getUser().getId(), status, pageable);
     }
 
     @GetMapping("/students/{studentId}")

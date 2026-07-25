@@ -21,9 +21,9 @@ public interface LeaveRequestService {
 
     LeaveRequestDTO getLeaveRequestById(Long id);
 
-    Page<LeaveRequestDTO> getAllLeaveRequests(Pageable pageable);
+    Page<LeaveRequestDTO> getAllLeaveRequests(Long authenticatedUserId, Pageable pageable);
 
-    Page<LeaveRequestDTO> getLeaveRequestsByStatus(LeaveRequestStatus status, Pageable pageable);
+    Page<LeaveRequestDTO> getLeaveRequestsByStatus(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable);
 
     Page<LeaveRequestDTO> getLeaveRequestsByStudent(Long studentId, Pageable pageable);
 

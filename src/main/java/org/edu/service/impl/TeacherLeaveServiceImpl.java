@@ -354,22 +354,18 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
     }
 
     private void validateInput(TeacherLeaveSaveRequest input) {
-        if (input.getStartDate().isAfter(input.getEndDate())) {
-            throw new IllegalArgumentException("Start date must be before or equal to end date");
+        if (input.getStartDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Teacher leave can only be requested for today or a future date");
+        }
+        if (!input.getStartDate().isBefore(input.getEndDate())) {
+            throw new IllegalArgumentException("End date must be after the start date");
         }
         long days = ChronoUnit.DAYS.between(input.getStartDate(), input.getEndDate()) + 1;
         if (days > MAX_LEAVE_DAYS) {
             throw new IllegalArgumentException("A teacher leave request cannot exceed " + MAX_LEAVE_DAYS + " days");
         }
         if (input.getDurationType() == TeacherLeaveDuration.PARTIAL_DAY) {
-            if (!input.getStartDate().equals(input.getEndDate())) {
-                throw new IllegalArgumentException("Partial-day leave must start and end on the same date");
-            }
-            schoolDayPolicyService.validateWithinSchoolDay(
-                    input.getStartTime(),
-                    input.getEndTime(),
-                    "Partial-day teacher leave"
-            );
+            throw new IllegalArgumentException("Partial-day leave is not available because leave requests must span at least two dates");
         }
     }
 
@@ -441,6 +437,9 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
                 request.getTeacher().getStaffId(),
                 request.getTeacher().getName(),
                 request.getTeacher().getDesignation(),
+                request.getTeacher().getStaffCategory(),
+                Boolean.TRUE.equals(request.getTeacher().getTeachingCapable()),
+                Boolean.TRUE.equals(request.getTeacher().getTeachingCapable()),
                 request.getLeaveType(),
                 request.getDurationType(),
                 request.getStartDate(),
