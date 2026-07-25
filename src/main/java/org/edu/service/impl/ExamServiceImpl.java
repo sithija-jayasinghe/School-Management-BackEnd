@@ -2,9 +2,11 @@ package org.edu.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamDTO;
+import org.edu.dto.request.BulkExamCreateRequest;
 import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
 import org.edu.entity.Exam;
@@ -45,6 +47,55 @@ public class ExamServiceImpl implements ExamService {
         exam.setActive(true);
 
         return examMapper.toDTO(examRepository.save(exam));
+    }
+
+    @Override
+    public List<ExamDTO> bulkCreateExams(BulkExamCreateRequest request) {
+        validateMarks(request.getMaxMarks(), request.getPassMarks());
+
+        AcademicYear academicYear = academicYearRepository.findByIdAndActiveTrue(request.getAcademicYearId())
+                .orElseThrow(() -> new ResourceNotFoundException("Academic year not found with id: " + request.getAcademicYearId()));
+        AcademicTerm academicTerm = academicTermRepository.findByIdAndActiveTrue(request.getAcademicTermId())
+                .orElseThrow(() -> new ResourceNotFoundException("Academic term not found with id: " + request.getAcademicTermId()));
+        org.edu.entity.Class studentClass = classRepository.findByIdAndActiveTrue(request.getClassId())
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + request.getClassId()));
+
+        validateTermBelongsToYear(academicTerm, academicYear);
+        if (request.getExamDate().isBefore(academicTerm.getStartDate()) || request.getExamDate().isAfter(academicTerm.getEndDate())) {
+            throw new IllegalArgumentException("Exam date must be within the academic term date range");
+        }
+
+        List<Exam> created = new ArrayList<>();
+        for (Long subjectId : request.getSubjectIds()) {
+            Subject subject = subjectRepository.findById(subjectId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + subjectId));
+
+            String name = academicTerm.getName() + " " + studentClass.getName() + " " + subject.getName();
+            boolean exists = examRepository.existsByAcademicTermIdAndStudentClassIdAndSubjectIdAndNameIgnoreCase(
+                    academicTerm.getId(), studentClass.getId(), subject.getId(), name);
+            if (exists) {
+                continue;
+            }
+
+            Exam exam = new Exam();
+            exam.setAcademicYear(academicYear);
+            exam.setAcademicTerm(academicTerm);
+            exam.setStudentClass(studentClass);
+            exam.setSubject(subject);
+            exam.setName(name);
+            exam.setType(request.getType());
+            exam.setExamDate(request.getExamDate());
+            exam.setMaxMarks(request.getMaxMarks());
+            exam.setPassMarks(request.getPassMarks());
+            exam.setDescription(request.getDescription());
+            exam.setActive(true);
+            created.add(exam);
+        }
+
+        return examRepository.saveAll(created)
+                .stream()
+                .map(examMapper::toDTO)
+                .toList();
     }
 
     @Override

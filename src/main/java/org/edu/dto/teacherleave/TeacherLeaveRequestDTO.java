@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.edu.util.StaffCategory;
 import org.edu.util.TeacherLeaveDuration;
 import org.edu.util.TeacherLeaveStatus;
 import org.edu.util.TeacherLeaveType;
@@ -18,6 +19,9 @@ public class TeacherLeaveRequestDTO {
     private String teacherStaffCode;
     private String teacherName;
     private String teacherDesignation;
+    private StaffCategory staffCategory;
+    private boolean teachingCapable;
+    private boolean requiresCoverage;
     private TeacherLeaveType leaveType;
     private TeacherLeaveDuration durationType;
     private LocalDate startDate;

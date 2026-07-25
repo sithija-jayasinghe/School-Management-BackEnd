@@ -289,15 +289,15 @@ class LeaveRequestServiceImplTest {
         when(staffRepository.findByUser_IdAndActiveTrue(200L)).thenReturn(Optional.of(teacher));
         when(leaveRequestRepository.findById(1L)).thenReturn(Optional.of(leaveRequest));
         when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 50L)).thenReturn(true);
-        when(attendanceService.createAttendance(org.mockito.Mockito.any(AttendanceDTO.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(attendanceService.createAttendance(org.mockito.Mockito.isNull(), org.mockito.Mockito.any(AttendanceDTO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(1));
 
         LeaveRequestDTO applied = leaveRequestService.applyApprovedLeaveToAttendance(200L, 1L);
 
         assertEquals(true, applied.isAttendanceApplied());
         assertNotNull(applied.getAttendanceAppliedAt());
         verify(attendanceService, org.mockito.Mockito.times(3))
-                .createAttendance(org.mockito.Mockito.argThat(attendance ->
+                .createAttendance(org.mockito.Mockito.isNull(), org.mockito.Mockito.argThat(attendance ->
                         attendance.getStudentId().equals(20L)
                                 && attendance.getStatus() == org.edu.util.AttendanceStatus.EXCUSED
                                 && attendance.getMarkedByStaffId().equals(50L)

@@ -110,7 +110,7 @@ class AcademicReportServiceImplTest {
                 .thenReturn(List.of(enrollment(student, term)));
         when(academicReportRepository.existsByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(false);
         when(studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(marks);
-        when(attendanceService.getStudentAttendanceSummary(20L, term.getStartDate(), term.getEndDate()))
+        when(attendanceService.getStudentAttendanceSummary(null, 20L, term.getStartDate(), term.getEndDate()))
                 .thenReturn(new AttendanceSummaryDTO(
                         20L,
                         "Student User",
@@ -175,7 +175,7 @@ class AcademicReportServiceImplTest {
         when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
         when(academicTermRepository.findByIdAndActiveTrue(40L)).thenReturn(Optional.of(term));
         when(studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(marks);
-        when(attendanceService.getStudentAttendanceSummary(20L, term.getStartDate(), term.getEndDate()))
+        when(attendanceService.getStudentAttendanceSummary(null, 20L, term.getStartDate(), term.getEndDate()))
                 .thenReturn(new AttendanceSummaryDTO(20L, "Student User", term.getStartDate(), term.getEndDate(), 12, 10, 1, 1, 0, 91.67));
         when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(20L, 5L, EnrollmentStatus.ACTIVE))
                 .thenReturn(List.of(enrollment(student, term)));
@@ -204,7 +204,7 @@ class AcademicReportServiceImplTest {
         when(studentRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(student));
         when(academicTermRepository.findByIdAndActiveTrue(40L)).thenReturn(Optional.of(term));
         when(studentMarkRepository.findReportMarksByStudentIdAndAcademicTermId(20L, 40L)).thenReturn(marks);
-        when(attendanceService.getStudentAttendanceSummary(20L, term.getStartDate(), term.getEndDate()))
+        when(attendanceService.getStudentAttendanceSummary(null, 20L, term.getStartDate(), term.getEndDate()))
                 .thenReturn(new AttendanceSummaryDTO(20L, "Student User", term.getStartDate(), term.getEndDate(), 0, 0, 0, 0, 0, 0.0));
         when(studentEnrollmentRepository.findByStudentIdAndAcademicYearIdAndStatusOrderByStartDateDesc(20L, 5L, EnrollmentStatus.ACTIVE))
                 .thenReturn(List.of(enrollment(student, term)));

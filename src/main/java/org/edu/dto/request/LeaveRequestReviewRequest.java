@@ -1,6 +1,5 @@
 package org.edu.dto.request;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -14,7 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class LeaveRequestReviewRequest {
 
-    @NotNull(message = "Reviewed by staff ID is required")
     @Positive(message = "Reviewed by staff ID must be positive")
     private Long reviewedByStaffId;
 

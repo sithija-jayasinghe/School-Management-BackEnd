@@ -1,7 +1,9 @@
 package org.edu.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.edu.dto.ClassTeacherAssignmentRequest;
 import org.edu.dto.TeachingAssignmentDTO;
 import org.edu.entity.AcademicYear;
 import org.edu.entity.Staff;
@@ -35,6 +37,38 @@ public class TeachingAssignmentServiceImpl implements TeachingAssignmentService 
         TeachingAssignment assignment = new TeachingAssignment();
         applyAssignmentFields(assignment, dto, null);
         return toDTO(teachingAssignmentRepository.save(assignment));
+    }
+
+    @Override
+    public List<TeachingAssignmentDTO> assignClassTeacher(ClassTeacherAssignmentRequest request) {
+        Staff staff = staffRepository.findByIdAndActiveTrue(request.getStaffId())
+                .orElseThrow(() -> new ResourceNotFoundException("Active staff not found with id: " + request.getStaffId()));
+        org.edu.entity.Class studentClass = classRepository.findByIdAndActiveTrue(request.getClassId())
+                .orElseThrow(() -> new ResourceNotFoundException("Active class not found with id: " + request.getClassId()));
+        AcademicYear academicYear = academicYearRepository.findByIdAndActiveTrue(request.getAcademicYearId())
+                .orElseThrow(() -> new ResourceNotFoundException("Active academic year not found with id: " + request.getAcademicYearId()));
+
+        List<TeachingAssignmentDTO> created = new ArrayList<>();
+        for (Long subjectId : request.getSubjectIds()) {
+            Subject subject = subjectRepository.findById(subjectId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + subjectId));
+
+            boolean alreadyAssigned = teachingAssignmentRepository
+                    .existsByStaffIdAndStudentClassIdAndSubjectIdAndAcademicYearId(
+                            staff.getId(), studentClass.getId(), subject.getId(), academicYear.getId());
+            if (alreadyAssigned) {
+                continue;
+            }
+
+            TeachingAssignment assignment = new TeachingAssignment();
+            assignment.setStaff(staff);
+            assignment.setStudentClass(studentClass);
+            assignment.setSubject(subject);
+            assignment.setAcademicYear(academicYear);
+            assignment.setActive(true);
+            created.add(toDTO(teachingAssignmentRepository.save(assignment)));
+        }
+        return created;
     }
 
     @Override

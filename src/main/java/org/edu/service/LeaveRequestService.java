@@ -13,17 +13,17 @@ public interface LeaveRequestService {
 
     LeaveRequestDTO updateLeaveRequest(Long id, LeaveRequestDTO dto);
 
-    LeaveRequestDTO approveLeaveRequest(Long id, LeaveRequestReviewRequest request);
+    LeaveRequestDTO approveLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request);
 
-    LeaveRequestDTO rejectLeaveRequest(Long id, LeaveRequestReviewRequest request);
+    LeaveRequestDTO rejectLeaveRequest(Long authenticatedUserId, Long id, LeaveRequestReviewRequest request);
 
     LeaveRequestDTO cancelLeaveRequest(Long id, String reviewerRemarks);
 
     LeaveRequestDTO getLeaveRequestById(Long id);
 
-    Page<LeaveRequestDTO> getAllLeaveRequests(Pageable pageable);
+    Page<LeaveRequestDTO> getAllLeaveRequests(Long authenticatedUserId, Pageable pageable);
 
-    Page<LeaveRequestDTO> getLeaveRequestsByStatus(LeaveRequestStatus status, Pageable pageable);
+    Page<LeaveRequestDTO> getLeaveRequestsByStatus(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable);
 
     Page<LeaveRequestDTO> getLeaveRequestsByStudent(Long studentId, Pageable pageable);
 

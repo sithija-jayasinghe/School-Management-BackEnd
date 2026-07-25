@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -241,7 +242,7 @@ class TeacherPortalServiceImplTest {
 
         when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
         when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(true);
-        when(attendanceService.getClassAttendanceByDate(30L, LocalDate.of(2026, 1, 5), Pageable.unpaged()))
+        when(attendanceService.getClassAttendanceByDate(null, 30L, LocalDate.of(2026, 1, 5), Pageable.unpaged()))
                 .thenReturn(new PageImpl<>(List.of(attendance)));
 
         var page = teacherPortalService.getClassAttendanceByDate(
@@ -277,6 +278,7 @@ class TeacherPortalServiceImplTest {
         when(classRepository.existsByIdAndClassTeacherIdAndActiveTrue(30L, 10L)).thenReturn(false);
         when(timetableRepository.existsByStaffIdAndStudentClassId(10L, 30L)).thenReturn(true);
         when(attendanceService.getStudentAttendanceSummary(
+                null,
                 20L,
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 1, 31)
@@ -513,12 +515,12 @@ class TeacherPortalServiceImplTest {
 
         when(staffRepository.findByUser_IdAndActiveTrue(100L)).thenReturn(Optional.of(staff));
         when(timetableRepository.existsByIdAndStaffIdAndStudentClassId(60L, 10L, 30L)).thenReturn(true);
-        when(attendanceService.markClassAttendance(any())).thenReturn(List.of(savedAttendance));
+        when(attendanceService.markClassAttendance(any(), any())).thenReturn(List.of(savedAttendance));
 
         List<AttendanceDTO> saved = teacherPortalService.markClassAttendance(100L, 30L, request);
 
         assertEquals(1, saved.size());
-        verify(attendanceService).markClassAttendance(argThat(bulkRequest ->
+        verify(attendanceService).markClassAttendance(isNull(), argThat(bulkRequest ->
                 bulkRequest.getClassId().equals(30L)
                         && bulkRequest.getMarkedByStaffId().equals(10L)
                         && bulkRequest.getTimetableId().equals(60L)

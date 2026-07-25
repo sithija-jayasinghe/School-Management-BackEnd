@@ -55,6 +55,7 @@ public class HouseController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active houses")
     public List<HouseDTO> getActiveHouses() {
         return houseService.getActiveHouses();

@@ -52,8 +52,9 @@ public class StaffController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Deactivate a staff record")
     public void deleteStaff(@PathVariable Long id) {
+        String staffName = staffService.getStaffById(id).getName();
         staffService.deleteStaff(id);
-        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.STAFF, id, "Staff #" + id, "Deactivated staff record");
+        auditLogService.log(AuditAction.DEACTIVATE, AuditEntityType.STAFF, id, staffName, "Deactivated staff record");
     }
 
     @GetMapping
@@ -85,12 +86,14 @@ public class StaffController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active staff members")
     public List<StaffDTO> getActiveStaff() {
         return staffService.getAllActiveStaff();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get a staff record by id")
     public StaffDTO getStaffById(@PathVariable Long id) {
         return staffService.getStaffById(id);

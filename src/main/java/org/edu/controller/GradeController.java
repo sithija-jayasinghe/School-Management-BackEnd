@@ -61,6 +61,7 @@ public class GradeController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "List active grades")
     public List<GradeDTO> getActiveGrades() {
         return gradeService.getAllActiveGrades();
