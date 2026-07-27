@@ -48,16 +48,32 @@ public class TeachingAssignmentServiceImpl implements TeachingAssignmentService 
         AcademicYear academicYear = academicYearRepository.findByIdAndActiveTrue(request.getAcademicYearId())
                 .orElseThrow(() -> new ResourceNotFoundException("Active academic year not found with id: " + request.getAcademicYearId()));
 
+        if (studentClass.getClassTeacher() != null
+                && !studentClass.getClassTeacher().getId().equals(staff.getId())) {
+            throw new IllegalStateException("This class already has a class teacher assigned");
+        }
+
+        if (studentClass.getClassTeacher() == null) {
+            studentClass.setClassTeacher(staff);
+            classRepository.save(studentClass);
+        }
+
         List<TeachingAssignmentDTO> created = new ArrayList<>();
         for (Long subjectId : request.getSubjectIds()) {
             Subject subject = subjectRepository.findById(subjectId)
                     .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + subjectId));
 
+            boolean subjectAlreadyAssigned = teachingAssignmentRepository
+                    .existsByStudentClassIdAndSubjectIdAndAcademicYearIdAndActiveTrue(
+                            studentClass.getId(), subject.getId(), academicYear.getId());
             boolean alreadyAssigned = teachingAssignmentRepository
                     .existsByStaffIdAndStudentClassIdAndSubjectIdAndAcademicYearId(
                             staff.getId(), studentClass.getId(), subject.getId(), academicYear.getId());
             if (alreadyAssigned) {
-                continue;
+                throw new IllegalStateException("Teacher is already assigned to this class subject for the academic year");
+            }
+            if (subjectAlreadyAssigned) {
+                throw new IllegalStateException("This subject already has a teacher assigned for this class and academic year");
             }
 
             TeachingAssignment assignment = new TeachingAssignment();
@@ -128,13 +144,22 @@ public class TeachingAssignmentServiceImpl implements TeachingAssignmentService 
         AcademicYear academicYear = academicYearRepository.findByIdAndActiveTrue(dto.getAcademicYearId())
                 .orElseThrow(() -> new ResourceNotFoundException("Active academic year not found with id: " + dto.getAcademicYearId()));
 
-        boolean duplicate = currentId == null
+        boolean sameTeacherDuplicate = currentId == null
                 ? teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndSubjectIdAndAcademicYearId(
                         staff.getId(), studentClass.getId(), subject.getId(), academicYear.getId())
                 : teachingAssignmentRepository.existsByStaffIdAndStudentClassIdAndSubjectIdAndAcademicYearIdAndIdNot(
                         staff.getId(), studentClass.getId(), subject.getId(), academicYear.getId(), currentId);
-        if (duplicate) {
+        if (sameTeacherDuplicate) {
             throw new IllegalStateException("Teacher is already assigned to this class subject for the academic year");
+        }
+
+        boolean subjectDuplicate = currentId == null
+                ? teachingAssignmentRepository.existsByStudentClassIdAndSubjectIdAndAcademicYearIdAndActiveTrue(
+                        studentClass.getId(), subject.getId(), academicYear.getId())
+                : teachingAssignmentRepository.existsByStudentClassIdAndSubjectIdAndAcademicYearIdAndActiveTrueAndIdNot(
+                        studentClass.getId(), subject.getId(), academicYear.getId(), currentId);
+        if (dto.isActive() && subjectDuplicate) {
+            throw new IllegalStateException("This subject already has a teacher assigned for this class and academic year");
         }
 
         assignment.setStaff(staff);

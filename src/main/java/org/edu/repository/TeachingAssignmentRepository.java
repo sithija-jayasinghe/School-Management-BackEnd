@@ -40,6 +40,19 @@ public interface TeachingAssignmentRepository extends JpaRepository<TeachingAssi
             Long id
     );
 
+    boolean existsByStudentClassIdAndSubjectIdAndAcademicYearIdAndActiveTrue(
+            Long classId,
+            Long subjectId,
+            Long academicYearId
+    );
+
+    boolean existsByStudentClassIdAndSubjectIdAndAcademicYearIdAndActiveTrueAndIdNot(
+            Long classId,
+            Long subjectId,
+            Long academicYearId,
+            Long id
+    );
+
     @Query("""
             select assignment
             from TeachingAssignment assignment

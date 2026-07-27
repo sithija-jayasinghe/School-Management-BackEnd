@@ -112,7 +112,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deactivateUser(Long userId) {
+    public void deactivateUser(Long userId, Long authenticatedUserId) {
+        if (userId.equals(authenticatedUserId)) {
+            throw new IllegalStateException("You cannot deactivate your own account");
+        }
+
         User user = getUserEntityById(userId);
 
         if (!user.isActive()) {

@@ -26,7 +26,7 @@ public interface UserService {
 
     void activateUser(Long userId);
 
-    void deactivateUser(Long userId);
+    void deactivateUser(Long userId, Long authenticatedUserId);
 
     UserResponse getCurrentUser();
 }
