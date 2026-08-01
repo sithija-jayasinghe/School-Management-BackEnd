@@ -69,25 +69,47 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public DocumentDTO updateDocument(Long authenticatedUserId, Long documentId, DocumentUpdateRequest request) {
+    public DocumentDTO updateDocument(Long authenticatedUserId, Long documentId, DocumentUpdateRequest request, MultipartFile file) {
         User user = getUser(authenticatedUserId);
         Document document = getActiveDocument(documentId);
         validateDocumentAccess(user, document.getStudent());
+        StoredDocumentFile storedFile = null;
+        String previousStoredFileName = document.getStoredFileName();
 
-        if (request.getDocumentType() != null) {
-            document.setDocumentType(request.getDocumentType());
-        }
-        if (request.getTitle() != null) {
-            document.setTitle(request.getTitle());
-        }
-        if (request.getDescription() != null) {
-            document.setDescription(request.getDescription());
-        }
-        if (request.getVisibleToParent() != null) {
-            document.setVisibleToParent(request.getVisibleToParent());
-        }
+        try {
+            if (request.getDocumentType() != null) {
+                document.setDocumentType(request.getDocumentType());
+            }
+            if (request.getTitle() != null) {
+                document.setTitle(request.getTitle());
+            }
+            if (request.getDescription() != null) {
+                document.setDescription(request.getDescription());
+            }
+            if (request.getVisibleToParent() != null) {
+                document.setVisibleToParent(request.getVisibleToParent());
+            }
+            if (file != null && !file.isEmpty()) {
+                storedFile = documentStorageService.store(file);
+                document.setOriginalFileName(storedFile.getOriginalFileName());
+                document.setStoredFileName(storedFile.getStoredFileName());
+                document.setContentType(storedFile.getContentType());
+                document.setFileSize(storedFile.getFileSize());
+            }
 
-        return documentMapper.toDTO(documentRepository.save(document));
+            Document savedDocument = documentRepository.save(document);
+
+            if (storedFile != null && previousStoredFileName != null && !previousStoredFileName.equals(savedDocument.getStoredFileName())) {
+                documentStorageService.delete(previousStoredFileName);
+            }
+
+            return documentMapper.toDTO(savedDocument);
+        } catch (RuntimeException ex) {
+            if (storedFile != null) {
+                documentStorageService.delete(storedFile.getStoredFileName());
+            }
+            throw ex;
+        }
     }
 
     @Override

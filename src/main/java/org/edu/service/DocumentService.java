@@ -12,7 +12,7 @@ public interface DocumentService {
 
     DocumentDTO uploadDocument(Long authenticatedUserId, DocumentCreateRequest request, MultipartFile file);
 
-    DocumentDTO updateDocument(Long authenticatedUserId, Long documentId, DocumentUpdateRequest request);
+    DocumentDTO updateDocument(Long authenticatedUserId, Long documentId, DocumentUpdateRequest request, MultipartFile file);
 
     void deleteDocument(Long authenticatedUserId, Long documentId);
 

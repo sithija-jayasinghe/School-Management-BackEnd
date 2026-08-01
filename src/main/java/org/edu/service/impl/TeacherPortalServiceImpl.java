@@ -148,9 +148,11 @@ public class TeacherPortalServiceImpl implements TeacherPortalService {
     @Override
     public List<TeacherPortalExamDTO> getExams(Long authenticatedUserId) {
         Staff staff = getActiveTeacherByUserId(authenticatedUserId);
+        List<Exam> classTeacherExams = examRepository.findTeacherPortalExamsByClassTeacher(staff.getId());
         List<Exam> assignmentExams = examRepository.findTeacherPortalExamsByTeachingAssignment(staff.getId());
         List<Exam> timetableExams = examRepository.findTeacherPortalExamsByStaffId(staff.getId());
         Map<Long, Exam> exams = new LinkedHashMap<>();
+        classTeacherExams.forEach(exam -> exams.put(exam.getId(), exam));
         assignmentExams.forEach(exam -> exams.put(exam.getId(), exam));
         timetableExams.forEach(exam -> exams.putIfAbsent(exam.getId(), exam));
 

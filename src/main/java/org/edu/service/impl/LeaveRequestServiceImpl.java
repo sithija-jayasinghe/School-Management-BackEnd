@@ -216,6 +216,22 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
+    public void deleteParentLeaveRequest(Long authenticatedUserId, Long leaveRequestId) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        LeaveRequest leaveRequest = getLeaveRequest(leaveRequestId);
+
+        if (!leaveRequest.getParent().getId().equals(parent.getId())) {
+            throw new ResourceNotFoundException("Leave request not found in current parent portal");
+        }
+
+        if (leaveRequest.getStatus() != LeaveRequestStatus.PENDING) {
+            throw new IllegalStateException("Only pending leave requests can be deleted");
+        }
+
+        leaveRequestRepository.delete(leaveRequest);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<LeaveRequestDTO> getTeacherLeaveRequests(Long authenticatedUserId, LeaveRequestStatus status, Pageable pageable) {
         Staff staff = getActiveStaffByUserId(authenticatedUserId);

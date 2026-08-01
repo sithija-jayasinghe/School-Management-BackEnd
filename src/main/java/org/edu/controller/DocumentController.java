@@ -56,14 +56,15 @@ public class DocumentController {
         return response;
     }
 
-    @PatchMapping("/{documentId}")
+    @PatchMapping(value = "/{documentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update document metadata")
     public DocumentDTO updateDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId,
-            @Valid @RequestBody DocumentUpdateRequest request
+            @Valid @RequestPart("metadata") DocumentUpdateRequest request,
+            @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        DocumentDTO response = documentService.updateDocument(principal.getUser().getId(), documentId, request);
+        DocumentDTO response = documentService.updateDocument(principal.getUser().getId(), documentId, request, file);
         auditLogService.log(AuditAction.UPDATE, AuditEntityType.DOCUMENT, response.getId(), response.getTitle(), "Updated document metadata");
         return response;
     }
