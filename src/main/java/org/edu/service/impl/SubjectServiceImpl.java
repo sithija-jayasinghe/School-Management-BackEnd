@@ -6,6 +6,8 @@ import org.edu.dto.SubjectDTO;
 import org.edu.entity.*;
 import org.edu.entity.Class;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.FilterSpecifications;
+import org.edu.filter.SubjectFilterDefinitions;
 import org.edu.mapper.ClassMapper;
 import org.edu.mapper.SubjectMapper;
 import org.edu.repository.ClassRepository;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -51,9 +54,8 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SubjectDTO> filterSubjects(String keyword, Long gradeId, Boolean hasClassCoverage, Pageable pageable) {
-        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
-        return subjectRepository.filterSubjects(normalizedKeyword, gradeId, hasClassCoverage, pageable)
+    public Page<SubjectDTO> filterSubjects(Map<String, String> filters, Pageable pageable) {
+        return subjectRepository.findAll(FilterSpecifications.build(filters, SubjectFilterDefinitions.definitions()), pageable)
                 .map(subjectMapper::toDTO);
     }
 

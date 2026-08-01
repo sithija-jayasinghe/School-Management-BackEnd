@@ -11,6 +11,8 @@ import org.edu.entity.Class;
 import org.edu.entity.User;
 import org.edu.exception.InvalidAgeException;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.FilterSpecifications;
+import org.edu.filter.StudentFilterDefinitions;
 import org.edu.mapper.StudentMapper;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.AcademicYearRepository;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
@@ -134,12 +137,11 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<StudentDTO> filterStudents(String keyword, Long classId, Long houseId, Boolean active, Pageable pageable) {
-        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
-        String houseName = houseId == null
-                ? null
-                : houseRepository.findByIdAndActiveTrue(houseId).map(House::getName).orElse(null);
-        return studentRepository.filterStudents(normalizedKeyword, classId, houseId, houseName, active, pageable)
+    public Page<StudentDTO> filterStudents(Map<String, String> filters, Pageable pageable) {
+        return studentRepository.findAll(
+                        FilterSpecifications.build(filters, StudentFilterDefinitions.definitions(houseRepository)),
+                        pageable
+                )
                 .map(this::toDTOWithParentIds);
     }
 

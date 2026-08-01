@@ -15,6 +15,7 @@ import org.edu.dto.StudentDTO;
 import org.edu.service.StudentService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/classes")
@@ -48,8 +49,8 @@ public class ClassController {
 
     @GetMapping
     @Operation(summary = "List classes")
-    public Page<ClassDTO> getAllClasses(Pageable pageable) {
-        return classService.getAllClasses(pageable);
+    public Page<ClassDTO> getAllClasses(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return classService.filterClasses(filters, pageable);
     }
 
     @GetMapping("/search")

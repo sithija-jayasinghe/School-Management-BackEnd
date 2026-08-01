@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.edu.dto.ClassDTO;
 import org.edu.entity.Class;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.ClassFilterDefinitions;
+import org.edu.filter.FilterSpecifications;
 import org.edu.mapper.ClassMapper;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.AcademicYearRepository;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -107,6 +110,17 @@ public class ClassServiceImpl implements ClassService {
     public Page<ClassDTO> getAllClasses(Pageable pageable) {
 
         return classRepository.findByActiveTrue(pageable)
+                .map(classMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ClassDTO> filterClasses(Map<String, String> filters, Pageable pageable) {
+        if (filters.isEmpty()) {
+            return getAllClasses(pageable);
+        }
+
+        return classRepository.findAll(FilterSpecifications.build(filters, ClassFilterDefinitions.definitions()), pageable)
                 .map(classMapper::toDTO);
     }
 

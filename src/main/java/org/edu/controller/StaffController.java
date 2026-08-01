@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/staff")
@@ -72,17 +73,8 @@ public class StaffController {
 
     @GetMapping("/filter")
     @Operation(summary = "Filter staff by directory, role, category, employment, department, teaching capability, and status")
-    public Page<StaffDTO> filterStaff(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) StaffCategory category,
-            @RequestParam(required = false) EmploymentType employmentType,
-            @RequestParam(required = false) String department,
-            @RequestParam(required = false) Boolean teachingCapable,
-            @RequestParam(required = false) Role role,
-            @RequestParam(required = false) Boolean active,
-            Pageable pageable
-    ) {
-        return staffService.filterStaff(keyword, category, employmentType, department, teachingCapable, role, active, pageable);
+    public Page<StaffDTO> filterStaff(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return staffService.filterStaff(filters, pageable);
     }
 
     @GetMapping("/active")

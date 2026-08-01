@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface AcademicYearService {
 
@@ -22,7 +23,7 @@ public interface AcademicYearService {
 
     Page<AcademicYearDTO> getAllAcademicYears(Pageable pageable);
 
-    Page<AcademicYearDTO> filterAcademicYears(String keyword, String status, Boolean current, Pageable pageable);
+    Page<AcademicYearDTO> filterAcademicYears(Map<String, String> filters, Pageable pageable);
 
     AcademicCalendarSummaryDTO getAcademicCalendarSummary();
 

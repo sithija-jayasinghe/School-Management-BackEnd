@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.ExamDTO;
 import org.edu.dto.request.BulkExamCreateRequest;
@@ -13,10 +13,8 @@ import org.edu.service.AuditLogService;
 import org.edu.service.ExamService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
-import org.edu.util.ExamType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -97,19 +95,8 @@ public class ExamController {
 
     @GetMapping("/filter")
     @Operation(summary = "Filter exams by text, academic period, class, subject, type, status, and date range")
-    public Page<ExamDTO> filterExams(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long academicYearId,
-            @RequestParam(required = false) Long academicTermId,
-            @RequestParam(required = false) Long classId,
-            @RequestParam(required = false) Long subjectId,
-            @RequestParam(required = false) ExamType type,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            Pageable pageable
-    ) {
-        return examService.filterExams(keyword, academicYearId, academicTermId, classId, subjectId, type, active, from, to, pageable);
+    public Page<ExamDTO> filterExams(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return examService.filterExams(filters, pageable);
     }
 
     @GetMapping("/classes/{classId}")

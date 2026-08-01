@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -57,8 +58,8 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List system users", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
-        return ResponseEntity.ok(userService.getAllUsers(pageable));
+    public ResponseEntity<Page<UserResponse>> getAllUsers(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return ResponseEntity.ok(userService.filterUsers(filters, pageable));
     }
 
     @GetMapping("/search")
