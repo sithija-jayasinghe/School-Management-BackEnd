@@ -20,6 +20,7 @@ public final class StaffFilterDefinitions {
         definitions.put("category", FilterSpecifications.equalsEnum("staffCategory", StaffCategory.class));
         definitions.put("employmentType", FilterSpecifications.equalsEnum("employmentType", EmploymentType.class));
         definitions.put("department", FilterSpecifications.equalsIgnoreCase("department"));
+//        definitions.put("designation", FilterSpecifications.equalsIgnoreCase("designation"));
         definitions.put("teachingCapable", FilterSpecifications.equalsBoolean("teachingCapable"));
         definitions.put("role", FilterSpecifications.equalsEnum("user.role", Role.class));
         definitions.put("keyword", keywordFilter());
