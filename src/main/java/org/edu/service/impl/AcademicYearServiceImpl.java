@@ -8,6 +8,8 @@ import org.edu.entity.AcademicTerm;
 import org.edu.entity.AcademicYear;
 import org.edu.entity.Grade;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.AcademicYearFilterDefinitions;
+import org.edu.filter.FilterSpecifications;
 import org.edu.mapper.AcademicYearMapper;
 import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.AcademicYearRepository;
@@ -23,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -122,15 +126,23 @@ public class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AcademicYearDTO> filterAcademicYears(String keyword, String status, Boolean current, Pageable pageable) {
-        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+    public Page<AcademicYearDTO> filterAcademicYears(Map<String, String> filters, Pageable pageable) {
+        Map<String, String> normalizedFilters = new LinkedHashMap<>(filters);
+        String status = normalizedFilters.remove("status");
         Boolean active = switch (status == null ? "active" : status.trim().toLowerCase()) {
             case "all" -> null;
             case "inactive" -> false;
             default -> true;
         };
 
-        return academicYearRepository.filterAcademicYears(normalizedKeyword, active, current, pageable)
+        if (active != null) {
+            normalizedFilters.put("active", active.toString());
+        }
+
+        return academicYearRepository.findAll(
+                        FilterSpecifications.build(normalizedFilters, AcademicYearFilterDefinitions.definitions()),
+                        pageable
+                )
                 .map(academicYearMapper::toDTO);
     }
 

@@ -18,6 +18,7 @@ import org.edu.dto.parentportal.ParentPortalSubjectDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ParentPortalService {
 
@@ -53,9 +54,11 @@ public interface ParentPortalService {
 
     DocumentFileResponse downloadStudentReportCard(Long authenticatedUserId, Long studentId, Long reportId);
 
-    LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto);
+    LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto, MultipartFile leaveLetterFile);
 
     Page<LeaveRequestDTO> getLeaveRequests(Long authenticatedUserId, Pageable pageable);
 
     LeaveRequestDTO cancelLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String remarks);
+
+    void deleteLeaveRequest(Long authenticatedUserId, Long leaveRequestId);
 }

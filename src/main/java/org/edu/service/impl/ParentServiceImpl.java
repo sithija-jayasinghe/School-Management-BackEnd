@@ -6,6 +6,8 @@ import org.edu.entity.Parent;
 import org.edu.entity.User;
 import org.edu.exception.DuplicateEmailException;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.FilterSpecifications;
+import org.edu.filter.ParentFilterDefinitions;
 import org.edu.mapper.ParentMapper;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.UserRepository;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -80,7 +83,14 @@ public class ParentServiceImpl implements ParentService {
     @Override
     public Page<ParentDTO> getAllParents(Pageable pageable) {
         return parentRepository.findAll(pageable)
-                .map(parentMapper::toDTO);
+                .map(this::toDTOWithStudentIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ParentDTO> filterParents(Map<String, String> filters, Pageable pageable) {
+        return parentRepository.findAll(FilterSpecifications.build(filters, ParentFilterDefinitions.definitions()), pageable)
+                .map(this::toDTOWithStudentIds);
     }
 
     @Override
@@ -88,20 +98,20 @@ public class ParentServiceImpl implements ParentService {
         Parent parent = parentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Parent not found with id: " + id));
 
-        return parentMapper.toDTO(parent);
+        return toDTOWithStudentIds(parent);
     }
 
     @Override
     public Page<ParentDTO> searchParents(String keyword, Pageable pageable) {
         return parentRepository.searchActiveParents(keyword.trim(), pageable)
-                .map(parentMapper::toDTO);
+                .map(this::toDTOWithStudentIds);
     }
 
     @Override
     public List<ParentDTO> getAllActiveParents() {
         return parentRepository.findByActiveTrue()
                 .stream()
-                .map(parentMapper::toDTO)
+                .map(this::toDTOWithStudentIds)
                 .toList();
     }
 
@@ -109,7 +119,7 @@ public class ParentServiceImpl implements ParentService {
     public List<ParentDTO> getAllInactiveParents() {
         return parentRepository.findByActiveFalse()
                 .stream()
-                .map(parentMapper::toDTO)
+                .map(this::toDTOWithStudentIds)
                 .toList();
     }
 
@@ -118,7 +128,15 @@ public class ParentServiceImpl implements ParentService {
         Parent parent = parentRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Parent not found with user id: " + userId));
 
-        return parentMapper.toDTO(parent);
+        return toDTOWithStudentIds(parent);
+    }
+
+    private ParentDTO toDTOWithStudentIds(Parent parent) {
+        ParentDTO dto = parentMapper.toDTO(parent);
+        dto.setStudentIds(parentStudentRepository.findByParentId(parent.getId()).stream()
+                .map(link -> link.getStudent().getId())
+                .toList());
+        return dto;
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.edu.dto.request.UserUpdateRequest;
 import org.edu.dto.response.UserResponse;
 import org.edu.service.AuditLogService;
 import org.edu.service.UserService;
+import org.edu.security.UserPrincipal;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -55,8 +58,8 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List system users", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
-        return ResponseEntity.ok(userService.getAllUsers(pageable));
+    public ResponseEntity<Page<UserResponse>> getAllUsers(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return ResponseEntity.ok(userService.filterUsers(filters, pageable));
     }
 
     @GetMapping("/search")
@@ -121,9 +124,9 @@ public class UserController {
     @PostMapping("/{userId}/deactivate")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Deactivate a user account", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Void> deactivateUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deactivateUser(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long userId) {
         String userName = userService.getUserById(userId).getName();
-        userService.deactivateUser(userId);
+        userService.deactivateUser(userId, principal.getUser().getId());
         auditLogService.log(
             AuditAction.DEACTIVATE,
             AuditEntityType.USER,

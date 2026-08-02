@@ -23,6 +23,9 @@ public class TeachingAssignmentDTO {
     private Long classId;
     private String className;
 
+    private Long gradeId;
+    private String gradeName;
+
     @NotNull(message = "Subject is required")
     private Long subjectId;
     private String subjectCode;

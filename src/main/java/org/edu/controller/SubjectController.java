@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/subjects")
 @RequiredArgsConstructor
@@ -31,17 +33,8 @@ public class SubjectController {
         @GetMapping
         @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
         @Operation(summary = "List subjects")
-        public Page<SubjectDTO> getAllSubjects(
-                @RequestParam(required = false) String keyword,
-                @RequestParam(required = false) Long gradeId,
-                @RequestParam(required = false) Boolean hasClassCoverage,
-                Pageable pageable
-        ) {
-            if ((keyword != null && !keyword.isBlank()) || gradeId != null || hasClassCoverage != null) {
-                return subjectService.filterSubjects(keyword, gradeId, hasClassCoverage, pageable);
-            }
-
-            return subjectService.getAllSubjects(pageable);
+        public Page<SubjectDTO> getAllSubjects(@RequestParam Map<String, String> filters, Pageable pageable) {
+            return subjectService.filterSubjects(filters, pageable);
         }
 
         @GetMapping("/{id}")

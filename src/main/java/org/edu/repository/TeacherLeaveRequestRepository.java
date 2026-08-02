@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import org.edu.entity.TeacherLeaveRequest;
 import org.edu.util.TeacherLeaveStatus;
+import org.edu.util.TeacherLeaveType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,19 @@ public interface TeacherLeaveRequestRepository extends JpaRepository<TeacherLeav
     Page<TeacherLeaveRequest> findByTeacherIdAndStatusOrderByCreatedAtDesc(
             Long teacherId,
             TeacherLeaveStatus status,
+            Pageable pageable
+    );
+
+    Page<TeacherLeaveRequest> findByTeacherIdAndLeaveTypeOrderByCreatedAtDesc(
+            Long teacherId,
+            TeacherLeaveType leaveType,
+            Pageable pageable
+    );
+
+    Page<TeacherLeaveRequest> findByTeacherIdAndStatusAndLeaveTypeOrderByCreatedAtDesc(
+            Long teacherId,
+            TeacherLeaveStatus status,
+            TeacherLeaveType leaveType,
             Pageable pageable
     );
 

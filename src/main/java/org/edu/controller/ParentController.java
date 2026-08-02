@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/parents")
@@ -40,8 +41,8 @@ public class ParentController {
 
     @GetMapping
     @Operation(summary = "List parents")
-    public Page<ParentDTO> getAllParents(Pageable pageable) {
-        return parentService.getAllParents(pageable);
+    public Page<ParentDTO> getAllParents(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return parentService.filterParents(filters, pageable);
     }
 
     @GetMapping("/{parentId}")

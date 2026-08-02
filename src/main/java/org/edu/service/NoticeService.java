@@ -1,6 +1,7 @@
 package org.edu.service;
 
 import java.util.List;
+import java.util.Map;
 import org.edu.dto.NoticeDTO;
 import org.edu.dto.parentportal.ParentPortalNoticeDTO;
 import org.edu.util.NoticeAudience;
@@ -22,6 +23,8 @@ public interface NoticeService {
     NoticeDTO getNoticeById(Long id);
 
     Page<NoticeDTO> getAllNotices(Pageable pageable);
+
+    Page<NoticeDTO> filterNotices(Map<String, String> filters, Pageable pageable);
 
     Page<NoticeDTO> searchNotices(String title, Pageable pageable);
 

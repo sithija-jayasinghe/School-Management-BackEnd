@@ -31,6 +31,11 @@ public class Parent {
     @Column(nullable = false, length = 15)
     private String phoneNumber;
 
+    // DEMO-FEATURE: parent-nic-class-status-filters START
+    @Column(length = 20, unique = true)
+    private String nic;
+    // DEMO-FEATURE: parent-nic-class-status-filters END
+
     @Column(nullable = false, length = 255)
     private String address;
 

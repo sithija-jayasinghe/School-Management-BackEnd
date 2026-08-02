@@ -7,6 +7,8 @@ import org.edu.dto.response.UserResponse;
 import org.edu.entity.User;
 import org.edu.exception.DuplicateEmailException;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.FilterSpecifications;
+import org.edu.filter.UserFilterDefinitions;
 import org.edu.repository.UserRepository;
 import org.edu.security.UserPrincipal;
 import org.edu.service.UserService;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -49,6 +52,13 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Page<UserResponse> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable)
+            .map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserResponse> filterUsers(Map<String, String> filters, Pageable pageable) {
+        return userRepository.findAll(FilterSpecifications.build(filters, UserFilterDefinitions.definitions()), pageable)
             .map(this::toResponse);
     }
 
@@ -112,7 +122,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deactivateUser(Long userId) {
+    public void deactivateUser(Long userId, Long authenticatedUserId) {
+        if (userId.equals(authenticatedUserId)) {
+            throw new IllegalStateException("You cannot deactivate your own account");
+        }
+
         User user = getUserEntityById(userId);
 
         if (!user.isActive()) {

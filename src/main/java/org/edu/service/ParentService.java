@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ParentService {
 
@@ -12,6 +13,7 @@ public interface ParentService {
     ParentDTO updateParent(Long id, ParentDTO parentDTO);
     void deleteParent(Long id); // Hard delete
     Page<ParentDTO> getAllParents(Pageable pageable);
+    Page<ParentDTO> filterParents(Map<String, String> filters, Pageable pageable);
     ParentDTO getParentById(Long id);
     Page<ParentDTO> searchParents(String keyword, Pageable pageable);
     List<ParentDTO> getAllActiveParents();

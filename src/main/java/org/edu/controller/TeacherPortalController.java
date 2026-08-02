@@ -35,6 +35,7 @@ import org.edu.service.TeacherPortalService;
 import org.edu.service.TeacherLeaveService;
 import org.edu.service.SchoolDayPolicyService;
 import org.edu.util.TeacherLeaveStatus;
+import org.edu.util.TeacherLeaveType;
 import org.edu.util.LeaveRequestStatus;
 import org.edu.dto.request.AcademicReportUpdateRequest;
 import org.springframework.core.io.Resource;
@@ -47,6 +48,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -364,9 +366,10 @@ public class TeacherPortalController {
     public Page<TeacherLeaveRequestDTO> getOwnLeaveRequests(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) TeacherLeaveStatus status,
+            @RequestParam(required = false) TeacherLeaveType leaveType,
             Pageable pageable
     ) {
-        return teacherLeaveService.getOwnRequests(principal.getUser().getId(), status, pageable);
+        return teacherLeaveService.getOwnRequests(principal.getUser().getId(), status, leaveType, pageable);
     }
 
     @GetMapping("/my-leave-requests/{requestId}")

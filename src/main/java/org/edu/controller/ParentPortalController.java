@@ -35,10 +35,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/parent-portal")
@@ -189,13 +191,14 @@ public class ParentPortalController {
                 .body(fileResponse.getResource());
     }
 
-    @PostMapping("/leave-requests")
+    @PostMapping(value = "/leave-requests", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Create a leave request from the parent portal")
     public LeaveRequestDTO createLeaveRequest(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody ParentPortalLeaveRequestCreateDTO dto
+            @Valid @RequestPart("metadata") ParentPortalLeaveRequestCreateDTO dto,
+            @RequestPart("file") MultipartFile leaveLetterFile
     ) {
-        return parentPortalService.createLeaveRequest(principal.getUser().getId(), dto);
+        return parentPortalService.createLeaveRequest(principal.getUser().getId(), dto, leaveLetterFile);
     }
 
     @GetMapping("/leave-requests")
@@ -215,5 +218,14 @@ public class ParentPortalController {
             @RequestParam(required = false) String remarks
     ) {
         return parentPortalService.cancelLeaveRequest(principal.getUser().getId(), leaveRequestId, remarks);
+    }
+
+    @DeleteMapping("/leave-requests/{leaveRequestId}")
+    @Operation(summary = "Delete a pending leave request from the parent portal")
+    public void deleteLeaveRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long leaveRequestId
+    ) {
+        parentPortalService.deleteLeaveRequest(principal.getUser().getId(), leaveRequestId);
     }
 }

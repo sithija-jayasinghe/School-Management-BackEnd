@@ -3,6 +3,7 @@ package org.edu.repository;
 import org.edu.entity.Class;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface ClassRepository extends JpaRepository<Class, Long> {
+public interface ClassRepository extends JpaRepository<Class, Long>, JpaSpecificationExecutor<Class> {
 
     Optional<Class> findByIdAndActiveTrue(Long id);
 
