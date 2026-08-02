@@ -23,11 +23,8 @@ public class TeachingAssignmentDTO {
     private Long classId;
     private String className;
 
-    // DEMO-FEATURE: teaching-assignment-grade-filter START
-    // Purpose: Exposes the assigned class grade so the frontend can filter teaching assignments by grade.
-    // private Long gradeId;
-    // private String gradeName;
-    // DEMO-FEATURE: teaching-assignment-grade-filter END
+    private Long gradeId;
+    private String gradeName;
 
     @NotNull(message = "Subject is required")
     private Long subjectId;

@@ -14,6 +14,7 @@ import org.edu.service.AuditLogService;
 import org.edu.service.DocumentService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
+import org.edu.util.DocumentType;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,13 +31,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-// DEMO-FEATURE: document-class-type-visibility-filters START
-// import org.edu.util.DocumentType;
-// import org.springframework.web.bind.annotation.RequestParam;
-// DEMO-FEATURE: document-class-type-visibility-filters END
 
 @RestController
 @RequestMapping("/api/documents")
@@ -103,27 +100,25 @@ public class DocumentController {
         return documentService.getDocumentsByStudent(principal.getUser().getId(), studentId, pageable);
     }
 
-    // DEMO-FEATURE: document-class-type-visibility-filters START
-    // @GetMapping
-    // @Operation(summary = "Filter documents")
-    // public Page<DocumentDTO> filterDocuments(
-    //         @AuthenticationPrincipal UserPrincipal principal,
-    //         @RequestParam(required = false) Long studentId,
-    //         @RequestParam(required = false) Long classId,
-    //         @RequestParam(required = false) DocumentType documentType,
-    //         @RequestParam(required = false) Boolean visibleToParent,
-    //         Pageable pageable
-    // ) {
-    //     return documentService.filterDocuments(
-    //             principal.getUser().getId(),
-    //             studentId,
-    //             classId,
-    //             documentType,
-    //             visibleToParent,
-    //             pageable
-    //     );
-    // }
-    // DEMO-FEATURE: document-class-type-visibility-filters END
+    @GetMapping
+    @Operation(summary = "Filter documents")
+    public Page<DocumentDTO> filterDocuments(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false) DocumentType documentType,
+            @RequestParam(required = false) Boolean visibleToParent,
+            Pageable pageable
+    ) {
+        return documentService.filterDocuments(
+                principal.getUser().getId(),
+                studentId,
+                classId,
+                documentType,
+                visibleToParent,
+                pageable
+        );
+    }
 
     @GetMapping("/{documentId}/download")
     @Operation(summary = "Download a document file")

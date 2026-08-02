@@ -13,9 +13,7 @@ public final class ParentFilterDefinitions {
     public static Map<String, FilterDefinition<Parent>> definitions() {
         Map<String, FilterDefinition<Parent>> definitions = new LinkedHashMap<>();
 
-        // DEMO-FEATURE: parent-status-filter START
-        // definitions.put("active", FilterSpecifications.equalsBoolean("active"));
-        // DEMO-FEATURE: parent-status-filter END
+        definitions.put("active", FilterSpecifications.equalsBoolean("active"));
         definitions.put("keyword", keywordFilter());
 
         return Map.copyOf(definitions);

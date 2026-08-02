@@ -34,14 +34,11 @@ import org.edu.util.Role;
 import org.edu.util.TeacherLeaveCoverageStatus;
 import org.edu.util.TeacherLeaveDuration;
 import org.edu.util.TeacherLeaveStatus;
+import org.edu.util.TeacherLeaveType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-// DEMO-FEATURE: teacher-my-leave-type-filter START
-// import org.edu.util.TeacherLeaveType;
-// DEMO-FEATURE: teacher-my-leave-type-filter END
 
 @Service
 @Transactional
@@ -138,30 +135,25 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
     public Page<TeacherLeaveRequestDTO> getOwnRequests(
             Long authenticatedUserId,
             TeacherLeaveStatus status,
+            TeacherLeaveType leaveType,
             Pageable pageable
     ) {
         Staff teacher = getActiveStaffMember(authenticatedUserId);
-        Page<TeacherLeaveRequest> requests = status == null
-                ? requestRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId(), pageable)
-                : requestRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacher.getId(), status, pageable);
-        // DEMO-FEATURE: teacher-my-leave-type-filter START
-        // Add TeacherLeaveType leaveType to this method signature and use this logic:
-        // Page<TeacherLeaveRequest> requests;
-        // if (status != null && leaveType != null) {
-        //     requests = requestRepository.findByTeacherIdAndStatusAndLeaveTypeOrderByCreatedAtDesc(
-        //             teacher.getId(),
-        //             status,
-        //             leaveType,
-        //             pageable
-        //     );
-        // } else if (status != null) {
-        //     requests = requestRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacher.getId(), status, pageable);
-        // } else if (leaveType != null) {
-        //     requests = requestRepository.findByTeacherIdAndLeaveTypeOrderByCreatedAtDesc(teacher.getId(), leaveType, pageable);
-        // } else {
-        //     requests = requestRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId(), pageable);
-        // }
-        // DEMO-FEATURE: teacher-my-leave-type-filter END
+        Page<TeacherLeaveRequest> requests;
+        if (status != null && leaveType != null) {
+            requests = requestRepository.findByTeacherIdAndStatusAndLeaveTypeOrderByCreatedAtDesc(
+                    teacher.getId(),
+                    status,
+                    leaveType,
+                    pageable
+            );
+        } else if (status != null) {
+            requests = requestRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacher.getId(), status, pageable);
+        } else if (leaveType != null) {
+            requests = requestRepository.findByTeacherIdAndLeaveTypeOrderByCreatedAtDesc(teacher.getId(), leaveType, pageable);
+        } else {
+            requests = requestRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId(), pageable);
+        }
         return requests.map(this::toDto);
     }
 

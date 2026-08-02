@@ -1,5 +1,8 @@
 package org.edu.service.impl;
 
+import jakarta.persistence.criteria.JoinType;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.DocumentDTO;
 import org.edu.dto.DocumentFileResponse;
@@ -18,20 +21,14 @@ import org.edu.repository.TimetableRepository;
 import org.edu.repository.UserRepository;
 import org.edu.service.DocumentService;
 import org.edu.service.DocumentStorageService;
+import org.edu.util.DocumentType;
 import org.edu.util.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-// DEMO-FEATURE: document-class-type-visibility-filters START
-// import jakarta.persistence.criteria.JoinType;
-// import java.util.HashSet;
-// import java.util.Set;
-// import org.edu.util.DocumentType;
-// import org.springframework.data.jpa.domain.Specification;
-// DEMO-FEATURE: document-class-type-visibility-filters END
 
 @Service
 @Transactional
@@ -149,25 +146,23 @@ public class DocumentServiceImpl implements DocumentService {
                 .map(documentMapper::toDTO);
     }
 
-    // DEMO-FEATURE: document-class-type-visibility-filters START
-    // @Override
-    // @Transactional(readOnly = true)
-    // public Page<DocumentDTO> filterDocuments(
-    //         Long authenticatedUserId,
-    //         Long studentId,
-    //         Long classId,
-    //         DocumentType documentType,
-    //         Boolean visibleToParent,
-    //         Pageable pageable
-    // ) {
-    //     User user = getUser(authenticatedUserId);
-    //     Specification<Document> specification = documentFilters(studentId, classId, documentType, visibleToParent)
-    //             .and(accessibleDocuments(user));
-    //
-    //     return documentRepository.findAll(specification, pageable)
-    //             .map(documentMapper::toDTO);
-    // }
-    // DEMO-FEATURE: document-class-type-visibility-filters END
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DocumentDTO> filterDocuments(
+            Long authenticatedUserId,
+            Long studentId,
+            Long classId,
+            DocumentType documentType,
+            Boolean visibleToParent,
+            Pageable pageable
+    ) {
+        User user = getUser(authenticatedUserId);
+        Specification<Document> specification = documentFilters(studentId, classId, documentType, visibleToParent)
+                .and(accessibleDocuments(user));
+
+        return documentRepository.findAll(specification, pageable)
+                .map(documentMapper::toDTO);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -246,65 +241,63 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-    // DEMO-FEATURE: document-class-type-visibility-filters START
-    // private Specification<Document> documentFilters(
-    //         Long studentId,
-    //         Long classId,
-    //         DocumentType documentType,
-    //         Boolean visibleToParent
-    // ) {
-    //     return (root, query, criteriaBuilder) -> {
-    //         var predicate = criteriaBuilder.conjunction();
-    //         predicate = criteriaBuilder.and(predicate, criteriaBuilder.isTrue(root.get("active")));
-    //
-    //         if (studentId != null) {
-    //             predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("student").get("id"), studentId));
-    //         }
-    //         if (classId != null) {
-    //             predicate = criteriaBuilder.and(
-    //                     predicate,
-    //                     criteriaBuilder.equal(root.get("student").get("currentClass").get("id"), classId)
-    //             );
-    //         }
-    //         if (documentType != null) {
-    //             predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("documentType"), documentType));
-    //         }
-    //         if (visibleToParent != null) {
-    //             predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("visibleToParent"), visibleToParent));
-    //         }
-    //
-    //         return predicate;
-    //     };
-    // }
-    //
-    // private Specification<Document> accessibleDocuments(User user) {
-    //     if (user.getRole() == Role.ADMIN) {
-    //         return Specification.where(null);
-    //     }
-    //
-    //     if (user.getRole() != Role.TEACHER) {
-    //         return (root, query, criteriaBuilder) -> criteriaBuilder.disjunction();
-    //     }
-    //
-    //     Long staffId = staffRepository.findByUser_IdAndActiveTrue(user.getId())
-    //             .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"))
-    //             .getId();
-    //
-    //     Set<Long> classIds = new HashSet<>();
-    //     classRepository.findByClassTeacherIdAndActiveTrueOrderByNameAsc(staffId)
-    //             .forEach(clazz -> classIds.add(clazz.getId()));
-    //     timetableRepository.findByStaffIdOrderByDayOfWeekAscStartTimeAsc(staffId)
-    //             .forEach(timetable -> classIds.add(timetable.getStudentClass().getId()));
-    //
-    //     if (classIds.isEmpty()) {
-    //         return (root, query, criteriaBuilder) -> criteriaBuilder.disjunction();
-    //     }
-    //
-    //     return (root, query, criteriaBuilder) -> root
-    //             .join("student", JoinType.INNER)
-    //             .join("currentClass", JoinType.INNER)
-    //             .get("id")
-    //             .in(classIds);
-    // }
-    // DEMO-FEATURE: document-class-type-visibility-filters END
+    private Specification<Document> documentFilters(
+            Long studentId,
+            Long classId,
+            DocumentType documentType,
+            Boolean visibleToParent
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            var predicate = criteriaBuilder.conjunction();
+            predicate = criteriaBuilder.and(predicate, criteriaBuilder.isTrue(root.get("active")));
+
+            if (studentId != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("student").get("id"), studentId));
+            }
+            if (classId != null) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.equal(root.get("student").get("currentClass").get("id"), classId)
+                );
+            }
+            if (documentType != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("documentType"), documentType));
+            }
+            if (visibleToParent != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("visibleToParent"), visibleToParent));
+            }
+
+            return predicate;
+        };
+    }
+
+    private Specification<Document> accessibleDocuments(User user) {
+        if (user.getRole() == Role.ADMIN) {
+            return Specification.where(null);
+        }
+
+        if (user.getRole() != Role.TEACHER) {
+            return (root, query, criteriaBuilder) -> criteriaBuilder.disjunction();
+        }
+
+        Long staffId = staffRepository.findByUser_IdAndActiveTrue(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Active teacher profile not found for current user"))
+                .getId();
+
+        Set<Long> classIds = new HashSet<>();
+        classRepository.findByClassTeacherIdAndActiveTrueOrderByNameAsc(staffId)
+                .forEach(clazz -> classIds.add(clazz.getId()));
+        timetableRepository.findByStaffIdOrderByDayOfWeekAscStartTimeAsc(staffId)
+                .forEach(timetable -> classIds.add(timetable.getStudentClass().getId()));
+
+        if (classIds.isEmpty()) {
+            return (root, query, criteriaBuilder) -> criteriaBuilder.disjunction();
+        }
+
+        return (root, query, criteriaBuilder) -> root
+                .join("student", JoinType.INNER)
+                .join("currentClass", JoinType.INNER)
+                .get("id")
+                .in(classIds);
+    }
 }

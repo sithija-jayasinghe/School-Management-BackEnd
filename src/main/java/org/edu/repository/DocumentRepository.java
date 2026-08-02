@@ -6,16 +6,9 @@ import org.edu.util.DocumentType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-// DEMO-FEATURE: document-class-type-visibility-filters START
-// import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-// DEMO-FEATURE: document-class-type-visibility-filters END
-
-public interface DocumentRepository extends JpaRepository<Document, Long> {
-    // DEMO-FEATURE: document-class-type-visibility-filters START
-    // To enable backend document filtering:
-    // public interface DocumentRepository extends JpaRepository<Document, Long>, JpaSpecificationExecutor<Document> {
-    // DEMO-FEATURE: document-class-type-visibility-filters END
+public interface DocumentRepository extends JpaRepository<Document, Long>, JpaSpecificationExecutor<Document> {
 
     Optional<Document> findByIdAndActiveTrue(Long id);
 

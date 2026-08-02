@@ -4,15 +4,12 @@ import java.time.LocalDate;
 import java.util.Collection;
 import org.edu.entity.TeacherLeaveRequest;
 import org.edu.util.TeacherLeaveStatus;
+import org.edu.util.TeacherLeaveType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-// DEMO-FEATURE: teacher-my-leave-type-filter START
-// import org.edu.util.TeacherLeaveType;
-// DEMO-FEATURE: teacher-my-leave-type-filter END
 
 public interface TeacherLeaveRequestRepository extends JpaRepository<TeacherLeaveRequest, Long> {
 
@@ -24,20 +21,18 @@ public interface TeacherLeaveRequestRepository extends JpaRepository<TeacherLeav
             Pageable pageable
     );
 
-    // DEMO-FEATURE: teacher-my-leave-type-filter START
-    // Page<TeacherLeaveRequest> findByTeacherIdAndLeaveTypeOrderByCreatedAtDesc(
-    //         Long teacherId,
-    //         TeacherLeaveType leaveType,
-    //         Pageable pageable
-    // );
-    //
-    // Page<TeacherLeaveRequest> findByTeacherIdAndStatusAndLeaveTypeOrderByCreatedAtDesc(
-    //         Long teacherId,
-    //         TeacherLeaveStatus status,
-    //         TeacherLeaveType leaveType,
-    //         Pageable pageable
-    // );
-    // DEMO-FEATURE: teacher-my-leave-type-filter END
+    Page<TeacherLeaveRequest> findByTeacherIdAndLeaveTypeOrderByCreatedAtDesc(
+            Long teacherId,
+            TeacherLeaveType leaveType,
+            Pageable pageable
+    );
+
+    Page<TeacherLeaveRequest> findByTeacherIdAndStatusAndLeaveTypeOrderByCreatedAtDesc(
+            Long teacherId,
+            TeacherLeaveStatus status,
+            TeacherLeaveType leaveType,
+            Pageable pageable
+    );
 
     Page<TeacherLeaveRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
 

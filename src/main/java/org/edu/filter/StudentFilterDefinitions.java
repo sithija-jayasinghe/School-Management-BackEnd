@@ -18,10 +18,7 @@ public final class StudentFilterDefinitions {
 
         definitions.put("active", FilterSpecifications.equalsBoolean("active"));
         definitions.put("classId", FilterSpecifications.equalsLong("currentClass.id"));
-        // DEMO-FEATURE: student-gender-filter START
-        // Purpose: Uncomment to enable backend filtering by Student.gender.
-        // definitions.put("gender", FilterSpecifications.equalsIgnoreCase("gender"));
-        // DEMO-FEATURE: student-gender-filter END
+        definitions.put("gender", FilterSpecifications.equalsIgnoreCase("gender"));
         definitions.put("houseId", houseIdFilter(houseRepository));
         definitions.put("keyword", keywordFilter());
 

@@ -176,11 +176,8 @@ public class TeachingAssignmentServiceImpl implements TeachingAssignmentService 
                 assignment.getStaff().getName(),
                 assignment.getStudentClass().getId(),
                 assignment.getStudentClass().getName(),
-                // DEMO-FEATURE: teaching-assignment-grade-filter START
-                // Purpose: Sends grade details from the assignment class to support frontend grade filtering.
-                // assignment.getStudentClass().getGrade() == null ? null : assignment.getStudentClass().getGrade().getId(),
-                // assignment.getStudentClass().getGrade() == null ? null : assignment.getStudentClass().getGrade().getName(),
-                // DEMO-FEATURE: teaching-assignment-grade-filter END
+                assignment.getStudentClass().getGrade() == null ? null : assignment.getStudentClass().getGrade().getId(),
+                assignment.getStudentClass().getGrade() == null ? null : assignment.getStudentClass().getGrade().getName(),
                 assignment.getSubject().getId(),
                 assignment.getSubject().getCode(),
                 assignment.getSubject().getName(),

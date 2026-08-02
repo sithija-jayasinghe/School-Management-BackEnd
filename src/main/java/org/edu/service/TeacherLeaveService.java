@@ -8,12 +8,9 @@ import org.edu.dto.teacherleave.TeacherLeaveReviewRequest;
 import org.edu.dto.teacherleave.TeacherLeaveSaveRequest;
 import org.edu.dto.teacherleave.TeacherLeaveSessionDTO;
 import org.edu.util.TeacherLeaveStatus;
+import org.edu.util.TeacherLeaveType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-// DEMO-FEATURE: teacher-my-leave-type-filter START
-// import org.edu.util.TeacherLeaveType;
-// DEMO-FEATURE: teacher-my-leave-type-filter END
 
 public interface TeacherLeaveService {
 
@@ -25,15 +22,12 @@ public interface TeacherLeaveService {
 
     TeacherLeaveRequestDTO getOwnRequest(Long authenticatedUserId, Long requestId);
 
-    Page<TeacherLeaveRequestDTO> getOwnRequests(Long authenticatedUserId, TeacherLeaveStatus status, Pageable pageable);
-    // DEMO-FEATURE: teacher-my-leave-type-filter START
-    // Page<TeacherLeaveRequestDTO> getOwnRequests(
-    //         Long authenticatedUserId,
-    //         TeacherLeaveStatus status,
-    //         TeacherLeaveType leaveType,
-    //         Pageable pageable
-    // );
-    // DEMO-FEATURE: teacher-my-leave-type-filter END
+    Page<TeacherLeaveRequestDTO> getOwnRequests(
+            Long authenticatedUserId,
+            TeacherLeaveStatus status,
+            TeacherLeaveType leaveType,
+            Pageable pageable
+    );
 
     Page<TeacherLeaveRequestDTO> getAllRequests(TeacherLeaveStatus status, Pageable pageable);
 
