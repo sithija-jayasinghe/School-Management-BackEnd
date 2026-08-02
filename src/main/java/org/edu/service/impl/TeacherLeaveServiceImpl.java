@@ -39,6 +39,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// DEMO-FEATURE: teacher-my-leave-type-filter START
+// import org.edu.util.TeacherLeaveType;
+// DEMO-FEATURE: teacher-my-leave-type-filter END
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -140,6 +144,24 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
         Page<TeacherLeaveRequest> requests = status == null
                 ? requestRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId(), pageable)
                 : requestRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacher.getId(), status, pageable);
+        // DEMO-FEATURE: teacher-my-leave-type-filter START
+        // Add TeacherLeaveType leaveType to this method signature and use this logic:
+        // Page<TeacherLeaveRequest> requests;
+        // if (status != null && leaveType != null) {
+        //     requests = requestRepository.findByTeacherIdAndStatusAndLeaveTypeOrderByCreatedAtDesc(
+        //             teacher.getId(),
+        //             status,
+        //             leaveType,
+        //             pageable
+        //     );
+        // } else if (status != null) {
+        //     requests = requestRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacher.getId(), status, pageable);
+        // } else if (leaveType != null) {
+        //     requests = requestRepository.findByTeacherIdAndLeaveTypeOrderByCreatedAtDesc(teacher.getId(), leaveType, pageable);
+        // } else {
+        //     requests = requestRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId(), pageable);
+        // }
+        // DEMO-FEATURE: teacher-my-leave-type-filter END
         return requests.map(this::toDto);
     }
 

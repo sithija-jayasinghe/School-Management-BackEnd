@@ -38,6 +38,14 @@ public class ParentDTO {
     )
     private String phoneNumber;
 
+    // DEMO-FEATURE: parent-nic-class-status-filters START
+    @Pattern(
+            regexp = "^(?:\\d{9}[vVxX]|\\d{12})$",
+            message = "NIC must be valid Sri Lankan NIC format"
+    )
+    private String nic;
+    // DEMO-FEATURE: parent-nic-class-status-filters END
+
     @NotBlank(message = "Address is required")
     private String address;
 

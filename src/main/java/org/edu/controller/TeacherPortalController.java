@@ -47,6 +47,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+
+// DEMO-FEATURE: teacher-my-leave-type-filter START
+// import org.edu.util.TeacherLeaveType;
+// DEMO-FEATURE: teacher-my-leave-type-filter END
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -366,6 +370,10 @@ public class TeacherPortalController {
             @RequestParam(required = false) TeacherLeaveStatus status,
             Pageable pageable
     ) {
+        // DEMO-FEATURE: teacher-my-leave-type-filter START
+        // @RequestParam(required = false) TeacherLeaveType leaveType,
+        // return teacherLeaveService.getOwnRequests(principal.getUser().getId(), status, leaveType, pageable);
+        // DEMO-FEATURE: teacher-my-leave-type-filter END
         return teacherLeaveService.getOwnRequests(principal.getUser().getId(), status, pageable);
     }
 

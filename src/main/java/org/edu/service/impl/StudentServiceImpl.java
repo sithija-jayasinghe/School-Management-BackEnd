@@ -325,9 +325,17 @@ public class StudentServiceImpl implements StudentService {
 
     private Parent findOrCreateParent(StudentParentInlineRequest parentRequest) {
         String phoneNumber = parentRequest.getPhoneNumber().trim();
+        // DEMO-FEATURE: parent-nic-class-status-filters START
+        String nic = normalizeParentNic(parentRequest.getNic());
+        // DEMO-FEATURE: parent-nic-class-status-filters END
         return parentRepository.findByPhoneNumber(phoneNumber)
                 .map(parent -> {
                     parent.setActive(true);
+                    // DEMO-FEATURE: parent-nic-class-status-filters START
+                    if (nic != null && (parent.getNic() == null || parent.getNic().isBlank())) {
+                        parent.setNic(nic);
+                    }
+                    // DEMO-FEATURE: parent-nic-class-status-filters END
                     ensureParentUser(parent, parentRequest);
                     return parent;
                 })
@@ -335,6 +343,9 @@ public class StudentServiceImpl implements StudentService {
                     Parent parent = new Parent();
                     parent.setName(parentRequest.getName().trim());
                     parent.setPhoneNumber(phoneNumber);
+                    // DEMO-FEATURE: parent-nic-class-status-filters START
+                    parent.setNic(nic);
+                    // DEMO-FEATURE: parent-nic-class-status-filters END
                     parent.setAddress(parentRequest.getAddress().trim());
                     parent.setOccupation(parentRequest.getOccupation().trim());
                     parent.setUser(createParentUser(parentRequest));
@@ -342,6 +353,16 @@ public class StudentServiceImpl implements StudentService {
                     return parentRepository.save(parent);
                 });
     }
+
+    // DEMO-FEATURE: parent-nic-class-status-filters START
+    private String normalizeParentNic(String nic) {
+        if (nic == null || nic.isBlank()) {
+            return null;
+        }
+
+        return nic.trim().toUpperCase();
+    }
+    // DEMO-FEATURE: parent-nic-class-status-filters END
 
     private void ensureParentUser(Parent parent, StudentParentInlineRequest parentRequest) {
         if (parent.getUser() != null) {

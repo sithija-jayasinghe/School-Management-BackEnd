@@ -13,7 +13,9 @@ public final class ParentFilterDefinitions {
     public static Map<String, FilterDefinition<Parent>> definitions() {
         Map<String, FilterDefinition<Parent>> definitions = new LinkedHashMap<>();
 
-        definitions.put("active", FilterSpecifications.equalsBoolean("active"));
+        // DEMO-FEATURE: parent-status-filter START
+        // definitions.put("active", FilterSpecifications.equalsBoolean("active"));
+        // DEMO-FEATURE: parent-status-filter END
         definitions.put("keyword", keywordFilter());
 
         return Map.copyOf(definitions);
@@ -22,7 +24,11 @@ public final class ParentFilterDefinitions {
     private static FilterDefinition<Parent> keywordFilter() {
         return rawValue -> FilterSpecifications.<Parent>likeIgnoreCase("name", rawValue)
                 .or(FilterSpecifications.likeIgnoreCase("phoneNumber", rawValue))
+                // DEMO-FEATURE: parent-nic-class-status-filters START
+                .or(FilterSpecifications.likeIgnoreCase("nic", rawValue))
+                // DEMO-FEATURE: parent-nic-class-status-filters END
                 .or(FilterSpecifications.likeIgnoreCase("address", rawValue))
                 .or(FilterSpecifications.likeIgnoreCase("occupation", rawValue));
     }
+
 }

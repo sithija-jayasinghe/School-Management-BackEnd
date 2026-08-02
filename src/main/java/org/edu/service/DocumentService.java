@@ -8,6 +8,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+// DEMO-FEATURE: document-class-type-visibility-filters START
+// import org.edu.util.DocumentType;
+// DEMO-FEATURE: document-class-type-visibility-filters END
+
 public interface DocumentService {
 
     DocumentDTO uploadDocument(Long authenticatedUserId, DocumentCreateRequest request, MultipartFile file);
@@ -19,6 +23,17 @@ public interface DocumentService {
     DocumentDTO getDocument(Long authenticatedUserId, Long documentId);
 
     Page<DocumentDTO> getDocumentsByStudent(Long authenticatedUserId, Long studentId, Pageable pageable);
+
+    // DEMO-FEATURE: document-class-type-visibility-filters START
+    // Page<DocumentDTO> filterDocuments(
+    //         Long authenticatedUserId,
+    //         Long studentId,
+    //         Long classId,
+    //         DocumentType documentType,
+    //         Boolean visibleToParent,
+    //         Pageable pageable
+    // );
+    // DEMO-FEATURE: document-class-type-visibility-filters END
 
     DocumentFileResponse downloadDocument(Long authenticatedUserId, Long documentId);
 
