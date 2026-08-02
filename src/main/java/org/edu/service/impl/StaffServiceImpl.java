@@ -6,6 +6,8 @@ import org.edu.entity.Staff;
 import org.edu.entity.User;
 import org.edu.exception.DuplicateEmailException;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.FilterSpecifications;
+import org.edu.filter.StaffFilterDefinitions;
 import org.edu.mapper.StaffMapper;
 import org.edu.repository.StaffRepository;
 import org.edu.repository.UserRepository;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -96,11 +99,9 @@ public class StaffServiceImpl implements StaffService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<StaffDTO> filterStaff(String keyword, StaffCategory category, EmploymentType employmentType, String department, Boolean teachingCapable, Role role, Boolean active, Pageable pageable) {
-        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
-        String normalizedDepartment = department == null || department.trim().isEmpty() ? null : department.trim();
+    public Page<StaffDTO> filterStaff(Map<String, String> filters, Pageable pageable) {
         return staffRepository
-                .filterStaff(normalizedKeyword, category, employmentType, normalizedDepartment, teachingCapable, role, active, pageable)
+                .findAll(FilterSpecifications.build(filters, StaffFilterDefinitions.definitions()), pageable)
                 .map(staffMapper::toDTO);
     }
 

@@ -8,6 +8,7 @@ import org.edu.dto.teacherleave.TeacherLeaveReviewRequest;
 import org.edu.dto.teacherleave.TeacherLeaveSaveRequest;
 import org.edu.dto.teacherleave.TeacherLeaveSessionDTO;
 import org.edu.util.TeacherLeaveStatus;
+import org.edu.util.TeacherLeaveType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,7 +22,12 @@ public interface TeacherLeaveService {
 
     TeacherLeaveRequestDTO getOwnRequest(Long authenticatedUserId, Long requestId);
 
-    Page<TeacherLeaveRequestDTO> getOwnRequests(Long authenticatedUserId, TeacherLeaveStatus status, Pageable pageable);
+    Page<TeacherLeaveRequestDTO> getOwnRequests(
+            Long authenticatedUserId,
+            TeacherLeaveStatus status,
+            TeacherLeaveType leaveType,
+            Pageable pageable
+    );
 
     Page<TeacherLeaveRequestDTO> getAllRequests(TeacherLeaveStatus status, Pageable pageable);
 

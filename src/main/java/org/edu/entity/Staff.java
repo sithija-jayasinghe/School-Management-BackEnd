@@ -40,6 +40,12 @@ public class Staff{
     @Column(nullable = false, length = 15)
     private String phoneNumber;
 
+    // DEMO-FEATURE: staff-phone-nic-columns START
+    // Purpose: Stores optional Sri Lankan NIC so the Staff table can show it.
+    @Column(length = 20, unique = true)
+    private String nic;
+    // DEMO-FEATURE: staff-phone-nic-columns END
+
     @Column(nullable = false)
     private String designation;
 

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.edu.dto.NoticeDTO;
 import org.edu.service.AuditLogService;
@@ -77,8 +78,8 @@ public class NoticeController {
 
     @GetMapping
     @Operation(summary = "List notices")
-    public Page<NoticeDTO> getAllNotices(Pageable pageable) {
-        return noticeService.getAllNotices(pageable);
+    public Page<NoticeDTO> getAllNotices(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return noticeService.filterNotices(filters, pageable);
     }
 
     @GetMapping("/{id}")

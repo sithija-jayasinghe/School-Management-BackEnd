@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/students")
@@ -50,12 +51,9 @@ public class StudentController {
 
     @GetMapping
     @Operation(summary = "List students")
-    public Page<StudentDTO> getAllStudents(@RequestParam(required = false) String keyword,
-                                           @RequestParam(required = false) Long classId,
-                                           @RequestParam(required = false) Long houseId,
-                                           @RequestParam(required = false) Boolean active,
+    public Page<StudentDTO> getAllStudents(@RequestParam Map<String, String> filters,
                                            Pageable pageable) {
-        return studentService.filterStudents(keyword, classId, houseId, active, pageable);
+        return studentService.filterStudents(filters, pageable);
     }
 
     @GetMapping("/{id}")

@@ -211,9 +211,9 @@ public class DemoDataSeeder implements CommandLineRunner {
         createLeaveRequest(priyantha, vihanga, LocalDate.of(2026, 2, 24), LocalDate.of(2026, 2, 24), "Travel request without supporting documents", "Requested at short notice", LeaveRequestStatus.REJECTED, saman, "Please submit supporting evidence earlier", false);
         createLeaveRequest(nilmini, dhanuka, LocalDate.of(2026, 3, 18), LocalDate.of(2026, 3, 19), "Family event out of town", "Cancelled after travel plans changed", LeaveRequestStatus.CANCELLED, null, "Cancelled by parent", false);
 
-        createDocument(saduni, adminUser, DocumentType.MEDICAL_RECORD, "Saduni medical note", "Medical note for February absence", "saduni-medical-note.txt", "text/plain", "Patient advised to rest for two days due to viral fever.\nIssued by Family Clinic, Maharagama.", true);
-        createDocument(anudi, adminUser, DocumentType.STUDENT_RECORD, "Anudi progress note", "Term 1 progress observation by administration", "anudi-progress-note.txt", "text/plain", "Anudi is punctual, active in class discussions, and shows strong English presentation skills.", true);
-        createDocument(vihanga, adminUser, DocumentType.LEAVE_LETTER, "Vihanga leave request copy", "Archived leave letter retained for staff follow-up", "vihanga-leave-letter.txt", "text/plain", "Leave request received without supporting documents. Follow-up required.", false);
+        createDocument(saduni, nimal.getUser(), DocumentType.MEDICAL_RECORD, "Saduni medical note", "Medical note for February absence", "saduni-medical-note.txt", "text/plain", "Patient advised to rest for two days due to viral fever.\nIssued by Family Clinic, Maharagama.", true);
+        createDocument(anudi, saman.getUser(), DocumentType.STUDENT_RECORD, "Anudi progress note", "Term 1 progress observation by class teacher", "anudi-progress-note.txt", "text/plain", "Anudi is punctual, active in class discussions, and shows strong English presentation skills.", true);
+        createDocument(vihanga, saman.getUser(), DocumentType.LEAVE_LETTER, "Vihanga leave request copy", "Archived leave letter retained for class teacher follow-up", "vihanga-leave-letter.txt", "text/plain", "Leave request received without supporting documents. Follow-up required.", false);
 
         generateAcademicReports(adminUser, termOne, List.of(saduni, lakshan, tharushi, kavindu, anudi, dhanuka, malsha, vihanga));
 

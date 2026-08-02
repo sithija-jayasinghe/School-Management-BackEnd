@@ -7,12 +7,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserService {
 
     UserResponse register(UserRegistrationRequest request);
 
     Page<UserResponse> getAllUsers(Pageable pageable);
+
+    Page<UserResponse> filterUsers(Map<String, String> filters, Pageable pageable);
 
     Page<UserResponse> searchUsers(String keyword, Pageable pageable);
 
@@ -26,7 +29,7 @@ public interface UserService {
 
     void activateUser(Long userId);
 
-    void deactivateUser(Long userId);
+    void deactivateUser(Long userId, Long authenticatedUserId);
 
     UserResponse getCurrentUser();
 }

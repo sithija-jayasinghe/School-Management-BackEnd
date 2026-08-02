@@ -21,16 +21,19 @@ import org.edu.dto.parentportal.ParentPortalSubjectDTO;
 import org.edu.dto.parentportal.ParentPortalTimetableEntryDTO;
 import org.edu.entity.Parent;
 import org.edu.entity.ParentStudent;
+import org.edu.entity.Document;
 import org.edu.entity.Student;
 import org.edu.entity.Subject;
 import org.edu.entity.Timetable;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.repository.DocumentRepository;
 import org.edu.repository.ParentRepository;
 import org.edu.repository.ParentStudentRepository;
 import org.edu.repository.TimetableRepository;
 import org.edu.service.AcademicReportService;
 import org.edu.service.AttendanceService;
 import org.edu.service.DocumentService;
+import org.edu.service.DocumentStorageService;
 import org.edu.service.LeaveRequestService;
 import org.edu.service.NoticeService;
 import org.edu.service.ParentPortalService;
@@ -39,6 +42,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.edu.util.DocumentType;
 
 @Service
 @Transactional(readOnly = true)
@@ -51,6 +56,8 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private final AcademicReportService academicReportService;
     private final AttendanceService attendanceService;
     private final DocumentService documentService;
+    private final DocumentRepository documentRepository;
+    private final DocumentStorageService documentStorageService;
     private final NoticeService noticeService;
     private final StudentMarkService studentMarkService;
     private final LeaveRequestService leaveRequestService;
@@ -213,10 +220,19 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     }
 
     @Override
-    public LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto) {
+    @Transactional
+    public LeaveRequestDTO createLeaveRequest(Long authenticatedUserId, ParentPortalLeaveRequestCreateDTO dto, MultipartFile leaveLetterFile) {
+        if (leaveLetterFile == null || leaveLetterFile.isEmpty()) {
+            throw new IllegalArgumentException("Leave letter file is required");
+        }
+
         Parent parent = getActiveParentByUserId(authenticatedUserId);
-        getAuthorizedStudentLink(parent.getId(), dto.getStudentId());
-        return leaveRequestService.createParentLeaveRequest(authenticatedUserId, dto);
+        ParentStudent link = getAuthorizedStudentLink(parent.getId(), dto.getStudentId());
+        LeaveRequestDTO leaveRequest = leaveRequestService.createParentLeaveRequest(authenticatedUserId, dto);
+
+        storeParentLeaveLetter(parent, link.getStudent(), dto, leaveLetterFile);
+
+        return leaveRequest;
     }
 
     @Override
@@ -226,9 +242,28 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     }
 
     @Override
+    @Transactional
     public LeaveRequestDTO cancelLeaveRequest(Long authenticatedUserId, Long leaveRequestId, String remarks) {
-        getActiveParentByUserId(authenticatedUserId);
-        return leaveRequestService.cancelParentLeaveRequest(authenticatedUserId, leaveRequestId, remarks);
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        LeaveRequestDTO leaveRequest = leaveRequestService.getLeaveRequestById(leaveRequestId);
+        if (!leaveRequest.getParentId().equals(parent.getId())) {
+            throw new ResourceNotFoundException("Leave request not found in current parent portal");
+        }
+        deleteParentLeaveLetter(parent.getUser().getId(), leaveRequest.getStudentId(), leaveRequest.getStudentName());
+        leaveRequestService.deleteParentLeaveRequest(authenticatedUserId, leaveRequestId);
+        return leaveRequest;
+    }
+
+    @Override
+    @Transactional
+    public void deleteLeaveRequest(Long authenticatedUserId, Long leaveRequestId) {
+        Parent parent = getActiveParentByUserId(authenticatedUserId);
+        LeaveRequestDTO leaveRequest = leaveRequestService.getLeaveRequestById(leaveRequestId);
+        if (!leaveRequest.getParentId().equals(parent.getId())) {
+            throw new ResourceNotFoundException("Leave request not found in current parent portal");
+        }
+        deleteParentLeaveLetter(parent.getUser().getId(), leaveRequest.getStudentId(), leaveRequest.getStudentName());
+        leaveRequestService.deleteParentLeaveRequest(authenticatedUserId, leaveRequestId);
     }
 
     private Parent getActiveParentByUserId(Long authenticatedUserId) {
@@ -239,6 +274,55 @@ public class ParentPortalServiceImpl implements ParentPortalService {
     private ParentStudent getAuthorizedStudentLink(Long parentId, Long studentId) {
         return parentStudentRepository.findActiveStudentLinkByParentIdAndStudentId(parentId, studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found in current parent portal"));
+    }
+
+    private void storeParentLeaveLetter(
+            Parent parent,
+            Student student,
+            ParentPortalLeaveRequestCreateDTO dto,
+            MultipartFile leaveLetterFile
+    ) {
+        StoredDocumentFile storedFile = documentStorageService.store(leaveLetterFile);
+
+        try {
+            String description = dto.getReason();
+            if (dto.getNote() != null && !dto.getNote().isBlank()) {
+                description = description + " - " + dto.getNote();
+            }
+
+            Document document = new Document();
+            document.setStudent(student);
+            document.setUploadedBy(parent.getUser());
+            document.setDocumentType(DocumentType.LEAVE_LETTER);
+            document.setTitle(student.getName() + " Leave Letter");
+            document.setDescription(description);
+            document.setOriginalFileName(storedFile.getOriginalFileName());
+            document.setStoredFileName(storedFile.getStoredFileName());
+            document.setContentType(storedFile.getContentType());
+            document.setFileSize(storedFile.getFileSize());
+            document.setVisibleToParent(true);
+            document.setActive(true);
+
+            documentRepository.save(document);
+        } catch (RuntimeException ex) {
+            documentStorageService.delete(storedFile.getStoredFileName());
+            throw ex;
+        }
+    }
+
+    private void deleteParentLeaveLetter(Long uploadedByUserId, Long studentId, String studentName) {
+        String title = studentName + " Leave Letter";
+        documentRepository
+                .findTopByStudentIdAndUploadedByIdAndDocumentTypeAndTitleAndActiveTrueOrderByCreatedAtDesc(
+                        studentId,
+                        uploadedByUserId,
+                        DocumentType.LEAVE_LETTER,
+                        title
+                )
+                .ifPresent(document -> {
+                    document.setActive(false);
+                    documentStorageService.delete(document.getStoredFileName());
+                });
     }
 
     private ParentPortalProfileDTO toProfile(Parent parent) {

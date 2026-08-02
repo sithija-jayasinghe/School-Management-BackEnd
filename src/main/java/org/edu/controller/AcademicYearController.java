@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/academic-years")
@@ -75,17 +76,8 @@ public class AcademicYearController {
 
     @GetMapping
     @Operation(summary = "List academic years")
-    public Page<AcademicYearDTO> getAllAcademicYears(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false, defaultValue = "active") String status,
-            @RequestParam(required = false) Boolean current,
-            Pageable pageable
-    ) {
-        if ((keyword != null && !keyword.isBlank()) || current != null || !"active".equalsIgnoreCase(status)) {
-            return academicYearService.filterAcademicYears(keyword, status, current, pageable);
-        }
-
-        return academicYearService.getAllAcademicYears(pageable);
+    public Page<AcademicYearDTO> getAllAcademicYears(@RequestParam Map<String, String> filters, Pageable pageable) {
+        return academicYearService.filterAcademicYears(filters, pageable);
     }
 
     @GetMapping("/summary")

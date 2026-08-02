@@ -6,13 +6,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SubjectService {
     SubjectDTO createSubjects(SubjectDTO subjectDTO);
     SubjectDTO updateSubjects(Long id,SubjectDTO subjectDTO);
     void deleteSubjects(Long id);
     Page<SubjectDTO> getAllSubjects(Pageable pageable);
-    Page<SubjectDTO> filterSubjects(String keyword, Long gradeId, Boolean hasClassCoverage, Pageable pageable);
+    Page<SubjectDTO> filterSubjects(Map<String, String> filters, Pageable pageable);
     SubjectDTO getSubjectById(Long id);
     Page<SubjectDTO> searchSubjects(String keyword, Pageable pageable);
     SubjectDTO getSubjectsByCodeId(String code);

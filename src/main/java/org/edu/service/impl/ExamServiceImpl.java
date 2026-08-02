@@ -12,6 +12,8 @@ import org.edu.entity.AcademicYear;
 import org.edu.entity.Exam;
 import org.edu.entity.Subject;
 import org.edu.exception.ResourceNotFoundException;
+import org.edu.filter.ExamFilterDefinitions;
+import org.edu.filter.FilterSpecifications;
 import org.edu.mapper.ExamMapper;
 import org.edu.repository.AcademicTermRepository;
 import org.edu.repository.AcademicYearRepository;
@@ -24,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -164,12 +167,15 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ExamDTO> filterExams(String keyword, Long academicYearId, Long academicTermId, Long classId, Long subjectId, ExamType type, Boolean active, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
-        validateOptionalDateRange(fromDate, toDate);
-        String normalizedKeyword = keyword == null || keyword.trim().isEmpty() ? null : keyword.trim();
+    public Page<ExamDTO> filterExams(Map<String, String> filters, Pageable pageable) {
+        validateOptionalDateRange(parseDate(filters.get("from")), parseDate(filters.get("to")));
         return examRepository
-                .filterExams(normalizedKeyword, academicYearId, academicTermId, classId, subjectId, type, active, fromDate, toDate, pageable)
+                .findAll(FilterSpecifications.build(filters, ExamFilterDefinitions.definitions()), pageable)
                 .map(examMapper::toDTO);
+    }
+
+    private LocalDate parseDate(String value) {
+        return value == null || value.isBlank() ? null : LocalDate.parse(value);
     }
 
     @Override

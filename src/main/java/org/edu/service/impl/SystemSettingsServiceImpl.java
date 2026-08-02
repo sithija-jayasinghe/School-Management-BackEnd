@@ -23,7 +23,6 @@ public class SystemSettingsServiceImpl implements SystemSettingsService {
     private final AcademicYearRepository academicYearRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public SystemSettingsDTO getSystemSettings() {
         return toDTO(getOrCreateSettings());
     }

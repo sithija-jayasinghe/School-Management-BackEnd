@@ -23,6 +23,14 @@ public class StudentParentInlineRequest {
     )
     private String phoneNumber;
 
+    // DEMO-FEATURE: parent-nic-class-status-filters START
+    @Pattern(
+            regexp = "^(?:\\d{9}[vVxX]|\\d{12})$",
+            message = "Parent NIC must be valid Sri Lankan NIC format"
+    )
+    private String nic;
+    // DEMO-FEATURE: parent-nic-class-status-filters END
+
     @NotBlank(message = "Parent email is required")
     @Email(message = "Parent email must be valid")
     private String email;

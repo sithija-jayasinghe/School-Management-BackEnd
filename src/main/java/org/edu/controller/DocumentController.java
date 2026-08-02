@@ -14,6 +14,7 @@ import org.edu.service.AuditLogService;
 import org.edu.service.DocumentService;
 import org.edu.util.AuditAction;
 import org.edu.util.AuditEntityType;
+import org.edu.util.DocumentType;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,14 +58,15 @@ public class DocumentController {
         return response;
     }
 
-    @PatchMapping("/{documentId}")
+    @PatchMapping(value = "/{documentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update document metadata")
     public DocumentDTO updateDocument(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long documentId,
-            @Valid @RequestBody DocumentUpdateRequest request
+            @Valid @RequestPart("metadata") DocumentUpdateRequest request,
+            @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        DocumentDTO response = documentService.updateDocument(principal.getUser().getId(), documentId, request);
+        DocumentDTO response = documentService.updateDocument(principal.getUser().getId(), documentId, request, file);
         auditLogService.log(AuditAction.UPDATE, AuditEntityType.DOCUMENT, response.getId(), response.getTitle(), "Updated document metadata");
         return response;
     }
@@ -95,6 +98,26 @@ public class DocumentController {
             Pageable pageable
     ) {
         return documentService.getDocumentsByStudent(principal.getUser().getId(), studentId, pageable);
+    }
+
+    @GetMapping
+    @Operation(summary = "Filter documents")
+    public Page<DocumentDTO> filterDocuments(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false) DocumentType documentType,
+            @RequestParam(required = false) Boolean visibleToParent,
+            Pageable pageable
+    ) {
+        return documentService.filterDocuments(
+                principal.getUser().getId(),
+                studentId,
+                classId,
+                documentType,
+                visibleToParent,
+                pageable
+        );
     }
 
     @GetMapping("/{documentId}/download")

@@ -49,6 +49,15 @@ public class StaffDTO {
     )
     private String phoneNumber;
 
+    // DEMO-FEATURE: staff-phone-nic-columns START
+    // Purpose: Allows optional Sri Lankan NIC in Staff API responses/requests.
+    @Pattern(
+            regexp = "^(?:\\d{9}[vVxX]|\\d{12})$",
+            message = "NIC must be valid Sri Lankan NIC format"
+    )
+    private String nic;
+    // DEMO-FEATURE: staff-phone-nic-columns END
+
     @NotBlank(message = "Designation is required")
     private String designation;
 
