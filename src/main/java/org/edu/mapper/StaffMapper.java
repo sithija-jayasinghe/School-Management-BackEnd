@@ -18,6 +18,7 @@ public interface StaffMapper extends BaseMapper<StaffDTO, Staff> {
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "nic", source = "nic")
     Staff toEntity(StaffDTO dto);
 
     @Override
@@ -25,6 +26,7 @@ public interface StaffMapper extends BaseMapper<StaffDTO, Staff> {
     @Mapping(target = "staffCategory", expression = "java(staff.getStaffCategory() == null ? legacyCategory(staff) : staff.getStaffCategory())")
     @Mapping(target = "employmentType", expression = "java(staff.getEmploymentType() == null ? org.edu.util.EmploymentType.PERMANENT : staff.getEmploymentType())")
     @Mapping(target = "teachingCapable", expression = "java(isTeachingCapable(staff))")
+    @Mapping(target = "nic", source = "nic")
     StaffDTO toDTO(Staff staff);
 
     @Override
@@ -35,6 +37,7 @@ public interface StaffMapper extends BaseMapper<StaffDTO, Staff> {
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "nic", source = "nic")
     void updateEntityFromDTO(StaffDTO dto, @MappingTarget Staff staff);
 
     default org.edu.util.StaffCategory legacyCategory(Staff staff) {

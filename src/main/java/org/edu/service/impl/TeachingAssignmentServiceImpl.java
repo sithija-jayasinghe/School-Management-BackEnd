@@ -55,6 +55,7 @@ public class TeachingAssignmentServiceImpl implements TeachingAssignmentService 
 
         if (studentClass.getClassTeacher() == null) {
             studentClass.setClassTeacher(staff);
+            syncClassTeacherDesignation(studentClass, staff);
             classRepository.save(studentClass);
         }
 
@@ -187,5 +188,12 @@ public class TeachingAssignmentServiceImpl implements TeachingAssignmentService 
                 assignment.getCreatedAt(),
                 assignment.getUpdatedAt()
         );
+    }
+
+    private void syncClassTeacherDesignation(org.edu.entity.Class studentClass, Staff staff) {
+        if (studentClass == null || staff == null || studentClass.getName() == null || studentClass.getName().isBlank()) {
+            return;
+        }
+        staff.setDesignation(studentClass.getName().trim() + " Class Teacher");
     }
 }

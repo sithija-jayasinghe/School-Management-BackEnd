@@ -40,12 +40,13 @@ public class StaffServiceImpl implements StaffService {
         User user = resolveUserForStaff(staffDTO);
 
         Staff staff = staffMapper.toEntity(staffDTO);
+        staff.setNic(normalizeNic(staffDTO.getNic()));
         staff.setUser(user);
         staff.setActive(true);
         applyStaffDefaults(staff, user);
 
         Staff updated = staffRepository.save(staff);
-        return staffMapper.toDTO(updated);
+        return toDTOWithNic(updated);
 
 
     }
@@ -57,10 +58,13 @@ public class StaffServiceImpl implements StaffService {
                 .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + id));
 
         staffMapper.updateEntityFromDTO(staffDTO, staff);
+        if (staffDTO.getNic() != null) {
+            staff.setNic(normalizeNic(staffDTO.getNic()));
+        }
 
         Staff updated = staffRepository.save(staff);
 
-        return staffMapper.toDTO(updated);
+        return toDTOWithNic(updated);
     }
 
     @Override
@@ -79,7 +83,7 @@ public class StaffServiceImpl implements StaffService {
     @Override
     public Page<StaffDTO> getAllStaff(Pageable pageable) {
         return staffRepository.findByActiveTrue(pageable)
-                .map(staffMapper::toDTO);
+                .map(this::toDTOWithNic);
     }
 
     @Override
@@ -87,14 +91,14 @@ public class StaffServiceImpl implements StaffService {
         Staff staff = staffRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + id));
 
-        return staffMapper.toDTO(staff);
+        return toDTOWithNic(staff);
     }
 
     @Override
     public Page<StaffDTO> searchStaff(String name, Pageable pageable) {
         return staffRepository
                 .findByNameContainingIgnoreCaseAndActiveTrue(name, pageable)
-                .map(staffMapper::toDTO);
+                .map(this::toDTOWithNic);
     }
 
     @Override
@@ -102,15 +106,21 @@ public class StaffServiceImpl implements StaffService {
     public Page<StaffDTO> filterStaff(Map<String, String> filters, Pageable pageable) {
         return staffRepository
                 .findAll(FilterSpecifications.build(filters, StaffFilterDefinitions.definitions()), pageable)
-                .map(staffMapper::toDTO);
+                .map(this::toDTOWithNic);
     }
 
     @Override
     public List<StaffDTO> getAllActiveStaff() {
         return staffRepository.findByActiveTrue()
                 .stream()
-                .map(staffMapper::toDTO)
+                .map(this::toDTOWithNic)
                 .toList();
+    }
+
+    private StaffDTO toDTOWithNic(Staff staff) {
+        StaffDTO dto = staffMapper.toDTO(staff);
+        dto.setNic(staff.getNic());
+        return dto;
     }
 
     private User resolveUserForStaff(StaffDTO staffDTO) {
@@ -164,6 +174,13 @@ public class StaffServiceImpl implements StaffService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String normalizeNic(String nic) {
+        if (!hasText(nic)) {
+            return null;
+        }
+        return nic.trim().toUpperCase();
     }
 
     private void applyStaffDefaults(Staff staff, User user) {

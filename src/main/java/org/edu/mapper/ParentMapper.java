@@ -18,10 +18,12 @@ public interface ParentMapper extends BaseMapper<ParentDTO, Parent> {
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "nic", source = "nic")
     Parent toEntity(ParentDTO dto);
 
     @Override
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "nic", source = "nic")
     ParentDTO toDTO(Parent parent);
 
     @Override
@@ -31,5 +33,6 @@ public interface ParentMapper extends BaseMapper<ParentDTO, Parent> {
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "nic", source = "nic")
     void updateEntityFromDTO(ParentDTO dto, @MappingTarget Parent parent);
 }

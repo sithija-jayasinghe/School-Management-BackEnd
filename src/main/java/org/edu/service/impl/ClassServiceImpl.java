@@ -59,6 +59,8 @@ public class ClassServiceImpl implements ClassService {
             clazz.setSubjects(subjects);
         }
 
+        syncClassTeacherDesignation(clazz);
+
         return classMapper.toDTO(classRepository.save(clazz));
     }
 
@@ -88,6 +90,8 @@ public class ClassServiceImpl implements ClassService {
                 clazz.setSubjects(subjects);
             }
         }
+
+        syncClassTeacherDesignation(clazz);
 
         return classMapper.toDTO(clazz);
     }
@@ -224,5 +228,12 @@ public class ClassServiceImpl implements ClassService {
                 && clazz.getSection() != null
                 && java.util.Arrays.stream(ClassSection.values())
                         .anyMatch(section -> section.name().equalsIgnoreCase(clazz.getSection()));
+    }
+
+    private void syncClassTeacherDesignation(Class clazz) {
+        if (clazz.getClassTeacher() == null || clazz.getName() == null || clazz.getName().isBlank()) {
+            return;
+        }
+        clazz.getClassTeacher().setDesignation(clazz.getName().trim() + " Class Teacher");
     }
 }
