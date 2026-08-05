@@ -34,6 +34,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AcademicYearServiceImpl implements AcademicYearService {
 
+//academic years create, update, activate, close, current year set karana service eka.
+// E wagema e year ekata adala primary classes automatic ready karanawa, saha academic calendar summary ekath hadanawa.
+
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermRepository academicTermRepository;
     private final GradeRepository gradeRepository;

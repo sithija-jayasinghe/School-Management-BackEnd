@@ -9,6 +9,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "students")
@@ -75,6 +77,14 @@ public class Student {
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "house_id")
         private House assignedHouse;
+
+        @ManyToMany(fetch = FetchType.LAZY)
+        @JoinTable(
+                name = "student_activities",
+                joinColumns = @JoinColumn(name = "student_id"),
+                inverseJoinColumns = @JoinColumn(name = "activity_id")
+        )
+        private Set<Activity> activities = new LinkedHashSet<>();
 
         @CreatedDate
         private LocalDateTime createdAt;

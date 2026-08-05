@@ -371,7 +371,11 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
         if (input.getStartDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Teacher leave can only be requested for today or a future date");
         }
-        if (!input.getStartDate().isBefore(input.getEndDate())) {
+        if (input.getDurationType() == TeacherLeaveDuration.PARTIAL_DAY) {
+            if (!input.getStartDate().isEqual(input.getEndDate())) {
+                throw new IllegalArgumentException("For part-of-a-day leave, start date and end date must be the same");
+            }
+        } else if (!input.getStartDate().isBefore(input.getEndDate())) {
             throw new IllegalArgumentException("End date must be after the start date");
         }
         long days = ChronoUnit.DAYS.between(input.getStartDate(), input.getEndDate()) + 1;
@@ -379,7 +383,14 @@ public class TeacherLeaveServiceImpl implements TeacherLeaveService {
             throw new IllegalArgumentException("A teacher leave request cannot exceed " + MAX_LEAVE_DAYS + " days");
         }
         if (input.getDurationType() == TeacherLeaveDuration.PARTIAL_DAY) {
-            throw new IllegalArgumentException("Partial-day leave is not available because leave requests must span at least two dates");
+            if (input.getStartTime() == null || input.getEndTime() == null) {
+                throw new IllegalArgumentException("Start time and end time are required for part-of-a-day leave");
+            }
+            schoolDayPolicyService.validateWithinSchoolDay(
+                    input.getStartTime(),
+                    input.getEndTime(),
+                    "Partial-day teacher leave"
+            );
         }
     }
 

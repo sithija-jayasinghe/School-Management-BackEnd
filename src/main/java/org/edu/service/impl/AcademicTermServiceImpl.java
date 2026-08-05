@@ -22,6 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AcademicTermServiceImpl implements AcademicTermService {
 
+    //school term create, update, activate, deactivate , close, search saha validate karana service eka.
+
     private final AcademicTermRepository academicTermRepository;
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermMapper academicTermMapper;

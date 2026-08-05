@@ -16,6 +16,7 @@ public interface StudentMapper extends BaseMapper<StudentDTO, Student> {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "currentClass", ignore = true)
     @Mapping(target = "assignedHouse", ignore = true)
+    @Mapping(target = "activities", ignore = true)
     @Mapping(target = "legacyPhoneNumber", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -27,6 +28,8 @@ public interface StudentMapper extends BaseMapper<StudentDTO, Student> {
     @Mapping(target = "currentClassName", source = "currentClass.name")
     @Mapping(target = "houseId", source = "assignedHouse.id")
     @Mapping(target = "houseName", source = "assignedHouse.name")
+    @Mapping(target = "activityIds", ignore = true)
+    @Mapping(target = "activityNames", ignore = true)
     StudentDTO toDTO(Student student);
 
     @Override
@@ -34,6 +37,7 @@ public interface StudentMapper extends BaseMapper<StudentDTO, Student> {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "currentClass", ignore = true)
     @Mapping(target = "assignedHouse", ignore = true)
+    @Mapping(target = "activities", ignore = true)
     @Mapping(target = "legacyPhoneNumber", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

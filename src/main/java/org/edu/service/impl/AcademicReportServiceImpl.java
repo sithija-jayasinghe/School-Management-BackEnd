@@ -50,6 +50,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AcademicReportServiceImpl implements AcademicReportService {
 
+//report card ekak hadana, update karana, publish karana, validate karana,
+// saha PDF ekak widihata download karanna AcademicReportPdfService call karana main service eka.
     private static final BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
 
     private final AcademicReportRepository academicReportRepository;

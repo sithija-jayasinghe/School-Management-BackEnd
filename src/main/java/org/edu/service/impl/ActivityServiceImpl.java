@@ -28,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ActivityServiceImpl implements ActivityService {
 
+//activities create/update/deactivate karana, ewagema teacherla e activities walata assign karana service eka.
+// Eken sports and societies manage karanna puluwan.
+
     private final ActivityRepository activityRepository;
     private final ActivityTeacherAssignmentRepository assignmentRepository;
     private final StaffRepository staffRepository;

@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class AcademicReportPdfServiceImpl implements AcademicReportPdfService {
 
+    // report card eka PDF file ekak widihata hadana service eka.
+
     private static final float LEFT = 48;
     private static final float PAGE_TOP = 790;
 

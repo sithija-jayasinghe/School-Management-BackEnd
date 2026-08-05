@@ -5,6 +5,7 @@ import org.edu.dto.StudentDTO;
 import org.edu.dto.StudentEnrollmentDTO;
 import org.edu.dto.StudentParentInlineRequest;
 import org.edu.entity.AcademicYear;
+import org.edu.entity.Activity;
 import org.edu.entity.Student;
 import org.edu.entity.StudentEnrollment;
 import org.edu.entity.Class;
@@ -16,6 +17,7 @@ import org.edu.filter.StudentFilterDefinitions;
 import org.edu.mapper.StudentMapper;
 import org.edu.repository.StudentRepository;
 import org.edu.repository.AcademicYearRepository;
+import org.edu.repository.ActivityRepository;
 import org.edu.repository.ClassRepository;
 import org.edu.repository.HouseRepository;
 import org.edu.service.StudentService;
@@ -49,6 +51,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
     private final AcademicYearRepository academicYearRepository;
+    private final ActivityRepository activityRepository;
     private final ClassRepository classRepository;
     private final HouseRepository houseRepository;
     private final ParentRepository parentRepository;
@@ -71,6 +74,7 @@ public class StudentServiceImpl implements StudentService {
         normalizeAdmissionDetails(student);
         applyStudentDefaults(student);
         applyHouse(student, studentDTO);
+        syncStudentActivities(student, studentDTO.getActivityIds());
 
         if (studentDTO.getCurrentClassId() != null) {
             Class clazz = classRepository.findByIdAndActiveTrue(studentDTO.getCurrentClassId())
@@ -105,6 +109,7 @@ public class StudentServiceImpl implements StudentService {
         normalizeAdmissionDetails(student);
         applyStudentDefaults(student);
         applyHouse(student, studentDTO);
+        syncStudentActivities(student, studentDTO.getActivityIds());
 
         if (studentDTO.getParentIds() != null) {
             syncParentLinks(student, studentDTO.getParentIds(), studentDTO.getGuardianRelationship());
@@ -422,6 +427,12 @@ public class StudentServiceImpl implements StudentService {
 
     private StudentDTO toDTOWithParentIds(Student student) {
         StudentDTO dto = studentMapper.toDTO(student);
+        dto.setActivityIds(student.getActivities().stream()
+                .map(Activity::getId)
+                .toList());
+        dto.setActivityNames(student.getActivities().stream()
+                .map(Activity::getName)
+                .toList());
         dto.setParentIds(parentStudentRepository.findByStudentId(student.getId()).stream()
                 .map(link -> link.getParent().getId())
                 .toList());
@@ -436,6 +447,22 @@ public class StudentServiceImpl implements StudentService {
                     dto.setCurrentClassName(enrollment.getStudentClass().getName());
                 });
         return dto;
+    }
+
+    private void syncStudentActivities(Student student, List<Long> activityIds) {
+        if (activityIds == null) {
+            student.getActivities().clear();
+            return;
+        }
+
+        LinkedHashSet<Activity> activities = activityIds.stream()
+                .distinct()
+                .map(activityId -> activityRepository.findByIdAndActiveTrue(activityId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Activity not found with id: " + activityId)))
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+
+        student.getActivities().clear();
+        student.getActivities().addAll(activities);
     }
 
     private StudentEnrollmentDTO toEnrollmentDTO(StudentEnrollment enrollment) {

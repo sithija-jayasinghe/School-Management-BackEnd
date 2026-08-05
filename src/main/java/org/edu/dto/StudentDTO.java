@@ -65,6 +65,10 @@ public class StudentDTO {
 
     private String currentAcademicYearName;
 
+    private List<Long> activityIds;
+
+    private List<String> activityNames;
+
     private List<Long> parentIds;
 
     @Valid
