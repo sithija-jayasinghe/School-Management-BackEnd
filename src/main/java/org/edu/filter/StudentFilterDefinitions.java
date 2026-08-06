@@ -1,11 +1,16 @@
 package org.edu.filter;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.edu.entity.House;
+import org.edu.entity.Activity;
 import org.edu.entity.Student;
 import org.edu.repository.HouseRepository;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class StudentFilterDefinitions {
@@ -20,6 +25,7 @@ public final class StudentFilterDefinitions {
         definitions.put("classId", FilterSpecifications.equalsLong("currentClass.id"));
         definitions.put("gender", FilterSpecifications.equalsIgnoreCase("gender"));
         definitions.put("houseId", houseIdFilter(houseRepository));
+        definitions.put("activityIds", activityIdsFilter());
         definitions.put("keyword", keywordFilter());
 
         return Map.copyOf(definitions);
@@ -56,5 +62,21 @@ public final class StudentFilterDefinitions {
                 .or(FilterSpecifications.likeIgnoreCase("assignedHouse.name", rawValue))
                 .or((root, query, criteriaBuilder) ->
                         criteriaBuilder.like(root.get("id").as(String.class), "%" + rawValue + "%"));
+    }
+
+    private static FilterDefinition<Student> activityIdsFilter() {
+        return rawValue -> {
+            List<Long> activityIds = Arrays.stream(rawValue.split(","))
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .map(Long::valueOf)
+                    .toList();
+
+            return (root, query, criteriaBuilder) -> {
+                query.distinct(true);
+                Join<Student, Activity> activityJoin = root.join("activities", JoinType.INNER);
+                return activityJoin.get("id").in(activityIds);
+            };
+        };
     }
 }
