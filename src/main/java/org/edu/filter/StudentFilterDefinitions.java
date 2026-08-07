@@ -2,6 +2,9 @@ package org.edu.filter;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.edu.entity.House;
 import org.edu.entity.Activity;
 import org.edu.entity.Student;
@@ -23,6 +26,7 @@ public final class StudentFilterDefinitions {
 
         definitions.put("active", FilterSpecifications.equalsBoolean("active"));
         definitions.put("classId", FilterSpecifications.equalsLong("currentClass.id"));
+        definitions.put("gradeId", FilterSpecifications.equalsLong("currentClass.grade.id"));
         definitions.put("gender", FilterSpecifications.equalsIgnoreCase("gender"));
         definitions.put("houseId", houseIdFilter(houseRepository));
         definitions.put("activityIds", activityIdsFilter());
@@ -73,9 +77,18 @@ public final class StudentFilterDefinitions {
                     .toList();
 
             return (root, query, criteriaBuilder) -> {
-                query.distinct(true);
-                Join<Student, Activity> activityJoin = root.join("activities", JoinType.INNER);
-                return activityJoin.get("id").in(activityIds);
+                Predicate[] matchesEveryActivity = activityIds.stream()
+                        .map(activityId -> {
+                            Subquery<Long> subquery = query.subquery(Long.class);
+                            Root<Student> correlatedStudent = subquery.correlate(root);
+                            Join<Student, Activity> activityJoin = correlatedStudent.join("activities", JoinType.INNER);
+                            subquery.select(activityJoin.get("id"));
+                            subquery.where(criteriaBuilder.equal(activityJoin.get("id"), activityId));
+                            return criteriaBuilder.exists(subquery);
+                        })
+                        .toArray(Predicate[]::new);
+
+                return criteriaBuilder.and(matchesEveryActivity);
             };
         };
     }

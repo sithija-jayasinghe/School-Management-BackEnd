@@ -148,7 +148,20 @@ public class ClassServiceImpl implements ClassService {
     @Override
     public List<ClassDTO> getAllActiveClasses() {
 
-        return classRepository.findByActiveTrue()
+        List<Class> activeClasses = classRepository.findByActiveTrue();
+
+        Long currentAcademicYearId = academicYearRepository.findByCurrentTrueAndActiveTrue()
+                .map(AcademicYear::getId)
+                .orElse(null);
+
+        if (currentAcademicYearId != null) {
+            activeClasses = activeClasses.stream()
+                    .filter(clazz -> clazz.getAcademicYear() != null
+                            && currentAcademicYearId.equals(clazz.getAcademicYear().getId()))
+                    .toList();
+        }
+
+        return activeClasses
                 .stream()
                 .map(classMapper::toDTO)
                 .toList();
